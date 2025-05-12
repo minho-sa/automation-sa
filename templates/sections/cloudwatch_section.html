@@ -1,0 +1,76 @@
+<!-- CloudWatch 섹션 -->
+<div class="card mb-4 service-section" id="cloudwatch-section">
+    <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#cloudwatch-content" aria-expanded="true">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i> {{ services.cloudwatch.name }}
+        </h5>
+        <span class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </span>
+    </div>
+    <div class="collapse show" id="cloudwatch-content">
+        <div class="card-body">
+            {% if all_services_data.cloudwatch.error is defined %}
+                <div class="alert alert-danger">{{ all_services_data.cloudwatch.error }}</div>
+            {% elif all_services_data.cloudwatch.alarms|default([])|length > 0 %}
+                <!-- CloudWatch Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">총 경보</h5>
+                                <p class="card-text display-6">{{ all_services_data.cloudwatch.alarms|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">정상 상태</h5>
+                                <p class="card-text display-6">{{ all_services_data.cloudwatch.alarms|selectattr('state', 'equalto', 'OK')|list|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">경보 상태</h5>
+                                <p class="card-text display-6">{{ all_services_data.cloudwatch.alarms|selectattr('state', 'equalto', 'ALARM')|list|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sortable">
+                        <thead>
+                            <tr>
+                                <th>경보 이름</th>
+                                <th>상태</th>
+                                <th>지표</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alarm in all_services_data.cloudwatch.alarms %}
+                            <tr>
+                                <td>{{ alarm.name }}</td>
+                                <td>
+                                    {% if alarm.state == 'OK' %}
+                                        <span class="badge bg-success">정상</span>
+                                    {% elif alarm.state == 'ALARM' %}
+                                        <span class="badge bg-danger">경보</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ alarm.state }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ alarm.metric }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">CloudWatch 경보가 없습니다.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>

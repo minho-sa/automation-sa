@@ -10,9 +10,10 @@
     </div>
     <div class="collapse show" id="s3-content">
         <div class="card-body">
-            {% if all_services_data.s3.error is defined %}
-                <div class="alert alert-danger">{{ all_services_data.s3.error }}</div>
-            {% elif all_services_data.s3.buckets|default([])|length > 0 %}
+            {% if all_services_data.s3 is defined %}
+                {% if all_services_data.s3.error is defined %}
+                    <div class="alert alert-danger">{{ all_services_data.s3.error }}</div>
+                {% elif all_services_data.s3.buckets|default([])|length > 0 %}
                 <!-- S3 Summary Cards -->
                 <div class="row mb-4">
                     <div class="col-md-3">
@@ -195,8 +196,11 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                    <div class="alert alert-info">S3 버킷이 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">S3 버킷이 없습니다.</div>
+                <div class="alert alert-info">S3 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

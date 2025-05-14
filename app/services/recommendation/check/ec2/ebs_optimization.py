@@ -17,14 +17,12 @@ def check_ebs_optimization(instance):
             # 미사용 볼륨 검사
             if not volume.get('Attachments'):
                 msg = f"미사용 EBS 볼륨 발견: {volume['VolumeId']}"
-                logger.warning(msg)
                 issues.append(msg)
             
             # IOPS 과다 설정 검사
             if volume.get('Iops') and volume.get('VolumeType') in ['io1', 'io2']:
                 if volume['Iops'] > 10000:
                     msg = f"과다 설정된 IOPS 발견: {volume['VolumeId']}"
-                    logger.warning(msg)
                     issues.append(msg)
             
             # gp2에서 gp3로 마이그레이션 추천

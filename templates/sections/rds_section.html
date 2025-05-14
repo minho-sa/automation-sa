@@ -10,9 +10,10 @@
     </div>
     <div class="collapse show" id="rds-content">
         <div class="card-body">
-            {% if all_services_data.rds.error is defined %}
-                <div class="alert alert-danger">{{ all_services_data.rds.error }}</div>
-            {% elif all_services_data.rds.instances|default([])|length > 0 %}
+            {% if all_services_data.rds is defined %}
+                {% if all_services_data.rds.error is defined %}
+                    <div class="alert alert-danger">{{ all_services_data.rds.error }}</div>
+                {% elif all_services_data.rds.instances|default([])|length > 0 %}
                 <!-- RDS Summary Cards -->
                 <div class="row mb-4">
                     <div class="col-md-3">
@@ -235,8 +236,11 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                    <div class="alert alert-info">RDS 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">RDS 인스턴스가 없습니다.</div>
+                <div class="alert alert-info">RDS 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

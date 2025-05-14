@@ -21,7 +21,6 @@ def check_public_layers(function: Dict) -> Dict:
                     break
         
         if has_public_layers:
-            logger.warning(f"Function {function_name} is using public layers")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

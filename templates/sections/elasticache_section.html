@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="elasticache-content">
         <div class="card-body">
-            {% if all_services_data.elasticache.error is defined %}
+            {% if all_services_data.elasticache is defined %}
+                {% if all_services_data.elasticache.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.elasticache.error }}</div>
             {% elif all_services_data.elasticache.clusters|default([])|length > 0 %}
                 <!-- ElastiCache Summary Cards -->
@@ -167,8 +168,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">ELASTICACHE 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">ElastiCache 클러스터가 없습니다.</div>
+                <div class="alert alert-info">ELASTICACHE 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

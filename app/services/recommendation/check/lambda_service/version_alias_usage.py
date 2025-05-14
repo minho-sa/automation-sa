@@ -17,7 +17,6 @@ def check_version_alias_usage(function: Dict) -> Dict:
                 break
         
         if versions_info and not has_published_versions:
-            logger.warning(f"Function {function_name} is only using $LATEST version")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

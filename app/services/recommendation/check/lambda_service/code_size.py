@@ -10,7 +10,6 @@ def check_code_size(function: Dict) -> Dict:
     
     try:
         if code_size > 5 * 1024 * 1024:  # 5MB
-            logger.warning(f"Function {function_name} has large code size: {code_size_mb:.2f}MB")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

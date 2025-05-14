@@ -9,7 +9,6 @@ def check_public_url_endpoint(function: Dict) -> Dict:
     
     try:
         if url_config and url_config.get('AuthType') == 'NONE':
-            logger.warning(f"Function {function_name} has public URL endpoint without authentication")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

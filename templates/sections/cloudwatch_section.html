@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="cloudwatch-content">
         <div class="card-body">
-            {% if all_services_data.cloudwatch.error is defined %}
+            {% if all_services_data.cloudwatch is defined %}
+                {% if all_services_data.cloudwatch.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.cloudwatch.error }}</div>
             {% elif all_services_data.cloudwatch.alarms|default([])|length > 0 %}
                 <!-- CloudWatch Summary Cards -->
@@ -68,8 +69,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">CLOUDWATCH 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">CloudWatch 경보가 없습니다.</div>
+                <div class="alert alert-info">CLOUDWATCH 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

@@ -16,11 +16,9 @@ def check_network_performance(instance):
         # 네트워크 사용량 검사
         if network_metrics.get('NetworkIn', 0) > 100000000:  # 100MB/s
             msg = "높은 인바운드 네트워크 사용량"
-            logger.warning(f"Instance {instance['id']}: {msg}")
             issues.append(msg)
         if network_metrics.get('NetworkOut', 0) > 100000000:  # 100MB/s
             msg = "높은 아웃바운드 네트워크 사용량"
-            logger.warning(f"Instance {instance['id']}: {msg}")
             issues.append(msg)
 
         if issues:

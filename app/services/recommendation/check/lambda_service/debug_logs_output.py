@@ -9,7 +9,6 @@ def check_debug_logs_output(function: Dict) -> Dict:
     
     try:
         if debug_logs_detected:
-            logger.warning(f"Function {function_name} has debug logs output")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

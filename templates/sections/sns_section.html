@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="sns-content">
         <div class="card-body">
-            {% if all_services_data.sns.error is defined %}
+            {% if all_services_data.sns is defined %}
+                {% if all_services_data.sns.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.sns.error }}</div>
             {% elif all_services_data.sns.topics|default([])|length > 0 %}
                 <!-- SNS Summary Cards -->
@@ -66,8 +67,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">SNS 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">SNS 주제가 없습니다.</div>
+                <div class="alert alert-info">SNS 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

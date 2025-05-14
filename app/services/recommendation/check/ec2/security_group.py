@@ -16,7 +16,6 @@ def check_security_group_recommendations(instance):
             logger.debug(f"Analyzing security group {sg.get('group_id')}")
             if '0.0.0.0/0' in sg.get('ip_ranges', []):
                 msg = f"보안 그룹 {sg['group_id']}에 전체 개방된 규칙이 있습니다."
-                logger.warning(msg)
                 security_issues.append(f"보안 그룹 {sg['group_id']}에 전체 개방된 규칙이 있습니다.")
             
             # 위험 포트 검사

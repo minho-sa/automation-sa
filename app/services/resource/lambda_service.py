@@ -114,10 +114,8 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Di
             )
             
             functions.append(function_data)
-            logger.info(f"Successfully collected data for function {function['FunctionName']}")
         
         result = {'functions': functions}
-        logger.info(f"Successfully collected data for {len(functions)} functions")
         return result
     except Exception as e:
         logger.error(f"Error in get_lambda_data: {str(e)}")

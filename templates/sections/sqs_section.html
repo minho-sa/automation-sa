@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="sqs-content">
         <div class="card-body">
-            {% if all_services_data.sqs.error is defined %}
+            {% if all_services_data.sqs is defined %}
+                {% if all_services_data.sqs.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.sqs.error }}</div>
             {% elif all_services_data.sqs.queues|default([])|length > 0 %}
                 <!-- SQS Summary Cards -->
@@ -78,8 +79,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">SQS 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">SQS 대기열이 없습니다.</div>
+                <div class="alert alert-info">SQS 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

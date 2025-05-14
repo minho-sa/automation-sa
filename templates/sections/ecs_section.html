@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="ecs-content">
         <div class="card-body">
-            {% if all_services_data.ecs.error is defined %}
+            {% if all_services_data.ecs is defined %}
+                {% if all_services_data.ecs.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.ecs.error }}</div>
             {% elif all_services_data.ecs.clusters|default([])|length > 0 %}
                 <!-- ECS Summary Cards -->
@@ -78,8 +79,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">ECS 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">ECS 클러스터가 없습니다.</div>
+                <div class="alert alert-info">ECS 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

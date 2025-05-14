@@ -1,10 +1,13 @@
 from flask import Flask
 from flask_login import LoginManager
 from config import Config
+from logging.handlers import RotatingFileHandler
+import os
 
 # 앱 초기화
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 app.config.from_object(Config)
+
 
 # 로그인 매니저 설정
 login_manager = LoginManager()

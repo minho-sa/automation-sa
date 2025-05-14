@@ -18,7 +18,6 @@ def check_runtime_version(function: Dict) -> Dict:
         ]
         
         if runtime in outdated_runtimes:
-            logger.warning(f"Function {function_name} uses outdated runtime: {runtime}")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

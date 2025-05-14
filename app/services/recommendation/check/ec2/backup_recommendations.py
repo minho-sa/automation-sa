@@ -42,7 +42,6 @@ def check_backup_recommendations(instance):
                                     break
                                 
                 except Exception as e:
-                    logger.warning(f"Error checking backup selections for plan {plan['BackupPlanId']}: {str(e)}")
                     continue
                 
                 if has_backup:

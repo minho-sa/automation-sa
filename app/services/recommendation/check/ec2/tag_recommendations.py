@@ -15,7 +15,6 @@ def check_tag_recommendations(instance):
         missing_tags = required_tags - instance_tags
 
         if missing_tags:
-            logger.warning(f"Instance {instance['id']} is missing required tags: {missing_tags}")
             return {
                 'service': 'EC2',
                 'resource': instance['id'],

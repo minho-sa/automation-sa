@@ -48,12 +48,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // 데이터 수집 시작 요청
+            // 한국 시간 기준으로 고유 ID 생성
+            const now = new Date();
+            const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9 (한국 시간)
+            const collectionId = `${koreaTime.getFullYear()}${String(koreaTime.getMonth() + 1).padStart(2, '0')}${String(koreaTime.getDate()).padStart(2, '0')}_${String(koreaTime.getHours()).padStart(2, '0')}${String(koreaTime.getMinutes()).padStart(2, '0')}${String(koreaTime.getSeconds()).padStart(2, '0')}`;
+            
+            console.log(`데이터 수집 ID: ${collectionId}`);
+            
+            // 데이터 수집 시작 요청 (ID 포함)
             fetch('/start_collection', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    collectionId: collectionId
+                }),
             })
             .then(response => response.json())
             .then(data => {

@@ -13,7 +13,6 @@ def check_environment_encryption(function: Dict) -> Dict:
         is_encrypted = False  # 기본적으로 암호화되지 않았다고 가정
         
         if not is_encrypted and environment:
-            logger.warning(f"Function {function_name} has unencrypted environment variables")
             return {
                 'service': 'Lambda',
                 'resource': function_name,

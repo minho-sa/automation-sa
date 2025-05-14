@@ -9,6 +9,7 @@ from app.services.recommendation import (
     get_sns_recommendations, get_sqs_recommendations, get_apigateway_recommendations, get_elasticache_recommendations,
     get_route53_recommendations, get_iam_recommendations
 )
+
 from app.routes.dashboard import collection_status
 
 @app.route('/recommendations')
@@ -59,14 +60,14 @@ def recommendations_view():
     try:
         # 이미 수집된 데이터를 사용하여 추천 사항 생성
         if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances']))
+            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
         
         if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
             all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions']))
         
         # S3 추천 사항
         if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
-            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], aws_access_key, aws_secret_key, region))
+            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], aws_access_key, aws_secret_key, region, collection_status['collection_id']))
         
         # # RDS 추천 사항
         # if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:
@@ -82,6 +83,7 @@ def recommendations_view():
         
         
     except Exception as e:
+        app.logger.error(f"[{collection_status['collection_id']}] 추천 사항 생성 중 오류: {str(e)}")
         flash(f'추천 사항 생성 중 오류가 발생했습니다: {str(e)}')
     
     return render_template('recommendations.html', 

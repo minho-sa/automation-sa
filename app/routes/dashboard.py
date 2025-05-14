@@ -27,7 +27,8 @@ collection_status = {
     'total_services': 14,  # 총 서비스 수
     'error': None,
     'all_services_data': {},
-    'user_id': None  # 사용자별 상태 추적을 위한 ID
+    'user_id': None,  # 사용자별 상태 추적을 위한 ID
+    'collection_id': None  # 데이터 수집 ID
 }
 
 # 데이터 수집 함수
@@ -44,84 +45,97 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
     collection_status['error'] = None
     collection_status['user_id'] = user_id
     
+    # 로그에 수집 ID 기록
+    collection_id = collection_status['collection_id']
+    app.logger.info(f"[{collection_id}] 데이터 수집 시작 - 사용자: {user_id}")
+    
     try:
         # EC2 데이터
         collection_status['current_service'] = 'EC2'
-        collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region)
+        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 시작")
+        collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
         collection_status['completed_services'].append('EC2')
+        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 완료")
         
         # S3 데이터
         collection_status['current_service'] = 'S3'
-        collection_status['all_services_data']['s3'] = get_s3_data(aws_access_key, aws_secret_key, region)
+        app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 시작")
+        collection_status['all_services_data']['s3'] = get_s3_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
         collection_status['completed_services'].append('S3')
+        app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 완료")
         
-        # RDS 데이터
-        collection_status['current_service'] = 'RDS'
-        collection_status['all_services_data']['rds'] = get_rds_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('RDS')
+        # # RDS 데이터
+        # collection_status['current_service'] = 'RDS'
+        # app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 시작")
+        # collection_status['all_services_data']['rds'] = get_rds_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
+        # collection_status['completed_services'].append('RDS')
+        # app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 완료")
         
-        # Lambda 데이터
-        collection_status['current_service'] = 'Lambda'
-        collection_status['all_services_data']['lambda'] = get_lambda_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('Lambda')
+        # # Lambda 데이터
+        # collection_status['current_service'] = 'Lambda'
+        # collection_status['all_services_data']['lambda'] = get_lambda_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('Lambda')
         
-        # CloudWatch 데이터
-        collection_status['current_service'] = 'CloudWatch'
-        collection_status['all_services_data']['cloudwatch'] = get_cloudwatch_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('CloudWatch')
+        # # CloudWatch 데이터
+        # collection_status['current_service'] = 'CloudWatch'
+        # collection_status['all_services_data']['cloudwatch'] = get_cloudwatch_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('CloudWatch')
         
-        # DynamoDB 데이터
-        collection_status['current_service'] = 'DynamoDB'
-        collection_status['all_services_data']['dynamodb'] = get_dynamodb_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('DynamoDB')
+        # # DynamoDB 데이터
+        # collection_status['current_service'] = 'DynamoDB'
+        # collection_status['all_services_data']['dynamodb'] = get_dynamodb_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('DynamoDB')
         
-        # ECS 데이터
-        collection_status['current_service'] = 'ECS'
-        collection_status['all_services_data']['ecs'] = get_ecs_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('ECS')
+        # # ECS 데이터
+        # collection_status['current_service'] = 'ECS'
+        # collection_status['all_services_data']['ecs'] = get_ecs_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('ECS')
         
-        # EKS 데이터
-        collection_status['current_service'] = 'EKS'
-        collection_status['all_services_data']['eks'] = get_eks_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('EKS')
+        # # EKS 데이터
+        # collection_status['current_service'] = 'EKS'
+        # collection_status['all_services_data']['eks'] = get_eks_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('EKS')
         
-        # SNS 데이터
-        collection_status['current_service'] = 'SNS'
-        collection_status['all_services_data']['sns'] = get_sns_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('SNS')
+        # # SNS 데이터
+        # collection_status['current_service'] = 'SNS'
+        # collection_status['all_services_data']['sns'] = get_sns_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('SNS')
         
-        # SQS 데이터
-        collection_status['current_service'] = 'SQS'
-        collection_status['all_services_data']['sqs'] = get_sqs_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('SQS')
+        # # SQS 데이터
+        # collection_status['current_service'] = 'SQS'
+        # collection_status['all_services_data']['sqs'] = get_sqs_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('SQS')
         
-        # API Gateway 데이터
-        collection_status['current_service'] = 'API Gateway'
-        collection_status['all_services_data']['apigateway'] = get_apigateway_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('API Gateway')
+        # # API Gateway 데이터
+        # collection_status['current_service'] = 'API Gateway'
+        # collection_status['all_services_data']['apigateway'] = get_apigateway_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('API Gateway')
         
-        # ElastiCache 데이터
-        collection_status['current_service'] = 'ElastiCache'
-        collection_status['all_services_data']['elasticache'] = get_elasticache_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('ElastiCache')
+        # # ElastiCache 데이터
+        # collection_status['current_service'] = 'ElastiCache'
+        # collection_status['all_services_data']['elasticache'] = get_elasticache_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('ElastiCache')
         
-        # Route 53 데이터
-        collection_status['current_service'] = 'Route 53'
-        collection_status['all_services_data']['route53'] = get_route53_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('Route 53')
+        # # Route 53 데이터
+        # collection_status['current_service'] = 'Route 53'
+        # collection_status['all_services_data']['route53'] = get_route53_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('Route 53')
         
-        # IAM 데이터
-        collection_status['current_service'] = 'IAM'
-        collection_status['all_services_data']['iam'] = get_iam_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('IAM')
+        # # IAM 데이터
+        # collection_status['current_service'] = 'IAM'
+        # collection_status['all_services_data']['iam'] = get_iam_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('IAM')
         
         # 수집 완료
         collection_status['current_service'] = None
         
     except Exception as e:
-        collection_status['error'] = str(e)
+        error_msg = str(e)
+        collection_status['error'] = error_msg
+        app.logger.error(f"[{collection_status['collection_id']}] 데이터 수집 오류: {error_msg}")
     finally:
         collection_status['is_collecting'] = False
+        app.logger.info(f"[{collection_status['collection_id']}] 데이터 수집 완료 - 총 {len(collection_status['completed_services'])}개 서비스")
 
 @app.route('/consolidated')
 @login_required
@@ -210,6 +224,13 @@ def start_collection():
     region = app.config.get('AWS_DEFAULT_REGION', 'ap-northeast-2')
     user_id = current_user.get_id()
     
+    # 클라이언트에서 전달받은 collection_id 저장
+    data = request.get_json()
+    collection_id = data.get('collectionId') if data else None
+    collection_status['collection_id'] = collection_id
+    
+    app.logger.info(f"데이터 수집 시작 - ID: {collection_id}")
+    
     # 백그라운드 스레드에서 데이터 수집 시작
     collection_thread = threading.Thread(
         target=collect_data, 
@@ -218,7 +239,7 @@ def start_collection():
     collection_thread.daemon = True
     collection_thread.start()
     
-    return jsonify({'status': 'started', 'message': '데이터 수집이 시작되었습니다.'})
+    return jsonify({'status': 'started', 'message': '데이터 수집이 시작되었습니다.', 'collectionId': collection_id})
 
 @app.route('/collection_status')
 @login_required
@@ -236,7 +257,8 @@ def get_collection_status():
             'completed_services': [],
             'total_services': collection_status['total_services'],
             'progress_percent': 0,
-            'error': '다른 사용자의 데이터 수집 중입니다.'
+            'error': '다른 사용자의 데이터 수집 중입니다.',
+            'collection_id': None
         })
     
     # 진행률 계산
@@ -250,5 +272,6 @@ def get_collection_status():
         'completed_services': collection_status['completed_services'],
         'total_services': collection_status['total_services'],
         'progress_percent': progress_percent,
-        'error': collection_status['error']
+        'error': collection_status['error'],
+        'collection_id': collection_status['collection_id']
     })

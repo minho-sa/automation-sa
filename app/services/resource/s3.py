@@ -1,6 +1,8 @@
 import boto3
 from typing import Dict, List, Any
 import logging
+from datetime import datetime, timedelta
+import pytz
 
 # 로깅 설정
 logging.basicConfig(
@@ -13,9 +15,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
+def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
     """S3 버킷 데이터 수집"""
-    logger.info("Starting S3 data collection")
+    log_prefix = f"[{collection_id}] " if collection_id else ""
+    logger.info(f"{log_prefix}Starting S3 data collection")
     try:
         # S3 클라이언트 생성
         s3_client = boto3.client(
@@ -29,12 +32,12 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
         response = s3_client.list_buckets()
         buckets = []
         
-        logger.info(f"Found {len(response.get('Buckets', []))} S3 buckets")
+        logger.info(f"{log_prefix}Found {len(response.get('Buckets', []))} S3 buckets")
         
         # 각 버킷에 대한 정보 수집
         for bucket in response.get('Buckets', []):
             bucket_name = bucket['Name']
-            logger.debug(f"Processing bucket: {bucket_name}")
+            logger.debug(f"{log_prefix}Processing bucket: {bucket_name}")
             
             # 기본 버킷 정보
             bucket_data = {
@@ -112,6 +115,10 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
                 )
                 
                 # 버킷 크기 메트릭
+                # 현재 시간과 24시간 전 시간을 사용하여 시간 범위 설정
+                current_time = datetime.now(pytz.UTC)
+                start_time = current_time - timedelta(days=1)
+                
                 size_response = cloudwatch.get_metric_statistics(
                     Namespace='AWS/S3',
                     MetricName='BucketSizeBytes',
@@ -119,8 +126,8 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
                         {'Name': 'BucketName', 'Value': bucket_name},
                         {'Name': 'StorageType', 'Value': 'StandardStorage'}
                     ],
-                    StartTime=bucket['CreationDate'],
-                    EndTime=bucket['CreationDate'],
+                    StartTime=start_time,
+                    EndTime=current_time,
                     Period=86400,
                     Statistics=['Average']
                 )
@@ -129,6 +136,7 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
                     bucket_data['size'] = size_response['Datapoints'][0]['Average']
                 
                 # 객체 수 메트릭
+                # 현재 시간과 24시간 전 시간을 사용 (위에서 이미 설정한 시간 사용)
                 count_response = cloudwatch.get_metric_statistics(
                     Namespace='AWS/S3',
                     MetricName='NumberOfObjects',
@@ -136,8 +144,8 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
                         {'Name': 'BucketName', 'Value': bucket_name},
                         {'Name': 'StorageType', 'Value': 'AllStorageTypes'}
                     ],
-                    StartTime=bucket['CreationDate'],
-                    EndTime=bucket['CreationDate'],
+                    StartTime=start_time,
+                    EndTime=current_time,
                     Period=86400,
                     Statistics=['Average']
                 )
@@ -145,14 +153,13 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
                 if count_response['Datapoints']:
                     bucket_data['object_count'] = count_response['Datapoints'][0]['Average']
             except Exception as e:
-                logger.error(f"Error getting metrics for {bucket_name}: {str(e)}")
+                logger.error(f"{log_prefix}Error getting metrics for {bucket_name}: {str(e)}")
             
             buckets.append(bucket_data)
-            logger.info(f"Successfully collected data for bucket {bucket_name}")
         
         result = {'buckets': buckets}
-        logger.info(f"Successfully collected data for {len(buckets)} buckets")
+        logger.info(f"{log_prefix}Successfully collected data for {len(buckets)} S3 buckets")
         return result
     except Exception as e:
-        logger.error(f"Error in get_s3_data: {str(e)}")
+        logger.error(f"{log_prefix}Error in get_s3_data: {str(e)}")
         return {'error': str(e)}

@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="ec2-content">
         <div class="card-body">
-            {% if all_services_data.ec2.error is defined %}
+            {% if all_services_data.ec2 is defined %}
+                {% if all_services_data.ec2.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.ec2.error }}</div>
             {% elif all_services_data.ec2.status is defined and all_services_data.ec2.status == 'collecting' %}
                 <div class="alert alert-info">
@@ -259,8 +260,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">EC2 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">EC2 인스턴스가 없습니다.</div>
+                <div class="alert alert-info">EC2 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

@@ -38,7 +38,6 @@ def get_lambda_recommendations(functions: Dict) -> List[Dict]:
         recommendations = []
 
         if not functions:
-            logger.warning("No functions data found")
             return []
 
         # functions가 리스트인 경우

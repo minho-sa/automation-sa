@@ -2,7 +2,6 @@
 # Check for CPU utilization recommendations
 
 import logging
-from .utils import analyze_cpu_metrics
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ def check_cpu_utilization(instance):
             logger.debug(f"Instance {instance_id} is not running or has no CPU metrics")
             return None
 
-        cpu_stats = analyze_cpu_metrics(instance['cpu_metrics'])
+        cpu_stats = instance.get('cpu_analysis', {'low_usage_days': 0, 'high_usage_days': 0})
         logger.debug(f"CPU stats for instance {instance_id}: {cpu_stats}")
 
         # CPU 사용 패턴 분석

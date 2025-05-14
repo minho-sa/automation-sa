@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="eks-content">
         <div class="card-body">
-            {% if all_services_data.eks.error is defined %}
+            {% if all_services_data.eks is defined %}
+                {% if all_services_data.eks.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.eks.error }}</div>
             {% elif all_services_data.eks.clusters|default([])|length > 0 %}
                 <!-- EKS Summary Cards -->
@@ -155,8 +156,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">EKS 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">EKS 클러스터가 없습니다.</div>
+                <div class="alert alert-info">EKS 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

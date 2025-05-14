@@ -10,7 +10,8 @@
     </div>
     <div class="collapse show" id="dynamodb-content">
         <div class="card-body">
-            {% if all_services_data.dynamodb.error is defined %}
+            {% if all_services_data.dynamodb is defined %}
+                {% if all_services_data.dynamodb.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.dynamodb.error }}</div>
             {% elif all_services_data.dynamodb.tables|default([])|length > 0 %}
                 <!-- DynamoDB Summary Cards -->
@@ -68,8 +69,11 @@
                         </tbody>
                     </table>
                 </div>
+                            {% else %}
+                    <div class="alert alert-info">DYNAMODB 데이터가 없습니다.</div>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">DynamoDB 테이블이 없습니다.</div>
+                <div class="alert alert-info">DYNAMODB 데이터가 수집되지 않았습니다.</div>
             {% endif %}
         </div>
     </div>

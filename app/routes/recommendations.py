@@ -59,15 +59,15 @@ def recommendations_view():
     
     try:
         # 이미 수집된 데이터를 사용하여 추천 사항 생성
-        if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
+        # if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
+        #     all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
         
-        if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
-            all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions']))
+        # if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
+        #     all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions']))
         
         # S3 추천 사항
         if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
-            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], aws_access_key, aws_secret_key, region, collection_status['collection_id']))
+            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
         
         # # RDS 추천 사항
         # if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:

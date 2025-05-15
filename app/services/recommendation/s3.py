@@ -7,7 +7,6 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('s3_recommendations.log'),
         logging.StreamHandler()
     ]
 )

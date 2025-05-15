@@ -35,21 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // Add sorting functionality to tables
-    const tables = document.querySelectorAll('.table-sortable');
-    if (tables) {
-        tables.forEach(table => {
-            const headers = table.querySelectorAll('th');
-            headers.forEach((header, index) => {
-                header.addEventListener('click', function() {
-                    sortTable(table, index);
-                });
-                header.style.cursor = 'pointer';
-                header.title = '클릭하여 정렬';
-            });
-        });
-    }
+    
+    // 테이블 정렬 기능은 table-sort.js로 이동되었습니다
     
     // Enhance modal behavior to prevent background interaction
     const modals = document.querySelectorAll('.modal');
@@ -101,29 +88,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// Function to sort tables
-function sortTable(table, column) {
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const direction = table.getAttribute('data-sort-direction') === 'asc' ? -1 : 1;
-    
-    // Sort the rows
-    rows.sort((a, b) => {
-        const aValue = a.querySelectorAll('td')[column].textContent.trim();
-        const bValue = b.querySelectorAll('td')[column].textContent.trim();
-        
-        if (!isNaN(aValue) && !isNaN(bValue)) {
-            return direction * (Number(aValue) - Number(bValue));
-        } else {
-            return direction * aValue.localeCompare(bValue, 'ko');
-        }
-    });
-    
-    // Update the table
-    rows.forEach(row => tbody.appendChild(row));
-    
-    // Toggle the sort direction
-    table.setAttribute('data-sort-direction', direction === 1 ? 'asc' : 'desc');
-}
-

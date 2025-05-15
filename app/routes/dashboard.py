@@ -51,11 +51,11 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
     
     try:
         # EC2 데이터
-        # collection_status['current_service'] = 'EC2'
-        # app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 시작")
-        # collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
-        # collection_status['completed_services'].append('EC2')
-        # app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 완료")
+        collection_status['current_service'] = 'EC2'
+        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 시작")
+        collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
+        collection_status['completed_services'].append('EC2')
+        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 완료")
         
         # S3 데이터
         collection_status['current_service'] = 'S3'

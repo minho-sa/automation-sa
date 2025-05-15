@@ -7,16 +7,22 @@ from app.services.recommendation.check.ec2.utils import calculate_stop_duration
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_stopped_instance(instance):
-    """장기 중지된 인스턴스 검사"""
+def check_stopped_instance(instance, collection_id=None):
+    """장기 중지된 인스턴스 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     instance_id = instance.get('id', 'unknown')
-    logger.debug(f"Checking stopped instance: {instance_id}")
+    log_prefix = f"[{collection_id}] " if collection_id else ""
+    logger.debug(f"{log_prefix}Checking stopped instance: {instance_id}")
     
     try:
         if instance.get('state') == 'stopped':
             stop_duration = calculate_stop_duration(instance.get('state_transition_time'))
             if stop_duration and stop_duration.days >= 7:
-                logger.info(f"Found long-stopped instance: {instance_id}")
+                logger.info(f"{log_prefix}Found long-stopped instance: {instance_id}")
                 return {
                     'service': 'EC2',
                     'resource': instance_id,
@@ -34,5 +40,5 @@ def check_stopped_instance(instance):
                 }
         return None
     except Exception as e:
-        logger.error(f"Error in check_stopped_instance for {instance_id}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_stopped_instance for {instance_id}: {str(e)}")
         return None

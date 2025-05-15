@@ -7,11 +7,18 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_backup_recommendations(instance):
-    """백업 정책 검사"""
+def check_backup_recommendations(instance, collection_id=None):
+    """백업 정책 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
         # AWS Backup 정책 확인
         backup = boto3.client('backup')
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking backup recommendations for instance {instance['id']}")
         
         # First, list all backup plans
         try:
@@ -48,7 +55,7 @@ def check_backup_recommendations(instance):
                     break
 
         except Exception as e:
-            logger.error(f"Error listing backup plans: {str(e)}")
+            logger.error(f"{log_prefix}Error listing backup plans: {str(e)}")
             return None
 
         if not has_backup:
@@ -70,5 +77,5 @@ def check_backup_recommendations(instance):
         return None
         
     except Exception as e:
-        logger.error(f"Error in check_backup_recommendations: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_backup_recommendations: {str(e)}")
         return None

@@ -4,11 +4,17 @@ from app.services.recommendation.check.ec2.utils import get_new_generation_equiv
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_old_generation_instance(instance):
-    """이전 세대 인스턴스 타입 검사"""
+def check_old_generation_instance(instance, collection_id=None):
+    """이전 세대 인스턴스 타입 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     instance_id = instance.get('id', 'unknown')
     instance_type = instance.get('type', '')
-    logger.debug(f"Checking instance type for {instance_id}: {instance_type}")
+    log_prefix = f"[{collection_id}] " if collection_id else ""
+    logger.debug(f"{log_prefix}Checking instance type for {instance_id}: {instance_type}")
     
     try:
         # 이전 세대 인스턴스 타입 확인
@@ -17,7 +23,7 @@ def check_old_generation_instance(instance):
         for prefix in old_gen_prefixes:
             if instance_type.startswith(prefix):
                 new_type = get_new_generation_equivalent(instance_type)
-                logger.info(f"Found old generation instance: {instance_id} ({instance_type})")
+                logger.info(f"{log_prefix}Found old generation instance: {instance_id} ({instance_type})")
                 return {
                     'service': 'EC2',
                     'resource': instance_id,
@@ -36,5 +42,5 @@ def check_old_generation_instance(instance):
                 }
         return None
     except Exception as e:
-        logger.error(f"Error in check_old_generation_instance for {instance_id}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_old_generation_instance for {instance_id}: {str(e)}")
         return None

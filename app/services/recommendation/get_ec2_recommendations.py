@@ -34,15 +34,15 @@ def get_ec2_recommendations(instances: List[Dict], collection_id: str = None) ->
             
             # 각 체크 함수 실행
             checks = [
-                check_backup_recommendations(instance),
-                check_cpu_utilization(instance),
-                check_ebs_optimization(instance),
-                check_network_performance(instance),
-                check_old_generation_instance(instance),
-                check_reserved_instance_recommendation(instance),
-                check_security_group_recommendations(instance),
-                check_stopped_instance(instance),
-                check_tag_recommendations(instance)
+                check_backup_recommendations(instance, collection_id),
+                check_cpu_utilization(instance, collection_id),
+                check_ebs_optimization(instance, collection_id),
+                check_network_performance(instance, collection_id),
+                check_old_generation_instance(instance, collection_id),
+                check_reserved_instance_recommendation(instance, collection_id),
+                check_security_group_recommendations(instance, collection_id),
+                check_stopped_instance(instance, collection_id),
+                check_tag_recommendations(instance, collection_id)
             ]
             
             # 결과 필터링 (None 제외)

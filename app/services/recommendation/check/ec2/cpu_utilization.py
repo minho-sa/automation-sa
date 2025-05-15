@@ -6,13 +6,17 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_cpu_utilization(instance):
+def check_cpu_utilization(instance, collection_id=None):
     """CPU 사용률 모니터링
     
     CPU 사용률 패턴을 분석하여 다음과 같은 상태를 확인합니다:
     - 매우 낮음 (20% 미만)
     - 적정 (20-80%)
     - 높음 (80% 이상)
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
     """
     # 상수 정의
     CPU_THRESHOLD = {
@@ -23,14 +27,15 @@ def check_cpu_utilization(instance):
 
     try:
         instance_id = instance.get('id')
-        logger.debug(f"Checking CPU utilization for instance {instance_id}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking CPU utilization for instance {instance_id}")
 
         if not (instance['state'] == 'running' and instance.get('cpu_metrics')):
-            logger.debug(f"Instance {instance_id} is not running or has no CPU metrics")
+            logger.debug(f"{log_prefix}Instance {instance_id} is not running or has no CPU metrics")
             return None
 
         cpu_stats = instance.get('cpu_analysis', {'low_usage_days': 0, 'high_usage_days': 0})
-        logger.debug(f"CPU stats for instance {instance_id}: {cpu_stats}")
+        logger.debug(f"{log_prefix}CPU stats for instance {instance_id}: {cpu_stats}")
 
         # CPU 사용 패턴 분석
         def get_cpu_pattern():
@@ -76,7 +81,7 @@ def check_cpu_utilization(instance):
 
         cpu_pattern = get_cpu_pattern()
         if not cpu_pattern:
-            logger.debug(f"No significant CPU utilization pattern found for instance {instance_id}")
+            logger.debug(f"{log_prefix}No significant CPU utilization pattern found for instance {instance_id}")
             return None
 
         # 결과 반환
@@ -97,5 +102,5 @@ def check_cpu_utilization(instance):
         }
 
     except Exception as e:
-        logger.error(f"Error in check_cpu_utilization for instance {instance_id}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_cpu_utilization for instance {instance_id}: {str(e)}", exc_info=True)
         return None

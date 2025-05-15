@@ -6,10 +6,16 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_tag_recommendations(instance):
-    """태그 관리 검사"""
+def check_tag_recommendations(instance, collection_id=None):
+    """태그 관리 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
-        logger.debug(f"Checking tag recommendations for instance {instance.get('id')}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking tag recommendations for instance {instance.get('id')}")
         required_tags = {'Name', 'Environment', 'Owner', 'Project'}
         instance_tags = {tag['Key'] for tag in instance.get('tags', [])}
         missing_tags = required_tags - instance_tags
@@ -30,8 +36,8 @@ def check_tag_recommendations(instance):
                     "정기적인 태그 컴플라이언스를 검토합니다."
                 ]
             }
-        logger.debug(f"No missing tags found for instance {instance['id']}")
+        logger.debug(f"{log_prefix}No missing tags found for instance {instance['id']}")
         return None
     except Exception as e:
-        logger.error(f"Error in check_tag_recommendations for instance {instance.get('id')}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_tag_recommendations for instance {instance.get('id')}: {str(e)}", exc_info=True)
         return None

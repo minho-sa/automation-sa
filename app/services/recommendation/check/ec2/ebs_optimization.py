@@ -6,13 +6,19 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_ebs_optimization(instance):
-    """EBS 볼륨 최적화 검사"""
+def check_ebs_optimization(instance, collection_id=None):
+    """EBS 볼륨 최적화 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
-        logger.debug(f"Checking EBS optimization for instance {instance.get('id')}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking EBS optimization for instance {instance.get('id')}")
         issues = []
         for volume in instance.get('volumes', []):
-            logger.debug(f"Analyzing volume {volume.get('VolumeId')} for instance {instance.get('id')}")
+            logger.debug(f"{log_prefix}Analyzing volume {volume.get('VolumeId')} for instance {instance.get('id')}")
             
             # 미사용 볼륨 검사
             if not volume.get('Attachments'):
@@ -28,11 +34,11 @@ def check_ebs_optimization(instance):
             # gp2에서 gp3로 마이그레이션 추천
             if volume.get('VolumeType') == 'gp2':
                 msg = f"gp3로 마이그레이션 권장: {volume['VolumeId']}"
-                logger.info(msg)
+                logger.info(f"{log_prefix}{msg}")
                 issues.append(msg)
 
         if issues:
-            logger.info(f"Found {len(issues)} EBS issues for instance {instance['id']}")
+            logger.info(f"{log_prefix}Found {len(issues)} EBS issues for instance {instance['id']}")
             return {
                 'service': 'EC2',
                 'resource': instance['id'],
@@ -48,8 +54,8 @@ def check_ebs_optimization(instance):
                 'impact': "불필요한 스토리지 비용 발생",
                 'benefit': "스토리지 비용 최적화 및 성능 개선"
             }
-        logger.debug(f"No EBS optimization issues found for instance {instance['id']}")
+        logger.debug(f"{log_prefix}No EBS optimization issues found for instance {instance['id']}")
         return None
     except Exception as e:
-        logger.error(f"Error in check_ebs_optimization for instance {instance.get('id')}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_ebs_optimization for instance {instance.get('id')}: {str(e)}", exc_info=True)
         return None

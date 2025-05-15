@@ -7,14 +7,20 @@ from .utils import calculate_runtime
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_reserved_instance_recommendation(instance):
-    """예약 인스턴스 추천"""
+def check_reserved_instance_recommendation(instance, collection_id=None):
+    """예약 인스턴스 추천
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
-        logger.debug(f"Checking reserved instance recommendation for instance {instance.get('id')}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking reserved instance recommendation for instance {instance.get('id')}")
         if instance['state'] == 'running':
             runtime = calculate_runtime(instance.get('launch_time'))
             if runtime and runtime.days >= 30:
-                logger.info(f"Instance {instance['id']} has been running for {runtime.days} days. Recommending reserved instance.")
+                logger.info(f"{log_prefix}Instance {instance['id']} has been running for {runtime.days} days. Recommending reserved instance.")
                 return {
                     'service': 'EC2',
                     'resource': instance['id'],
@@ -29,8 +35,8 @@ def check_reserved_instance_recommendation(instance):
                         "예약 인스턴스를 구매합니다."
                     ]
                 }
-        logger.debug(f"No reserved instance recommendation for instance {instance.get('id')}")
+        logger.debug(f"{log_prefix}No reserved instance recommendation for instance {instance.get('id')}")
         return None
     except Exception as e:
-        logger.error(f"Error in check_reserved_instance_recommendation for instance {instance.get('id')}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_reserved_instance_recommendation for instance {instance.get('id')}: {str(e)}", exc_info=True)
         return None

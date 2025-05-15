@@ -6,10 +6,16 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_network_performance(instance):
-    """네트워크 성능 모니터링"""
+def check_network_performance(instance, collection_id=None):
+    """네트워크 성능 모니터링
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
-        logger.debug(f"Checking network performance for instance {instance.get('id')}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking network performance for instance {instance.get('id')}")
         network_metrics = instance.get('network_metrics', {})
         issues = []
         
@@ -22,7 +28,7 @@ def check_network_performance(instance):
             issues.append(msg)
 
         if issues:
-            logger.info(f"Found {len(issues)} network performance issues for instance {instance['id']}")
+            logger.info(f"{log_prefix}Found {len(issues)} network performance issues for instance {instance['id']}")
             return {
                 'service': 'EC2',
                 'resource': instance['id'],
@@ -38,8 +44,8 @@ def check_network_performance(instance):
                     "향상된 네트워킹 활성화를 검토합니다."
                 ]
             }
-        logger.debug(f"No network performance issues found for instance {instance['id']}")
+        logger.debug(f"{log_prefix}No network performance issues found for instance {instance['id']}")
         return None
     except Exception as e:
-        logger.error(f"Error in check_network_performance for instance {instance.get('id')}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_network_performance for instance {instance.get('id')}: {str(e)}", exc_info=True)
         return None

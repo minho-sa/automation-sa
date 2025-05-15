@@ -6,14 +6,20 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_security_group_recommendations(instance):
-    """보안 그룹 검사"""
+def check_security_group_recommendations(instance, collection_id=None):
+    """보안 그룹 검사
+    
+    Args:
+        instance: EC2 인스턴스 정보
+        collection_id: 수집 ID (로깅용)
+    """
     try:
-        logger.debug(f"Checking security group recommendations for instance {instance.get('id')}")
+        log_prefix = f"[{collection_id}] " if collection_id else ""
+        logger.debug(f"{log_prefix}Checking security group recommendations for instance {instance.get('id')}")
         security_issues = []
         for sg in instance.get('security_groups', []):
             # 전체 개방된 포트 검사
-            logger.debug(f"Analyzing security group {sg.get('group_id')}")
+            logger.debug(f"{log_prefix}Analyzing security group {sg.get('group_id')}")
             if '0.0.0.0/0' in sg.get('ip_ranges', []):
                 msg = f"보안 그룹 {sg['group_id']}에 전체 개방된 규칙이 있습니다."
                 security_issues.append(f"보안 그룹 {sg['group_id']}에 전체 개방된 규칙이 있습니다.")
@@ -25,7 +31,7 @@ def check_security_group_recommendations(instance):
                     security_issues.append(f"보안 그룹 {sg['group_id']}에 위험 포트({port})가 개방되어 있습니다.")
 
         if security_issues:
-            logger.info(f"Found {len(security_issues)} security issues for instance {instance['id']}")
+            logger.info(f"{log_prefix}Found {len(security_issues)} security issues for instance {instance['id']}")
             return {
                 'service': 'EC2',
                 'resource': instance['id'],
@@ -41,8 +47,8 @@ def check_security_group_recommendations(instance):
                     "정기적인 보안 그룹 규칙 검토를 수행합니다."
                 ]
             }
-        logger.debug(f"No security issues found for instance {instance['id']}")
+        logger.debug(f"{log_prefix}No security issues found for instance {instance['id']}")
         return None
     except Exception as e:
-        logger.error(f"Error in check_security_group_recommendations for instance {instance.get('id')}: {str(e)}", exc_info=True)
+        logger.error(f"{log_prefix}Error in check_security_group_recommendations for instance {instance.get('id')}: {str(e)}", exc_info=True)
         return None

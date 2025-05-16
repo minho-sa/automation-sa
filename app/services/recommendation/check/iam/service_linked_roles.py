@@ -3,32 +3,31 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_service_linked_roles(iam_data, collection_id=None):
+def check_service_linked_roles(data, collection_id=None):
     """서비스 연결 역할 사용 검사
     
     Args:
-        iam_data: IAM 데이터
+        data: 역할 데이터
         collection_id: 수집 ID (로깅용)
     """
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
         logger.debug(f"{log_prefix}Checking service linked roles")
         
-        roles = iam_data.get('roles', [])
-        non_service_linked_roles = []
+        role = data.get('role')
+        if not role:
+            return None
+            
+        role_name = role.get('name', 'unknown')
         
-        for role in roles:
-            if not role.get('service_linked') and role.get('name', '').startswith('AWS'):
-                non_service_linked_roles.append(role.get('name', 'unknown'))
-        
-        if non_service_linked_roles:
-            logger.info(f"{log_prefix}Found {len(non_service_linked_roles)} AWS service roles not using service-linked roles")
+        if role_name.startswith('AWS') and not role.get('service_linked'):
+            logger.info(f"{log_prefix}Role {role_name} is not using service-linked role")
             return {
                 'service': 'IAM',
-                'resource': 'Roles',
+                'resource': role_name,
                 'severity': '낮음',
-                'message': "서비스 연결 역할 사용 검토가 필요합니다.",
-                'problem': f"{len(non_service_linked_roles)}개의 서비스가 서비스 연결 역할을 사용하지 않고 있습니다.",
+                'message': f"역할 {role_name}의 서비스 연결 역할 사용 검토가 필요합니다.",
+                'problem': "AWS 서비스 역할이 서비스 연결 역할을 사용하지 않고 있습니다.",
                 'impact': "수동 권한 관리로 인한 관리 부담 및 오류 가능성이 증가하고 있습니다.",
                 'benefit': "서비스 연결 역할 사용으로 권한 관리 간소화 및 오류 감소가 가능합니다.",
                 'steps': [

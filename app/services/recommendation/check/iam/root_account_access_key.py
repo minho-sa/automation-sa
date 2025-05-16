@@ -15,7 +15,7 @@ def check_root_account_access_key(iam_data, collection_id=None):
         logger.debug(f"{log_prefix}Checking root account access key")
         
         root_account = iam_data.get('root_account', {})
-        if root_account.get('access_key_exists'):
+        if root_account and root_account.get('access_key_exists'):
             logger.info(f"{log_prefix}Root account has access keys")
             return {
                 'service': 'IAM',

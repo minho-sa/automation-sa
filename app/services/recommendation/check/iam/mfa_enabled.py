@@ -3,39 +3,39 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_mfa_enabled(iam_data, collection_id=None):
+def check_mfa_enabled(data, collection_id=None):
     """MFA 미설정 사용자 검사
     
     Args:
-        iam_data: IAM 데이터
+        data: 사용자 데이터
         collection_id: 수집 ID (로깅용)
     """
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
-        logger.debug(f"{log_prefix}Checking MFA enabled status for users")
+        logger.debug(f"{log_prefix}Checking MFA enabled status")
         
-        users = iam_data.get('users', [])
-        mfa_users = []
+        user = data.get('user')
+        if not user:
+            return None
+            
+        user_name = user.get('name', 'unknown')
         
-        for user in users:
-            if user.get('password_enabled') and not user.get('mfa_enabled'):
-                mfa_users.append(user.get('name', 'unknown'))
-        
-        if mfa_users:
-            logger.info(f"{log_prefix}Found {len(mfa_users)} users without MFA")
+        if user.get('password_enabled') and not user.get('mfa_enabled'):
+            logger.info(f"{log_prefix}User {user_name} has no MFA enabled")
             return {
                 'service': 'IAM',
-                'resource': 'Users',
+                'resource': user_name,
                 'severity': '높음',
-                'message': "MFA 미설정 사용자가 존재합니다.",
-                'problem': f"{len(mfa_users)}명의 사용자가 MFA를 설정하지 않았습니다.",
-                'impact': "자격 증명 도용 위험이 증가하고 계정 보안이 취약한 상태입니다.",
-                'benefit': "MFA 설정으로 무단 액세스 위험을 95% 이상 감소시킬 수 있습니다.",
+                'message': f"사용자 {user_name}에 대해 MFA 활성화가 필요합니다.",
+                'problem': "콘솔 액세스가 가능한 IAM 사용자 계정에 MFA가 설정되어 있지 않습니다.",
+                'impact': "MFA가 없는 계정은 비인가 접근에 취약할 수 있습니다.",
+                'benefit': "MFA를 사용하면 계정 보안이 크게 강화됩니다.",
                 'steps': [
-                    "모든 IAM 사용자에게 MFA 설정을 의무화합니다.",
-                    "MFA 미설정 사용자에 대한 액세스 제한 정책을 적용합니다.",
-                    "정기적인 MFA 설정 상태를 모니터링합니다.",
-                    "MFA 설정 가이드를 사용자에게 제공합니다."
+                    "AWS 콘솔에서 IAM 서비스로 이동합니다.",
+                    f"사용자 {user_name}를 선택합니다.",
+                    "보안 자격 증명 탭으로 이동합니다.",
+                    "MFA 디바이스를 할당합니다.",
+                    "가상 MFA 또는 하드웨어 MFA를 설정합니다."
                 ]
             }
         return None

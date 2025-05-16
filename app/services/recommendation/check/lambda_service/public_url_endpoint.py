@@ -1,14 +1,19 @@
-from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+import logging
+from typing import Dict, Optional
 
-def check_public_url_endpoint(function: Dict) -> Dict:
+# 로깅 설정
+logger = logging.getLogger(__name__)
+
+def check_public_url_endpoint(function: Dict, collection_id: str = None) -> Optional[Dict]:
     """공개된 Lambda URL 엔드포인트 검사"""
+    log_prefix = f"[{collection_id}] " if collection_id else ""
     function_name = function.get('FunctionName', 'unknown')
     url_config = function.get('UrlConfig', {})
-    logger.debug(f"Checking public URL endpoint for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking public URL endpoint for function: {function_name}")
     
     try:
         if url_config and url_config.get('AuthType') == 'NONE':
+            logger.info(f"{log_prefix}Function {function_name} has public URL endpoint with no authentication")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -26,5 +31,5 @@ def check_public_url_endpoint(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_public_url_endpoint for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_public_url_endpoint for function {function_name}: {str(e)}")
         return None

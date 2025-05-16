@@ -1,15 +1,19 @@
-from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+import logging
+from typing import Dict, Optional
 
-def check_reserved_concurrency(function: Dict) -> Dict:
+# 로깅 설정
+logger = logging.getLogger(__name__)
+
+def check_reserved_concurrency(function: Dict, collection_id: str = None) -> Optional[Dict]:
     """Reserved Concurrency 미설정 검사"""
+    log_prefix = f"[{collection_id}] " if collection_id else ""
     function_name = function.get('FunctionName', 'unknown')
     reserved_concurrency = function.get('ReservedConcurrency')
-    logger.debug(f"Checking reserved concurrency for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking reserved concurrency for function: {function_name}")
     
     try:
         if reserved_concurrency is None:
-            logger.info(f"Function {function_name} has no reserved concurrency")
+            logger.info(f"{log_prefix}Function {function_name} has no reserved concurrency")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -26,5 +30,5 @@ def check_reserved_concurrency(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_reserved_concurrency for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_reserved_concurrency for function {function_name}: {str(e)}")
         return None

@@ -4,41 +4,44 @@ from datetime import datetime, timezone
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_unused_credentials(iam_data, collection_id=None):
+def check_unused_credentials(data, collection_id=None):
     """미사용 IAM 자격 증명 검사
     
     Args:
-        iam_data: IAM 데이터
+        data: 사용자 데이터
         collection_id: 수집 ID (로깅용)
     """
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
         logger.debug(f"{log_prefix}Checking unused credentials")
         
-        users = iam_data.get('users', [])
+        user = data.get('user')
+        if not user:
+            return None
+            
+        user_name = user.get('name', 'unknown')
         current_time = datetime.now(timezone.utc)
         unused_credentials = []
         
-        for user in users:
-            # 액세스 키 확인
-            for key in user.get('access_keys', []):
-                if key.get('status') == 'Active' and key.get('days_since_used') and key.get('days_since_used') > 90:
-                    unused_credentials.append(f"{user.get('name')}의 액세스 키 {key.get('id')}")
-            
-            # 로그인 프로필 확인
-            if user.get('password_enabled') and user.get('last_activity'):
-                last_activity = datetime.strptime(user.get('last_activity'), '%Y-%m-%d') if isinstance(user.get('last_activity'), str) else user.get('last_activity')
-                if (current_time - last_activity).days > 90:
-                    unused_credentials.append(f"{user.get('name')}의 로그인 프로필")
+        # 액세스 키 확인
+        for key in user.get('access_keys', []):
+            if key.get('status') == 'Active' and key.get('days_since_used') and key.get('days_since_used') > 90:
+                unused_credentials.append(f"액세스 키 {key.get('id')}")
+        
+        # 로그인 프로필 확인
+        if user.get('password_enabled') and user.get('last_activity'):
+            last_activity = datetime.strptime(user.get('last_activity'), '%Y-%m-%d') if isinstance(user.get('last_activity'), str) else user.get('last_activity')
+            if last_activity and (current_time - last_activity).days > 90:
+                unused_credentials.append("로그인 프로필")
         
         if unused_credentials:
-            logger.info(f"{log_prefix}Found {len(unused_credentials)} unused credentials")
+            logger.info(f"{log_prefix}User {user_name} has unused credentials: {', '.join(unused_credentials)}")
             return {
                 'service': 'IAM',
-                'resource': 'Credentials',
+                'resource': user_name,
                 'severity': '중간',
-                'message': "미사용 IAM 자격 증명 정리가 필요합니다.",
-                'problem': f"{len(unused_credentials)}개의 자격 증명이 90일 동안 사용되지 않았습니다.",
+                'message': f"사용자 {user_name}의 미사용 자격 증명 정리가 필요합니다.",
+                'problem': f"다음 자격 증명이 90일 동안 사용되지 않았습니다: {', '.join(unused_credentials)}",
                 'impact': "불필요한 액세스 포인트로 인한 보안 위험이 증가하고 있습니다.",
                 'benefit': "미사용 자격 증명 제거로 보안 태세 강화 및 관리 부담 감소가 가능합니다.",
                 'steps': [

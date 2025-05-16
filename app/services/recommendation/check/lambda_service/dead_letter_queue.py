@@ -1,15 +1,16 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_dead_letter_queue(function: Dict) -> Dict:
+def check_dead_letter_queue(function: Dict, collection_id: str = None) -> Dict:
     """Dead Letter Queue (DLQ) 미설정 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     dlq_config = function.get('DeadLetterConfig', {})
-    logger.debug(f"Checking dead letter queue for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking dead letter queue for function: {function_name}")
     
     try:
         if not dlq_config:
-            logger.info(f"Function {function_name} has no dead letter queue configured")
+            logger.info(f"{log_prefix}Function {function_name} has no dead letter queue configured")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -26,5 +27,5 @@ def check_dead_letter_queue(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_dead_letter_queue for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_dead_letter_queue for function {function_name}: {str(e)}")
         return None

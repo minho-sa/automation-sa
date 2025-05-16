@@ -1,11 +1,15 @@
-from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+import logging
+from typing import Dict, Optional
 
-def check_version_alias_usage(function: Dict) -> Dict:
+# 로깅 설정
+logger = logging.getLogger(__name__)
+
+def check_version_alias_usage(function: Dict, collection_id: str = None) -> Optional[Dict]:
     """최신 버전 alias 미사용 검사"""
+    log_prefix = f"[{collection_id}] " if collection_id else ""
     function_name = function.get('FunctionName', 'unknown')
     versions_info = function.get('VersionsInfo', [])
-    logger.debug(f"Checking version alias usage for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking version alias usage for function: {function_name}")
     
     try:
         # 버전 정보가 있지만 $LATEST만 사용하는 경우 확인
@@ -17,6 +21,7 @@ def check_version_alias_usage(function: Dict) -> Dict:
                 break
         
         if versions_info and not has_published_versions:
+            logger.info(f"{log_prefix}Function {function_name} is only using $LATEST version without aliases")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -33,5 +38,5 @@ def check_version_alias_usage(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_version_alias_usage for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_version_alias_usage for function {function_name}: {str(e)}")
         return None

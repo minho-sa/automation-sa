@@ -50,19 +50,19 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
     app.logger.info(f"[{collection_id}] 데이터 수집 시작 - 사용자: {user_id}")
     
     try:
-        # EC2 데이터
-        collection_status['current_service'] = 'EC2'
-        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 시작")
-        collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
-        collection_status['completed_services'].append('EC2')
-        app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 완료")
+        # # EC2 데이터
+        # collection_status['current_service'] = 'EC2'
+        # app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 시작")
+        # collection_status['all_services_data']['ec2'] = get_ec2_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
+        # collection_status['completed_services'].append('EC2')
+        # app.logger.info(f"[{collection_status['collection_id']}] EC2 데이터 수집 완료")
         
-        # S3 데이터
-        collection_status['current_service'] = 'S3'
-        app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 시작")
-        collection_status['all_services_data']['s3'] = get_s3_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
-        collection_status['completed_services'].append('S3')
-        app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 완료")
+        # # S3 데이터
+        # collection_status['current_service'] = 'S3'
+        # app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 시작")
+        # collection_status['all_services_data']['s3'] = get_s3_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
+        # collection_status['completed_services'].append('S3')
+        # app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 완료")
         
         # # RDS 데이터
         # collection_status['current_service'] = 'RDS'
@@ -73,8 +73,10 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
         
         # Lambda 데이터
         collection_status['current_service'] = 'Lambda'
-        collection_status['all_services_data']['lambda'] = get_lambda_data(aws_access_key, aws_secret_key, region)
+        app.logger.info(f"[{collection_status['collection_id']}] Lambda 데이터 수집 시작")
+        collection_status['all_services_data']['lambda'] = get_lambda_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
         collection_status['completed_services'].append('Lambda')
+        app.logger.info(f"[{collection_status['collection_id']}] Lambda 데이터 수집 완료")
         
         # # CloudWatch 데이터
         # collection_status['current_service'] = 'CloudWatch'
@@ -122,9 +124,9 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
         # collection_status['completed_services'].append('Route 53')
         
         # # IAM 데이터
-        collection_status['current_service'] = 'IAM'
-        collection_status['all_services_data']['iam'] = get_iam_data(aws_access_key, aws_secret_key, region)
-        collection_status['completed_services'].append('IAM')
+        # collection_status['current_service'] = 'IAM'
+        # collection_status['all_services_data']['iam'] = get_iam_data(aws_access_key, aws_secret_key, region)
+        # collection_status['completed_services'].append('IAM')
         
         # 수집 완료
         collection_status['current_service'] = None

@@ -1,11 +1,12 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_debug_logs_output(function: Dict) -> Dict:
+def check_debug_logs_output(function: Dict, collection_id: str = None) -> Dict:
     """디버깅 로그 출력 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     debug_logs_detected = function.get('DebugLogsDetected', False)
-    logger.debug(f"Checking debug logs output for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking debug logs output for function: {function_name}")
     
     try:
         if debug_logs_detected:
@@ -25,5 +26,5 @@ def check_debug_logs_output(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_debug_logs_output for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_debug_logs_output for function {function_name}: {str(e)}")
         return None

@@ -13,10 +13,19 @@
             {% if all_services_data.iam is defined %}
                 {% if all_services_data.iam.error is defined %}
                 <div class="alert alert-danger">{{ all_services_data.iam.error }}</div>
+            {% elif all_services_data.iam.status is defined and all_services_data.iam.status == 'collecting' %}
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>데이터 수집 중입니다. 잠시만 기다려주세요.</span>
+                    </div>
+                </div>
             {% elif all_services_data.iam.users|default([])|length > 0 %}
                 <!-- IAM Summary Cards -->
                 <div class="row mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="card bg-primary text-white">
                             <div class="card-body">
                                 <h5 class="card-title">총 사용자</h5>
@@ -24,39 +33,407 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card {% if all_services_data.iam.users|length > 5 %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
                             <div class="card-body">
-                                <h5 class="card-title">보안 상태</h5>
-                                <p class="card-text">
-                                    {% if all_services_data.iam.users|length > 5 %}
-                                        <i class="fas fa-exclamation-triangle"></i> 사용자가 5명 이상입니다. 미사용 계정을 검토하세요.
+                                <h5 class="card-title">MFA 활성화</h5>
+                                <p class="card-text display-6">{{ all_services_data.iam.users|selectattr('mfa_enabled', 'equalto', true)|list|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">MFA 미설정</h5>
+                                <p class="card-text display-6">{{ all_services_data.iam.users|selectattr('password_enabled', 'equalto', true)|selectattr('mfa_enabled', 'equalto', false)|list|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">역할</h5>
+                                <p class="card-text display-6">{{ all_services_data.iam.roles|default([])|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 사용자 테이블 -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="iam-user-table">
+                        <thead>
+                            <tr>
+                                <th>사용자 이름</th>
+                                <th>생성일</th>
+                                <th>MFA</th>
+                                <th>액세스 키</th>
+                                <th>콘솔 액세스</th>
+                                <th>그룹</th>
+                                <th>상세 정보</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in all_services_data.iam.users %}
+                            <tr class="user-row" data-user-id="{{ loop.index }}">
+                                <td>{{ user.name }}</td>
+                                <td>{{ user.created }}</td>
+                                <td>
+                                    {% if user.mfa_enabled %}
+                                        <span class="badge bg-success">활성화</span>
                                     {% else %}
-                                        <i class="fas fa-check-circle"></i> 사용자 수가 적절합니다.
+                                        <span class="badge bg-danger">비활성화</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.access_keys|default([]) %}
+                                        <span class="badge bg-info">{{ user.access_keys|length }}개</span>
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.password_enabled %}
+                                        <span class="badge bg-success">활성화</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">비활성화</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.groups|default([]) %}
+                                        <span class="badge bg-info">{{ user.groups|length }}개</span>
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary user-detail-btn" type="button" data-user-id="{{ loop.index }}">
+                                        상세 보기
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 상세 정보 모달 -->
+                <div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="userDetailModalLabel">사용자 상세 정보</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% for user in all_services_data.iam.users %}
+                                <div class="user-details" id="user-details-{{ loop.index }}" style="display: none;">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <h6 class="border-bottom pb-2 mb-3">기본 정보</h6>
+                                            <table class="table table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <th>사용자 이름</th>
+                                                        <td>{{ user.name }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>사용자 ID</th>
+                                                        <td>{{ user.id }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>생성일</th>
+                                                        <td>{{ user.created }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>마지막 활동</th>
+                                                        <td>{{ user.last_activity|default('-') }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <h6 class="border-bottom pb-2 mb-3">보안 설정</h6>
+                                            <table class="table table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <th>MFA</th>
+                                                        <td>
+                                                            {% if user.mfa_enabled %}
+                                                                <span class="badge bg-success">활성화</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">비활성화</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>콘솔 액세스</th>
+                                                        <td>
+                                                            {% if user.password_enabled %}
+                                                                <span class="badge bg-success">활성화</span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary">비활성화</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% if user.password_enabled and user.password_last_used is defined %}
+                                                    <tr>
+                                                        <th>마지막 로그인</th>
+                                                        <td>{{ user.password_last_used|default('-') }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 액세스 키 정보 -->
+                                    {% if user.access_keys|default([]) %}
+                                    <div class="mb-3">
+                                        <h6 class="border-bottom pb-2 mb-3">액세스 키</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>액세스 키 ID</th>
+                                                        <th>생성일</th>
+                                                        <th>상태</th>
+                                                        <th>마지막 사용</th>
+                                                        <th>생성 후 경과일</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for key in user.access_keys %}
+                                                    <tr>
+                                                        <td>{{ key.id }}</td>
+                                                        <td>{{ key.created }}</td>
+                                                        <td>
+                                                            {% if key.status == 'Active' %}
+                                                                <span class="badge bg-success">활성화</span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary">비활성화</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ key.last_used|default('-') }}</td>
+                                                        <td>
+                                                            {% if key.days_since_created > 90 %}
+                                                                <span class="badge bg-danger">{{ key.days_since_created }}일</span>
+                                                            {% else %}
+                                                                <span class="badge bg-success">{{ key.days_since_created }}일</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- 그룹 정보 -->
+                                    {% if user.groups|default([]) %}
+                                    <div class="mb-3">
+                                        <h6 class="border-bottom pb-2 mb-3">그룹</h6>
+                                        <div class="row">
+                                            {% for group in user.groups %}
+                                            <div class="col-md-3 mb-1">
+                                                <span class="badge bg-info">{{ group }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- 정책 정보 -->
+                                    {% if user.policies|default([]) %}
+                                    <div class="mb-3">
+                                        <h6 class="border-bottom pb-2 mb-3">직접 연결된 정책</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>정책 이름</th>
+                                                        <th>ARN</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for policy in user.policies %}
+                                                    <tr>
+                                                        <td>{{ policy.name }}</td>
+                                                        <td>{{ policy.arn }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 루트 계정 정보 -->
+                {% if all_services_data.iam.root_account|default({}) %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">루트 계정 상태</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>액세스 키:</strong>
+                                    {% if all_services_data.iam.root_account.access_key_exists %}
+                                        <span class="badge bg-danger">활성화</span>
+                                        <small class="text-danger ms-2">보안 위험: 루트 계정 액세스 키를 제거하세요.</small>
+                                    {% else %}
+                                        <span class="badge bg-success">없음</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>MFA:</strong>
+                                    {% if all_services_data.iam.root_account.mfa_enabled %}
+                                        <span class="badge bg-success">활성화</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">비활성화</span>
+                                        <small class="text-danger ms-2">보안 위험: 루트 계정에 MFA를 활성화하세요.</small>
                                     {% endif %}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-sortable">
-                        <thead>
-                            <tr>
-                                <th>사용자 이름</th>
-                                <th>생성일</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in all_services_data.iam.users %}
-                            <tr>
-                                <td>{{ user.name }}</td>
-                                <td>{{ user.created }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                {% endif %}
+                
+                <!-- 역할 정보 -->
+                {% if all_services_data.iam.roles|default([]) %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">IAM 역할</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>역할 이름</th>
+                                        <th>생성일</th>
+                                        <th>서비스 연결</th>
+                                        <th>정책 수</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for role in all_services_data.iam.roles %}
+                                    <tr>
+                                        <td>{{ role.name }}</td>
+                                        <td>{{ role.created }}</td>
+                                        <td>
+                                            {% if role.service_linked %}
+                                                <span class="badge bg-success">예</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">아니오</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if role.policies|default([]) %}
+                                                <span class="badge bg-info">{{ role.policies|length }}개</span>
+                                            {% else %}
+                                                <span>-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+                {% endif %}
+                
+                <!-- 비밀번호 정책 -->
+                {% if all_services_data.iam.password_policy|default({}) %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">비밀번호 정책</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if all_services_data.iam.password_policy.exists is defined and not all_services_data.iam.password_policy.exists %}
+                            <div class="alert alert-warning">비밀번호 정책이 설정되어 있지 않습니다.</div>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p><strong>최소 길이:</strong> 
+                                        {% if all_services_data.iam.password_policy.MinimumPasswordLength|default(0) >= 14 %}
+                                            <span class="badge bg-success">{{ all_services_data.iam.password_policy.MinimumPasswordLength }}자</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">{{ all_services_data.iam.password_policy.MinimumPasswordLength|default(0) }}자</span>
+                                            <small class="text-warning ms-2">14자 이상 권장</small>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>대문자 필요:</strong> 
+                                        {% if all_services_data.iam.password_policy.RequireUppercaseCharacters|default(false) %}
+                                            <span class="badge bg-success">예</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">아니오</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>소문자 필요:</strong> 
+                                        {% if all_services_data.iam.password_policy.RequireLowercaseCharacters|default(false) %}
+                                            <span class="badge bg-success">예</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">아니오</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>숫자 필요:</strong> 
+                                        {% if all_services_data.iam.password_policy.RequireNumbers|default(false) %}
+                                            <span class="badge bg-success">예</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">아니오</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>특수문자 필요:</strong> 
+                                        {% if all_services_data.iam.password_policy.RequireSymbols|default(false) %}
+                                            <span class="badge bg-success">예</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">아니오</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>만료 기간:</strong> 
+                                        {% if all_services_data.iam.password_policy.MaxPasswordAge|default(0) > 0 and all_services_data.iam.password_policy.MaxPasswordAge|default(0) <= 90 %}
+                                            <span class="badge bg-success">{{ all_services_data.iam.password_policy.MaxPasswordAge }}일</span>
+                                        {% elif all_services_data.iam.password_policy.MaxPasswordAge|default(0) > 90 %}
+                                            <span class="badge bg-warning">{{ all_services_data.iam.password_policy.MaxPasswordAge }}일</span>
+                                            <small class="text-warning ms-2">90일 이하 권장</small>
+                                        {% else %}
+                                            <span class="badge bg-warning">설정 안됨</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
                 {% else %}
                     <div class="alert alert-info">IAM 데이터가 없습니다.</div>
                 {% endif %}
@@ -66,3 +443,111 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // IAM 테이블 정렬 기능
+    const iamTable = document.getElementById('iam-user-table');
+    if (iamTable) {
+        const headers = iamTable.querySelectorAll('thead th');
+        headers.forEach((header, index) => {
+            // 정렬 아이콘 추가
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-sort ms-1';
+            icon.style.opacity = '0.5';
+            icon.style.fontSize = '0.8rem';
+            header.appendChild(icon);
+            
+            // 정렬 이벤트 추가
+            header.addEventListener('click', function() {
+                sortIAMTable(iamTable, index);
+            });
+            
+            // 커서 스타일 변경
+            header.style.cursor = 'pointer';
+            header.title = '클릭하여 정렬';
+        });
+    }
+    
+    // 상세 보기 버튼 이벤트
+    const detailButtons = document.querySelectorAll('.user-detail-btn');
+    const userModal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+    
+    detailButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            
+            // 모든 상세 정보 숨기기
+            document.querySelectorAll('.user-details').forEach(detail => {
+                detail.style.display = 'none';
+            });
+            
+            // 선택한 사용자의 상세 정보 표시
+            const selectedDetail = document.getElementById(`user-details-${userId}`);
+            if (selectedDetail) {
+                selectedDetail.style.display = 'block';
+            }
+            
+            // 모달 제목 업데이트
+            const userName = this.closest('tr').querySelector('td:first-child').textContent;
+            document.getElementById('userDetailModalLabel').textContent = `사용자 상세 정보: ${userName}`;
+            
+            // 모달 표시
+            userModal.show();
+        });
+    });
+});
+
+// IAM 테이블 정렬 함수
+function sortIAMTable(table, columnIndex) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr.user-row'));
+    
+    // 현재 정렬 방향 확인
+    const currentDirection = table.getAttribute('data-sort-direction') || 'asc';
+    const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+    
+    // 정렬 방향 표시 업데이트
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach(header => {
+        const icon = header.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-sort ms-1';
+            icon.style.opacity = '0.5';
+        }
+    });
+    
+    const currentHeader = headers[columnIndex];
+    const currentIcon = currentHeader.querySelector('i');
+    if (currentIcon) {
+        currentIcon.className = `fas fa-sort-${newDirection === 'asc' ? 'up' : 'down'} ms-1`;
+        currentIcon.style.opacity = '1';
+    }
+    
+    // 행 정렬
+    rows.sort((a, b) => {
+        const aValue = a.querySelectorAll('td')[columnIndex].textContent.trim();
+        const bValue = b.querySelectorAll('td')[columnIndex].textContent.trim();
+        
+        // 숫자 정렬
+        if (!isNaN(parseFloat(aValue)) && !isNaN(parseFloat(bValue))) {
+            return newDirection === 'asc' 
+                ? parseFloat(aValue) - parseFloat(bValue)
+                : parseFloat(bValue) - parseFloat(aValue);
+        }
+        
+        // 문자열 정렬
+        return newDirection === 'asc'
+            ? aValue.localeCompare(bValue, 'ko')
+            : bValue.localeCompare(aValue, 'ko');
+    });
+    
+    // 정렬된 행을 테이블에 다시 추가
+    rows.forEach(row => {
+        tbody.appendChild(row);
+    });
+    
+    // 정렬 방향 저장
+    table.setAttribute('data-sort-direction', newDirection);
+}
+</script>

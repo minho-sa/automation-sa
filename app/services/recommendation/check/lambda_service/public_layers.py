@@ -1,11 +1,15 @@
-from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+import logging
+from typing import Dict, Optional
 
-def check_public_layers(function: Dict) -> Dict:
+# 로깅 설정
+logger = logging.getLogger(__name__)
+
+def check_public_layers(function: Dict, collection_id: str = None) -> Optional[Dict]:
     """퍼블릭 Layer 사용 검사"""
+    log_prefix = f"[{collection_id}] " if collection_id else ""
     function_name = function.get('FunctionName', 'unknown')
     layers = function.get('Layers', [])
-    logger.debug(f"Checking public layers for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking public layers for function: {function_name}")
     
     try:
         # 실제로는 Layer ARN을 분석하여 외부 계정 소유인지 확인해야 함
@@ -21,6 +25,7 @@ def check_public_layers(function: Dict) -> Dict:
                     break
         
         if has_public_layers:
+            logger.info(f"{log_prefix}Function {function_name} is using public layers")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -37,5 +42,5 @@ def check_public_layers(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_public_layers for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_public_layers for function {function_name}: {str(e)}")
         return None

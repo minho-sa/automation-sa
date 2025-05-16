@@ -3,18 +3,20 @@ import logging
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-def check_password_policy(iam_data, collection_id=None):
+def check_password_policy(data, collection_id=None):
     """비밀번호 정책 검사
     
     Args:
-        iam_data: IAM 데이터
+        data: 비밀번호 정책 데이터
         collection_id: 수집 ID (로깅용)
     """
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
         logger.debug(f"{log_prefix}Checking password policy")
         
-        password_policy = iam_data.get('password_policy', {})
+        password_policy = data.get('password_policy')
+        if not password_policy:
+            return None
         
         if not password_policy.get('exists', True):
             logger.info(f"{log_prefix}No password policy configured")

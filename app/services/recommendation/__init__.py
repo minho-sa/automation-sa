@@ -1,13 +1,11 @@
 # Import recommendation functions for easy access
 from app.services.recommendation.get_ec2_recommendations import get_ec2_recommendations
 from app.services.recommendation.get_s3_recommendations import get_s3_recommendations
+from app.services.recommendation.get_lambda_recommendations import get_lambda_recommendations
 from app.services.recommendation.get_iam_recommendations import get_iam_recommendations
 
 # 아직 구현되지 않은 함수들에 대한 임시 구현
 def get_rds_recommendations(*args, **kwargs):
-    return []
-
-def get_lambda_recommendations(*args, **kwargs):
     return []
 
 def get_cloudwatch_recommendations(*args, **kwargs):

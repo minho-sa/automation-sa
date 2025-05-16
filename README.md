@@ -37,7 +37,7 @@ git clone <repository-url>
 cd aws-resource-optimization-analyzer
 
 # 가상 환경 생성 및 활성화
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Windows에서는: venv\Scripts\activate
 
 # 종속성 설치
@@ -51,7 +51,7 @@ cp .env.example .env
 ### 빠른 시작
 1. 애플리케이션 시작:
 ```bash
-python run.py
+python3 run.py
 ```
 
 2. 웹 인터페이스 접속:

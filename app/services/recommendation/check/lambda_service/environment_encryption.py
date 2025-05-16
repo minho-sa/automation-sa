@@ -1,11 +1,12 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_environment_encryption(function: Dict) -> Dict:
+def check_environment_encryption(function: Dict, collection_id: str = None) -> Dict:
     """환경 변수 암호화 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     environment = function.get('Environment', {})
-    logger.debug(f"Checking environment encryption for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking environment encryption for function: {function_name}")
     
     try:
         # 실제로는 KMS 키 사용 여부를 확인해야 하지만, 예시에서는 간단히 처리
@@ -13,6 +14,7 @@ def check_environment_encryption(function: Dict) -> Dict:
         is_encrypted = False  # 기본적으로 암호화되지 않았다고 가정
         
         if not is_encrypted and environment:
+            logger.info(f"{log_prefix}Function {function_name} has unencrypted environment variables")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -30,5 +32,5 @@ def check_environment_encryption(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_environment_encryption for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_environment_encryption for function {function_name}: {str(e)}")
         return None

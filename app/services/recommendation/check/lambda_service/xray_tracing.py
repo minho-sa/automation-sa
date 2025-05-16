@@ -1,15 +1,16 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_xray_tracing(function: Dict) -> Dict:
+def check_xray_tracing(function: Dict, collection_id: str = None) -> Dict:
     """X-Ray 추적 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     tracing_config = function.get('TracingConfig', 'PassThrough')
-    logger.debug(f"Checking X-Ray tracing for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking X-Ray tracing for function: {function_name}")
     
     try:
         if tracing_config == 'PassThrough':
-            logger.info(f"Function {function_name} has X-Ray tracing disabled")
+            logger.info(f"{log_prefix}Function {function_name} has X-Ray tracing disabled")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -27,5 +28,5 @@ def check_xray_tracing(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_xray_tracing for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_xray_tracing for function {function_name}: {str(e)}")
         return None

@@ -1,15 +1,16 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_vpc_configuration(function: Dict) -> Dict:
+def check_vpc_configuration(function: Dict, collection_id: str = None) -> Dict:
     """VPC 구성 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     vpc_config = function.get('VpcConfig', {})
-    logger.debug(f"Checking VPC configuration for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking VPC configuration for function: {function_name}")
     
     try:
         if not vpc_config or not vpc_config.get('VpcId'):
-            logger.info(f"Function {function_name} is not configured with VPC")
+            logger.info(f"{log_prefix}Function {function_name} is not configured with VPC")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -27,5 +28,5 @@ def check_vpc_configuration(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_vpc_configuration for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_vpc_configuration for function {function_name}: {str(e)}")
         return None

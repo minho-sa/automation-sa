@@ -1,15 +1,16 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_memory_size(function: Dict) -> Dict:
+def check_memory_size(function: Dict, collection_id: str = None) -> Dict:
     """메모리 설정 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     memory_size = function.get('MemorySize', 0)
-    logger.debug(f"Checking memory size for function: {function_name}")
+    logger.debug(f"{log_prefix} Checking memory size for function: {function_name}")
     
     try:
         if memory_size > 512:
-            logger.info(f"Function {function_name} has high memory setting: {memory_size}MB")
+            logger.info(f"{log_prefix} Function {function_name} has high memory setting: {memory_size}MB")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -27,5 +28,5 @@ def check_memory_size(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_memory_size for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix} Error in check_memory_size for function {function_name}: {str(e)}")
         return None

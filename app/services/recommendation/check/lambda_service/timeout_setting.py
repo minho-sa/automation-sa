@@ -1,15 +1,16 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_timeout_setting(function: Dict) -> Dict:
+def check_timeout_setting(function: Dict, collection_id: str = None) -> Dict:
     """타임아웃 설정 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     timeout = function.get('Timeout', 0)
-    logger.debug(f"Checking timeout setting for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking timeout setting for function: {function_name}")
     
     try:
         if timeout > 60:
-            logger.info(f"Function {function_name} has high timeout setting: {timeout} seconds")
+            logger.info(f"{log_prefix}Function {function_name} has high timeout setting: {timeout} seconds")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -26,5 +27,5 @@ def check_timeout_setting(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_timeout_setting for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_timeout_setting for function {function_name}: {str(e)}")
         return None

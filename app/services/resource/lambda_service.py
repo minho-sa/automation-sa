@@ -14,9 +14,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Dict:
+def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
     """Lambda 함수 데이터 수집"""
-    logger.info("Starting Lambda data collection")
+    # collection_id가 None이 아닌지 확인
+    if collection_id is None:
+        collection_id = "lambda-collection"
+    
+    log_prefix = f"[{collection_id}]"
+    logger.info(f"{log_prefix} Starting Lambda data collection")
     try:
         lambda_client = boto3.client(
             'lambda',
@@ -35,10 +40,10 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Di
         response = lambda_client.list_functions()
         functions = []
         
-        logger.info(f"Found {len(response.get('Functions', []))} Lambda functions")
+        logger.info(f"{log_prefix} Found {len(response.get('Functions', []))} Lambda functions")
         
         for function in response.get('Functions', []):
-            logger.debug(f"Processing function {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Processing function {function['FunctionName']}")
             
             # 기본 함수 정보
             function_data = {
@@ -63,25 +68,25 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Di
             }
             
             # 태그 정보 수집
-            logger.debug(f"Collecting tags for {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Collecting tags for {function['FunctionName']}")
             try:
                 tags_response = lambda_client.list_tags(Resource=function['FunctionArn'])
                 function_data['Tags'] = tags_response.get('Tags', {})
             except Exception as e:
-                logger.error(f"Error collecting tags: {str(e)}")
+                logger.error(f"{log_prefix} Error collecting tags: {str(e)}")
             
             # 예약된 동시성 정보 수집
-            logger.debug(f"Collecting concurrency info for {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Collecting concurrency info for {function['FunctionName']}")
             try:
                 concurrency = lambda_client.get_function_concurrency(
                     FunctionName=function['FunctionName']
                 )
                 function_data['ReservedConcurrency'] = concurrency.get('ReservedConcurrentExecutions')
             except Exception as e:
-                logger.error(f"Error collecting concurrency info: {str(e)}")
+                logger.error(f"{log_prefix} Error collecting concurrency info: {str(e)}")
             
             # 함수 URL 구성 정보 수집
-            logger.debug(f"Collecting URL config for {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Collecting URL config for {function['FunctionName']}")
             try:
                 url_config = lambda_client.get_function_url_config(
                     FunctionName=function['FunctionName']
@@ -95,7 +100,7 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Di
                 pass
             
             # 버전 정보 수집
-            logger.debug(f"Collecting versions for {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Collecting versions for {function['FunctionName']}")
             try:
                 versions = lambda_client.list_versions_by_function(
                     FunctionName=function['FunctionName']
@@ -104,24 +109,31 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str) -> Di
                     {'Version': v.get('Version')} for v in versions.get('Versions', [])
                 ]
             except Exception as e:
-                logger.error(f"Error collecting versions: {str(e)}")
+                logger.error(f"{log_prefix} Error collecting versions: {str(e)}")
             
             # 로그 출력 검사
-            logger.debug(f"Checking debug logs for {function['FunctionName']}")
+            logger.debug(f"{log_prefix} Checking debug logs for {function['FunctionName']}")
             function_data['DebugLogsDetected'] = _check_debug_logs(
-                aws_access_key, aws_secret_key, region, function['FunctionName']
+                aws_access_key, aws_secret_key, region, function['FunctionName'], collection_id
             )
             
             functions.append(function_data)
         
         result = {'functions': functions}
+        logger.info(f"{log_prefix} Completed Lambda data collection")
         return result
     except Exception as e:
-        logger.error(f"Error in get_lambda_data: {str(e)}")
+        logger.error(f"{log_prefix} Error in get_lambda_data: {str(e)}")
         return {'error': str(e)}
 
-def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str, function_name: str) -> bool:
+def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str, 
+                     function_name: str, collection_id: str = None) -> bool:
     """디버깅 로그 출력 검사"""
+    # collection_id가 None이 아닌지 확인
+    if collection_id is None:
+        collection_id = "lambda-collection"
+        
+    log_prefix = f"[{collection_id}]"
     try:
         logs_client = boto3.client(
             'logs',
@@ -141,7 +153,7 @@ def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str, fun
         
         # 로그 그룹이 존재하지 않으면 디버깅 로그가 없다고 판단
         if not log_groups.get('logGroups'):
-            logger.info(f"Log group {log_group_name} does not exist for function {function_name}")
+            logger.info(f"{log_prefix} Log group {log_group_name} does not exist for function {function_name}")
             return False
             
         # 최근 로그 이벤트 검색
@@ -160,5 +172,5 @@ def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str, fun
         
         return False
     except Exception as e:
-        logger.error(f"Error checking debug logs: {str(e)}")
+        logger.error(f"{log_prefix} Error checking debug logs: {str(e)}")
         return False

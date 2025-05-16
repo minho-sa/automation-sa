@@ -1,15 +1,17 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_code_size(function: Dict) -> Dict:
+def check_code_size(function: Dict, collection_id: str = None) -> Dict:
     """코드 크기 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     code_size = function.get('CodeSize', 0)
     code_size_mb = code_size / 1024 / 1024  # Convert to MB
-    logger.debug(f"Checking code size for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking code size for function: {function_name}")
     
     try:
         if code_size > 5 * 1024 * 1024:  # 5MB
+            logger.info(f"{log_prefix}Function {function_name} has large code size: {code_size_mb:.2f}MB")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -27,5 +29,5 @@ def check_code_size(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_code_size for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_code_size for function {function_name}: {str(e)}")
         return None

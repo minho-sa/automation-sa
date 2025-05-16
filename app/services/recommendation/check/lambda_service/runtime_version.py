@@ -1,11 +1,12 @@
 from typing import Dict
-from app.services.recommendation.check.lambda_service.utils import logger
+from app.services.recommendation.check.lambda_service.utils import logger, get_log_prefix
 
-def check_runtime_version(function: Dict) -> Dict:
+def check_runtime_version(function: Dict, collection_id: str = None) -> Dict:
     """런타임 버전 검사"""
+    log_prefix = get_log_prefix(collection_id)
     function_name = function.get('FunctionName', 'unknown')
     runtime = function.get('Runtime', '')
-    logger.debug(f"Checking runtime version for function: {function_name}")
+    logger.debug(f"{log_prefix}Checking runtime version for function: {function_name}")
     
     try:
         outdated_runtimes = [
@@ -18,6 +19,7 @@ def check_runtime_version(function: Dict) -> Dict:
         ]
         
         if runtime in outdated_runtimes:
+            logger.info(f"{log_prefix}Function {function_name} uses outdated runtime: {runtime}")
             return {
                 'service': 'Lambda',
                 'resource': function_name,
@@ -35,5 +37,5 @@ def check_runtime_version(function: Dict) -> Dict:
             }
         return None
     except Exception as e:
-        logger.error(f"Error in check_runtime_version for function {function_name}: {str(e)}")
+        logger.error(f"{log_prefix}Error in check_runtime_version for function {function_name}: {str(e)}")
         return None

@@ -59,11 +59,11 @@ def recommendations_view():
     
     try:
         # 이미 수집된 데이터를 사용하여 추천 사항 생성
-        # if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-        #     all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
+        if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
+            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
         
-        # if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
-        #     all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions']))
+        if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
+            all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions']))
         
         # S3 추천 사항
         if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
@@ -78,8 +78,8 @@ def recommendations_view():
         #     all_recommendations.extend(get_cloudwatch_recommendations(collection_status['all_services_data']['cloudwatch']['alarms']))
         
         # # IAM 추천 사항
-        # if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
-        #     all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam']['users']))
+        if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
+            all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam']['users']))
         
         
     except Exception as e:

@@ -59,8 +59,9 @@ def recommendations_view():
     
     try:
         # 이미 수집된 데이터를 사용하여 추천 사항 생성
-        # if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-        #     all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
+        #EC2 추천 사항
+        if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
+            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
         
         if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
             all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions'], collection_status['collection_id']))

@@ -44,7 +44,7 @@
                         <div class="card bg-warning text-dark">
                             <div class="card-body">
                                 <h5 class="card-title">인스턴스 클래스</h5>
-                                <p class="card-text">{{ all_services_data.rds.instances|map(attribute='size')|list|unique|list|length }} 종류</p>
+                                <p class="card-text">{{ all_services_data.rds.instances|map(attribute='instance_class')|list|unique|list|length }} 종류</p>
                             </div>
                         </div>
                     </div>
@@ -89,6 +89,7 @@
                                 <th>상태</th>
                                 <th>인스턴스 클래스</th>
                                 <th>스토리지 (GB)</th>
+                                <th>스토리지 유형</th>
                                 <th>다중 AZ</th>
                                 <th>상세 정보</th>
                             </tr>
@@ -106,8 +107,9 @@
                                         <span class="badge bg-secondary">{{ instance.status }}</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ instance.size }}</td>
-                                <td>{{ instance.storage|default('-') }}</td>
+                                <td>{{ instance.instance_class|default(instance.size)|default('-') }}</td>
+                                <td>{{ instance.allocated_storage|default(instance.storage)|default('-') }}</td>
+                                <td>{{ instance.storage_type|default('-') }}</td>
                                 <td>
                                     {% if instance.multi_az|default(false) %}
                                         <span class="badge bg-success">예</span>
@@ -122,7 +124,7 @@
                                 </td>
                             </tr>
                             <tr class="collapse" id="rds-details-{{ loop.index }}">
-                                <td colspan="8">
+                                <td colspan="9">
                                     <div class="card card-body bg-light">
                                         <h6>데이터베이스 인스턴스 상세 정보</h6>
                                         

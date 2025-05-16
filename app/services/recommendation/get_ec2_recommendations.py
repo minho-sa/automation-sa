@@ -18,11 +18,12 @@ logger = logging.getLogger(__name__)
 
 def get_ec2_recommendations(instances: List[Dict], collection_id: str = None) -> List[Dict]:
     """EC2 인스턴스에 대한 권장사항 수집"""
+    # 예외 처리 전에 log_prefix 정의 (전역 변수로 선언)
+    global log_prefix
     log_prefix = f"[{collection_id}] " if collection_id else ""
     logger.info(f"{log_prefix}Starting EC2 recommendations collection")
     
     try:
-        log_prefix = f"[{collection_id}] " if collection_id else ""
         logger.info(f"{log_prefix}Analyzing {len(instances)} instances for recommendations")
         
         # 권장사항 수집

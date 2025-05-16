@@ -64,12 +64,12 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id):
         # collection_status['completed_services'].append('S3')
         # app.logger.info(f"[{collection_status['collection_id']}] S3 데이터 수집 완료")
         
-        # # RDS 데이터
-        # collection_status['current_service'] = 'RDS'
-        # app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 시작")
-        # collection_status['all_services_data']['rds'] = get_rds_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
-        # collection_status['completed_services'].append('RDS')
-        # app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 완료")
+        # RDS 데이터
+        collection_status['current_service'] = 'RDS'
+        app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 시작")
+        collection_status['all_services_data']['rds'] = get_rds_data(aws_access_key, aws_secret_key, region, collection_status['collection_id'])
+        collection_status['completed_services'].append('RDS')
+        app.logger.info(f"[{collection_status['collection_id']}] RDS 데이터 수집 완료")
         
         # Lambda 데이터
         collection_status['current_service'] = 'Lambda'

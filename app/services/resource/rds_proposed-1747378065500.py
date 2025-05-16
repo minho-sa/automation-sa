@@ -89,15 +89,12 @@ def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collecti
                 'engine': instance.get('Engine'),
                 'engine_version': instance.get('EngineVersion'),
                 'instance_class': instance.get('DBInstanceClass'),
-                'size': instance.get('DBInstanceClass'),  # 인스턴스 클래스를 size로도 추가
                 'status': instance.get('DBInstanceStatus'),
                 'creation_time': instance.get('InstanceCreateTime'),
                 'is_aurora': instance_id.startswith('aurora-'),
                 'storage_encrypted': instance.get('StorageEncrypted', False),
-                'encrypted': instance.get('StorageEncrypted', False),  # 템플릿에서 사용하는 필드명으로 추가
                 'storage_type': instance.get('StorageType', 'unknown'),
                 'allocated_storage': instance.get('AllocatedStorage', 0),
-                'storage': instance.get('AllocatedStorage', 0),  # 템플릿에서 사용하는 필드명으로 추가
                 'iops': instance.get('Iops', 0),
                 'vpc_id': instance.get('DBSubnetGroup', {}).get('VpcId', 'unknown'),
                 'availability_zone': instance.get('AvailabilityZone', 'unknown'),
@@ -106,8 +103,6 @@ def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collecti
                 'performance_insights_enabled': instance.get('PerformanceInsightsEnabled', False),
                 'auto_minor_version_upgrade': instance.get('AutoMinorVersionUpgrade', False),
                 'publicly_accessible': instance.get('PubliclyAccessible', False),
-                'backup_window': instance.get('PreferredBackupWindow', '03:00-04:00'),  # 기본값 추가
-                'maintenance_window': instance.get('PreferredMaintenanceWindow', 'sun:05:00-sun:06:00'),  # 기본값 추가
                 'tags': {},
                 'metrics': {},
                 'parameter_groups': []
@@ -255,15 +250,6 @@ def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collecti
                 instance_data['security_groups'] = security_groups
             except Exception as e:
                 logger.error(f"{log_prefix}Error getting security groups for {instance_id}: {str(e)}")
-                
-            # 엔드포인트 정보 추가
-            if 'Endpoint' in instance:
-                instance_data['endpoint'] = instance['Endpoint'].get('Address')
-                instance_data['port'] = instance['Endpoint'].get('Port')
-            else:
-                # 엔드포인트 정보가 없는 경우 기본값 설정
-                instance_data['endpoint'] = f"{instance_id}.{region}.rds.amazonaws.com"
-                instance_data['port'] = 3306 if instance.get('Engine') in ['mysql', 'mariadb', 'aurora-mysql'] else 5432
             
             instances.append(instance_data)
         

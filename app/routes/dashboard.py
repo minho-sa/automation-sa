@@ -64,16 +64,16 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id, selected_servi
         
     app.logger.info(f"collect_data 함수 내부 - 선택된 서비스: {selected_services}")
     
-    # 사용자별 상태 초기화
-    if collection_status['user_id'] != user_id:
-        collection_status['all_services_data'] = {}
+    # 항상 데이터 초기화 (이전 데이터 유지하지 않음)
+    collection_status['all_services_data'] = {}
     
+    # 상태 초기화
     collection_status['is_collecting'] = True
     collection_status['current_service'] = None
-    collection_status['completed_services'] = []
+    collection_status['completed_services'] = []  # 완료된 서비스 목록 초기화
     collection_status['error'] = None
     collection_status['user_id'] = user_id
-    collection_status['selected_services'] = selected_services
+    collection_status['selected_services'] = selected_services.copy()  # 복사본 사용
     collection_status['total_services'] = len(selected_services)
     collection_status['collection_id'] = str(uuid.uuid4())[:8]  # 고유한 수집 ID 생성
     
@@ -95,7 +95,8 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id, selected_servi
                     aws_access_key, aws_secret_key, region, collection_status['collection_id']
                 )
                 
-                collection_status['completed_services'].append(service_name)
+                # 완료된 서비스 추가 (서비스 키를 저장)
+                collection_status['completed_services'].append(service_key)
                 app.logger.info(f"[{collection_id}] {service_name} 데이터 수집 완료")
         
         # 수집 완료
@@ -194,10 +195,13 @@ def start_collection():
         region = app.config.get('AWS_DEFAULT_REGION', 'ap-northeast-2')
         user_id = current_user.get_id()
         
-        # 항상 새로운 수집을 시작할 수 있도록 상태 초기화
+        # 항상 새로운 수집을 시작할 수 있도록 상태 완전히 초기화
         global collection_status
         collection_status['is_collecting'] = False
         collection_status['last_collection_time'] = time.time()
+        collection_status['all_services_data'] = {}  # 이전 데이터 완전히 초기화
+        collection_status['completed_services'] = []  # 완료된 서비스 목록 초기화
+        collection_status['current_service'] = None
         
         # 요청 데이터 확인
         if not request.is_json:
@@ -237,16 +241,26 @@ def get_collection_status():
             'progress': 0
         })
     
-    # 진행률 계산
+    # 서비스 키를 서비스 이름으로 변환 (중복 제거)
+    unique_service_keys = set(collection_status['completed_services'])
+    completed_service_names = []
+    for service_key in unique_service_keys:
+        if service_key in aws_services:
+            completed_service_names.append(aws_services[service_key]['name'])
+    
+    # 진행률 계산 (중복 제거된 서비스 수 기준)
     progress = 0
     if collection_status['total_services'] > 0:
-        progress = int(len(collection_status['completed_services']) / collection_status['total_services'] * 100)
+        unique_completed = len(set(collection_status['completed_services']))
+        progress = min(int(unique_completed / collection_status['total_services'] * 100), 100)
     
+    # 선택된 서비스 목록도 함께 반환
     return jsonify({
         'is_collecting': collection_status['is_collecting'],
         'current_service': collection_status['current_service'],
-        'completed_services': collection_status['completed_services'],
+        'completed_services': completed_service_names,  # 서비스 이름 목록 반환
         'total_services': collection_status['total_services'],
         'error': collection_status['error'],
-        'progress': progress
+        'progress': progress,
+        'selected_services': collection_status.get('selected_services', [])  # 선택된 서비스 목록 추가
     })

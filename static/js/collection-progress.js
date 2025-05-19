@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentServiceElement = document.getElementById('modal-current-service');
                 const progressBarElement = document.getElementById('modal-progress-bar');
                 const completedCountElement = document.getElementById('modal-completed-count');
+                const totalServicesElement = document.getElementById('modal-total-services');
                 const completedServicesListElement = document.getElementById('modal-completed-services-list');
                 
                 if (data.is_collecting) {
@@ -195,8 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (currentServiceElement) currentServiceElement.textContent = data.current_service || '준비 중...';
                     
                     // 진행률 계산 및 업데이트
-                    const progress = data.total_services > 0 ? 
-                        Math.round((data.completed_services.length / data.total_services) * 100) : 0;
+                    const progress = data.progress || 0;
                     
                     if (progressBarElement) {
                         progressBarElement.style.width = `${progress}%`;
@@ -204,22 +204,38 @@ document.addEventListener('DOMContentLoaded', function() {
                         progressBarElement.setAttribute('aria-valuenow', progress);
                     }
                     
-                    if (completedCountElement) completedCountElement.textContent = data.completed_services.length;
+                    // 완료된 서비스 수 업데이트 - 중복 제거 후 계산
+                    const uniqueCompletedServices = new Set(data.completed_services);
+                    if (completedCountElement) completedCountElement.textContent = uniqueCompletedServices.size;
+                    if (totalServicesElement) totalServicesElement.textContent = selectedServices.length;
                     
                     // 완료된 서비스 목록 업데이트
                     if (completedServicesListElement) {
                         completedServicesListElement.innerHTML = '';
                         
+                        // 서비스 이름 역매핑 (코드 -> 표시 이름)
+                        const reverseMapping = {};
+                        Object.entries(serviceMapping).forEach(([displayName, code]) => {
+                            reverseMapping[code] = displayName;
+                        });
+                        
+                        // 이미 표시된 서비스 추적
+                        const displayedServices = new Set();
+                        
                         // 완료된 서비스 배지 추가
-                        data.completed_services.forEach(service => {
-                            const badge = document.createElement('span');
-                            badge.className = 'badge bg-success me-1 mb-1';
-                            badge.textContent = service;
-                            completedServicesListElement.appendChild(badge);
+                        data.completed_services.forEach(serviceName => {
+                            if (!displayedServices.has(serviceName)) {
+                                displayedServices.add(serviceName);
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-success me-1 mb-1';
+                                badge.textContent = serviceName;
+                                completedServicesListElement.appendChild(badge);
+                            }
                         });
                         
                         // 현재 수집 중인 서비스 배지 추가
-                        if (data.current_service) {
+                        if (data.current_service && !displayedServices.has(data.current_service)) {
+                            displayedServices.add(data.current_service);
                             const badge = document.createElement('span');
                             badge.className = 'badge bg-primary me-1 mb-1';
                             badge.textContent = data.current_service + ' (수집 중)';
@@ -227,14 +243,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         // 수집 예정인 서비스 배지 추가
-                        const pendingServices = selectedServices.filter(service => {
-                            const serviceName = Object.entries(serviceMapping).find(entry => entry[1] === service)?.[0];
-                            return !data.completed_services.includes(serviceName) && serviceName !== data.current_service;
-                        });
-                        
-                        pendingServices.forEach(service => {
-                            const serviceName = Object.entries(serviceMapping).find(entry => entry[1] === service)?.[0];
-                            if (serviceName) {
+                        selectedServices.forEach(serviceCode => {
+                            const serviceName = reverseMapping[serviceCode];
+                            if (serviceName && !displayedServices.has(serviceName)) {
+                                displayedServices.add(serviceName);
                                 const badge = document.createElement('span');
                                 badge.className = 'badge bg-secondary me-1 mb-1';
                                 badge.textContent = serviceName;

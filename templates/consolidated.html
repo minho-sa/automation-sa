@@ -174,7 +174,16 @@
 </div>
 
 <script>
+// 서비스 정보를 전역 변수로 저장
+let servicesData = {};
+
 document.addEventListener('DOMContentLoaded', function() {
+    // 서버에서 전달된 서비스 정보를 JavaScript 객체로 변환
+    servicesData = {
+        {% for service_key, service in services.items() %}
+            "{{ service_key }}": { "name": "{{ service.name }}", "icon": "{{ service.icon }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
     const expandAllBtn = document.getElementById('expand-all');
     const collapseAllBtn = document.getElementById('collapse-all');
     const selectServicesBtn = document.getElementById('select-services-btn');
@@ -184,7 +193,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
     
     // 모달 객체 생성
-    const selectServicesModal = new bootstrap.Modal(document.getElementById('selectServicesModal'));
+    const selectServicesModalElement = document.getElementById('selectServicesModal');
+    const selectServicesModal = new bootstrap.Modal(selectServicesModalElement);
+    
+    // 모달 닫기 버튼에 이벤트 리스너 추가
+    selectServicesModalElement.querySelector('.btn-close').addEventListener('click', function() {
+        selectServicesModal.hide();
+    });
+    
+    // 취소 버튼에 이벤트 리스너 추가
+    const cancelBtn = selectServicesModalElement.querySelector('.modal-footer .btn-secondary');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            selectServicesModal.hide();
+        });
+    }
     
     // 데이터 수집 버튼 클릭 시 모달 표시
     if (selectServicesBtn) {
@@ -237,7 +260,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // 선택된 서비스가 없는 경우 - 이 검증은 collection-progress.js에서 처리하므로 여기서는 제거
+            // 선택된 서비스가 없는 경우
+            if (selectedServices.length === 0) {
+                alert('최소한 하나 이상의 서비스를 선택해야 합니다.');
+                return;
+            }
             
             // 버튼 비활성화
             startCollectionBtn.disabled = true;
@@ -253,11 +280,43 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // 오류 메시지는 표시하지 않음 (collection-progress.js에서 처리)
                 if (data.status === 'success') {
-                    // 진행 상황은 collection-progress.js에서 처리
+                    // 모달 내용을 진행 상황 표시로 변경
+                    const modalBody = document.querySelector('#selectServicesModal .modal-body');
+                    const modalTitle = document.querySelector('#selectServicesModal .modal-title');
+                    const modalFooter = document.querySelector('#selectServicesModal .modal-footer');
+                    
+                    modalTitle.textContent = '데이터 수집 진행 중';
+                    
+                    // 진행 상황 표시 HTML 생성
+                    modalBody.innerHTML = `
+                        <p>선택한 서비스의 데이터를 수집하고 있습니다.</p>
+                        <p>현재 수집 중인 서비스: <strong id="modal-current-service">준비 중...</strong></p>
+                        <div class="progress mb-3">
+                            <div id="modal-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                0%
+                            </div>
+                        </div>
+                        <p>완료된 서비스: <span id="modal-completed-count">0</span> / <span id="modal-total-services">${selectedServices.length}</span></p>
+                        <div class="mb-2">
+                            <span class="badge bg-success me-1">완료됨</span>
+                            <span class="badge bg-primary me-1">수집 중</span>
+                            <span class="badge bg-secondary me-1">수집 예정</span>
+                        </div>
+                        <div id="modal-completed-services-list"></div>
+                    `;
+                    
+                    // 모달 푸터 변경
+                    modalFooter.innerHTML = `
+                        <button type="button" class="btn btn-secondary" onclick="document.querySelector('#selectServicesModal .btn-close').click()">백그라운드에서 계속</button>
+                    `;
+                    
+                    // 상태 확인 시작
+                    startModalStatusCheck();
                 } else {
-                    // 오류 메시지는 표시하지 않음 (collection-progress.js에서 처리)
+                    // 오류 메시지 표시
+                    alert('오류: ' + data.message);
                     
                     // 버튼 상태 복원
                     startCollectionBtn.disabled = false;
@@ -304,12 +363,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 완료된 서비스 목록 업데이트
                     if (completedServicesListElement) {
                         completedServicesListElement.innerHTML = '';
+                        
+                        // 이미 표시된 서비스 추적
+                        const displayedServices = new Set();
+                        
+                        // 완료된 서비스 배지 추가
                         data.completed_services.forEach(service => {
+                            displayedServices.add(service);
                             const badge = document.createElement('span');
                             badge.className = 'badge bg-success me-1 mb-1';
                             badge.textContent = service;
                             completedServicesListElement.appendChild(badge);
                         });
+                        
+                        // 현재 수집 중인 서비스 배지 추가
+                        if (data.current_service && !displayedServices.has(data.current_service)) {
+                            displayedServices.add(data.current_service);
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-primary me-1 mb-1';
+                            badge.textContent = data.current_service + ' (수집 중)';
+                            completedServicesListElement.appendChild(badge);
+                        }
+                        
+                        // 수집 예정인 서비스 배지 추가 - 서비스 이름 직접 매핑
+                        const serviceNameMap = {
+                            'ec2': 'EC2',
+                            's3': 'S3',
+                            'rds': 'RDS',
+                            'lambda': 'Lambda',
+                            'cloudwatch': 'CloudWatch',
+                            'iam': 'IAM',
+                            'dynamodb': 'DynamoDB',
+                            'ecs': 'ECS',
+                            'eks': 'EKS',
+                            'sns': 'SNS',
+                            'sqs': 'SQS',
+                            'apigateway': 'API Gateway',
+                            'elasticache': 'ElastiCache',
+                            'route53': 'Route 53'
+                        };
+                        
+                        if (data.selected_services) {
+                            data.selected_services.forEach(serviceKey => {
+                                const serviceName = serviceNameMap[serviceKey];
+                                if (serviceName && !displayedServices.has(serviceName)) {
+                                    displayedServices.add(serviceName);
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge bg-pending me-1 mb-1';
+                                    badge.textContent = serviceName;
+                                    completedServicesListElement.appendChild(badge);
+                                }
+                            });
+                        }
                     }
                 } else {
                     // 수집이 완료된 경우
@@ -318,8 +423,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         alert('데이터 수집 중 오류가 발생했습니다: ' + data.error);
                     } else if (data.completed_services && data.completed_services.length > 0) {
                         // 수집이 성공적으로 완료된 경우
-                        // 페이지 새로고침
-                        location.reload();
+                        // 페이지 새로고침 (캐시 무효화)
+                        location.href = location.pathname + '?t=' + new Date().getTime();
                     }
                     
                     // 상태 확인 중지
@@ -331,9 +436,129 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 이 함수는 collection-progress.js로 이동했습니다
+    // 모달 상태 확인 함수
+    function startModalStatusCheck() {
+        // 이전 인터벌이 있으면 제거
+        if (modalStatusCheckInterval) {
+            clearInterval(modalStatusCheckInterval);
+        }
+        
+        // 새로운 인터벌 시작
+        modalStatusCheckInterval = setInterval(checkModalCollectionStatus, 1000);
+        checkModalCollectionStatus(); // 즉시 한 번 확인
+    }
     
-    // 이 함수는 collection-progress.js로 이동했습니다
+    // 모달 내 수집 상태 확인 함수
+    function checkModalCollectionStatus() {
+        fetch('/collection_status')
+            .then(response => response.json())
+            .then(data => {
+                // 모달 내 요소 업데이트
+                const currentServiceElement = document.getElementById('modal-current-service');
+                const progressBarElement = document.getElementById('modal-progress-bar');
+                const completedCountElement = document.getElementById('modal-completed-count');
+                const totalServicesElement = document.getElementById('modal-total-services');
+                const completedServicesListElement = document.getElementById('modal-completed-services-list');
+                
+                if (data.is_collecting) {
+                    // 수집 중인 경우
+                    if (currentServiceElement) currentServiceElement.textContent = data.current_service || '준비 중...';
+                    if (progressBarElement) {
+                        progressBarElement.style.width = data.progress + '%';
+                        progressBarElement.textContent = data.progress + '%';
+                        progressBarElement.setAttribute('aria-valuenow', data.progress);
+                    }
+                    if (completedCountElement) completedCountElement.textContent = data.completed_services.length;
+                    if (totalServicesElement) totalServicesElement.textContent = data.total_services;
+                    
+                    // 완료된 서비스 목록 업데이트
+                    if (completedServicesListElement) {
+                        completedServicesListElement.innerHTML = '';
+                        
+                        // 이미 표시된 서비스 추적
+                        const displayedServices = new Set();
+                        
+                        // 완료된 서비스 배지 추가
+                        data.completed_services.forEach(service => {
+                            displayedServices.add(service);
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-success me-1 mb-1';
+                            badge.textContent = service;
+                            completedServicesListElement.appendChild(badge);
+                        });
+                        
+                        // 현재 수집 중인 서비스 배지 추가
+                        if (data.current_service && !displayedServices.has(data.current_service)) {
+                            displayedServices.add(data.current_service);
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-primary me-1 mb-1';
+                            badge.textContent = data.current_service + ' (수집 중)';
+                            completedServicesListElement.appendChild(badge);
+                        }
+                        
+                        // 수집 예정인 서비스 배지 추가 - 서비스 이름 직접 매핑
+                        const serviceNameMap = {
+                            'ec2': 'EC2',
+                            's3': 'S3',
+                            'rds': 'RDS',
+                            'lambda': 'Lambda',
+                            'cloudwatch': 'CloudWatch',
+                            'iam': 'IAM',
+                            'dynamodb': 'DynamoDB',
+                            'ecs': 'ECS',
+                            'eks': 'EKS',
+                            'sns': 'SNS',
+                            'sqs': 'SQS',
+                            'apigateway': 'API Gateway',
+                            'elasticache': 'ElastiCache',
+                            'route53': 'Route 53'
+                        };
+                        
+                        if (data.selected_services) {
+                            data.selected_services.forEach(serviceKey => {
+                                const serviceName = serviceNameMap[serviceKey];
+                                if (serviceName && !displayedServices.has(serviceName)) {
+                                    displayedServices.add(serviceName);
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge bg-secondary me-1 mb-1';
+                                    badge.textContent = serviceName;
+                                    completedServicesListElement.appendChild(badge);
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    // 수집이 완료된 경우
+                    if (data.error) {
+                        // 오류가 있는 경우
+                        const modalBody = document.querySelector('#selectServicesModal .modal-body');
+                        modalBody.innerHTML += `<div class="alert alert-danger mt-3">오류: ${data.error}</div>`;
+                        
+                        // 3초 후 모달 닫기
+                        setTimeout(() => {
+                            document.querySelector('#selectServicesModal .btn-close').click();
+                            location.href = location.pathname + '?t=' + new Date().getTime(); // 캐시 방지를 위한 쿼리 파라미터 추가
+                        }, 3000);
+                    } else if (data.completed_services && data.completed_services.length > 0) {
+                        // 수집이 성공적으로 완료된 경우
+                        const modalBody = document.querySelector('#selectServicesModal .modal-body');
+                        modalBody.innerHTML += `<div class="alert alert-success mt-3">데이터 수집이 완료되었습니다!</div>`;
+                        
+                        // 1초 후 모달 닫고 페이지 새로고침 (캐시 무효화)
+                        setTimeout(() => {
+                            document.querySelector('#selectServicesModal .btn-close').click();
+                            location.href = location.pathname + '?t=' + new Date().getTime(); // 캐시 방지를 위한 쿼리 파라미터 추가
+                        }, 1000);
+                    }
+                    
+                    // 상태 확인 중지
+                    clearInterval(modalStatusCheckInterval);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
     
     // 페이지 로드 시 수집 상태 확인 시작
     if (document.getElementById('collection-progress-container')) {

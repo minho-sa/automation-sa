@@ -4,6 +4,11 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- collection-progress.js 비활성화 -->
+<script>
+    // collection-progress.js 로드 방지
+    window.preventCollectionProgressLoad = true;
+</script>
 <style>
     /* 화살표 애니메이션 */
     @keyframes bounce {
@@ -224,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "{{ service_key }}": { "name": "{{ service.name }}", "icon": "{{ service.icon }}" }{% if not loop.last %},{% endif %}
         {% endfor %}
     };
+    
     const expandAllBtn = document.getElementById('expand-all');
     const collapseAllBtn = document.getElementById('collapse-all');
     const selectServicesBtn = document.getElementById('select-services-btn');
@@ -237,9 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectServicesModal = new bootstrap.Modal(selectServicesModalElement);
     
     // 모달 닫기 버튼에 이벤트 리스너 추가
-    selectServicesModalElement.querySelector('.btn-close').addEventListener('click', function() {
-        selectServicesModal.hide();
-    });
+    const closeBtn = selectServicesModalElement.querySelector('.btn-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            selectServicesModal.hide();
+        });
+    }
     
     // 취소 버튼에 이벤트 리스너 추가
     const cancelBtn = selectServicesModalElement.querySelector('.modal-footer .btn-secondary');
@@ -251,9 +260,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 데이터 수집 버튼 클릭 시 모달 표시
     if (selectServicesBtn) {
-        selectServicesBtn.addEventListener('click', function() {
+        // 기존 이벤트 리스너 제거 (중복 방지)
+        selectServicesBtn.replaceWith(selectServicesBtn.cloneNode(true));
+        // 새로운 버튼 참조 가져오기
+        const newSelectServicesBtn = document.getElementById('select-services-btn');
+        
+        newSelectServicesBtn.addEventListener('click', function() {
             // 모달 열기 전에 버튼 상태 초기화
-            const startCollectionBtn = document.getElementById('start-collection');
             if (startCollectionBtn) {
                 startCollectionBtn.disabled = false;
                 startCollectionBtn.textContent = '데이터 수집 시작';

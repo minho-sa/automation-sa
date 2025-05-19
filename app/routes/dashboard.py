@@ -200,8 +200,13 @@ def start_collection():
         region = app.config.get('AWS_DEFAULT_REGION', 'ap-northeast-2')
         user_id = current_user.get_id()
         
-        # 항상 새로운 수집을 시작할 수 있도록 상태 완전히 초기화
+        # 이미 수집 중인 경우 중복 요청 방지
         global collection_status
+        if collection_status['is_collecting']:
+            app.logger.warning(f"이미 데이터 수집이 진행 중입니다. 사용자: {user_id}")
+            return jsonify({'status': 'error', 'message': '이미 데이터 수집이 진행 중입니다. 완료될 때까지 기다려주세요.'}), 409
+        
+        # 항상 새로운 수집을 시작할 수 있도록 상태 완전히 초기화
         collection_status['is_collecting'] = False
         collection_status['last_collection_time'] = time.time()
         collection_status['all_services_data'] = {}  # 이전 데이터 완전히 초기화
@@ -218,6 +223,9 @@ def start_collection():
         # 선택된 서비스가 없는 경우
         if not selected_services:
             return jsonify({'status': 'error', 'message': '최소한 하나 이상의 서비스를 선택해야 합니다.'}), 400
+        
+        # 수집 상태를 먼저 설정하여 중복 요청 방지
+        collection_status['is_collecting'] = True
         
         # 데이터 수집 시작
         thread = threading.Thread(target=collect_data, args=(aws_access_key, aws_secret_key, region, user_id, selected_services))

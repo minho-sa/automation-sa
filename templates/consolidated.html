@@ -40,7 +40,7 @@
             <button class="btn btn-primary" id="expand-all">모두 펼치기</button>
             <button class="btn btn-outline-secondary ms-2" id="collapse-all">모두 접기</button>
             {% if not is_collecting %}
-            <button class="btn btn-success ms-2" id="start-collection">데이터 수집</button>
+            <button class="btn btn-success ms-2" id="select-services-btn">데이터 수집</button>
             {% endif %}
         </div>
     </div>
@@ -136,10 +136,210 @@
 </div>
 {% endif %}
 
+<!-- 서비스 선택 모달 -->
+<div class="modal fade" id="selectServicesModal" tabindex="-1" aria-labelledby="selectServicesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="selectServicesModalLabel">수집할 AWS 서비스 선택</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">데이터를 수집할 AWS 서비스를 선택하세요:</p>
+                
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-primary" id="select-all-services">모두 선택</button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" id="deselect-all-services">모두 선택 해제</button>
+                </div>
+                
+                <div class="row">
+                    {% for service_key, service in services.items() %}
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input service-checkbox" type="checkbox" value="{{ service_key }}" id="service-{{ service_key }}" checked>
+                            <label class="form-check-label" for="service-{{ service_key }}">
+                                <i class="fas {{ service.icon }} me-1"></i> {{ service.name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="start-collection">데이터 수집 시작</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const expandAllBtn = document.getElementById('expand-all');
     const collapseAllBtn = document.getElementById('collapse-all');
+    const selectServicesBtn = document.getElementById('select-services-btn');
+    const startCollectionBtn = document.getElementById('start-collection');
+    const selectAllServicesBtn = document.getElementById('select-all-services');
+    const deselectAllServicesBtn = document.getElementById('deselect-all-services');
+    const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+    
+    // 모달 객체 생성
+    const selectServicesModal = new bootstrap.Modal(document.getElementById('selectServicesModal'));
+    
+    // 데이터 수집 버튼 클릭 시 모달 표시
+    if (selectServicesBtn) {
+        selectServicesBtn.addEventListener('click', function() {
+            // 모달 열기 전에 버튼 상태 초기화
+            const startCollectionBtn = document.getElementById('start-collection');
+            if (startCollectionBtn) {
+                startCollectionBtn.disabled = false;
+                startCollectionBtn.textContent = '데이터 수집 시작';
+            }
+            
+            // 모달 내용 초기화
+            const modalBody = document.querySelector('#selectServicesModal .modal-body');
+            if (modalBody) {
+                // 기존 알림 메시지 제거
+                const alerts = modalBody.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }
+            
+            selectServicesModal.show();
+        });
+    }
+    
+    // 모두 선택 버튼
+    if (selectAllServicesBtn) {
+        selectAllServicesBtn.addEventListener('click', function() {
+            serviceCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+    }
+    
+    // 모두 선택 해제 버튼
+    if (deselectAllServicesBtn) {
+        deselectAllServicesBtn.addEventListener('click', function() {
+            serviceCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        });
+    }
+    
+    // 데이터 수집 시작 버튼
+    if (startCollectionBtn) {
+        startCollectionBtn.addEventListener('click', function() {
+            // 선택된 서비스 목록 수집
+            const selectedServices = [];
+            serviceCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedServices.push(checkbox.value);
+                }
+            });
+            
+            // 선택된 서비스가 없는 경우 - 이 검증은 collection-progress.js에서 처리하므로 여기서는 제거
+            
+            // 버튼 비활성화
+            startCollectionBtn.disabled = true;
+            startCollectionBtn.textContent = '처리 중...';
+            
+            // 데이터 수집 API 호출
+            fetch('/start_collection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ selected_services: selectedServices })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 오류 메시지는 표시하지 않음 (collection-progress.js에서 처리)
+                if (data.status === 'success') {
+                    // 진행 상황은 collection-progress.js에서 처리
+                } else {
+                    // 오류 메시지는 표시하지 않음 (collection-progress.js에서 처리)
+                    
+                    // 버튼 상태 복원
+                    startCollectionBtn.disabled = false;
+                    startCollectionBtn.textContent = '데이터 수집 시작';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('데이터 수집 요청 중 오류가 발생했습니다.');
+                
+                // 버튼 상태 복원
+                startCollectionBtn.disabled = false;
+                startCollectionBtn.textContent = '데이터 수집 시작';
+            });
+        });
+    }
+    
+    // 수집 상태 주기적으로 확인
+    let statusCheckInterval;
+    let modalStatusCheckInterval;
+    
+    function checkCollectionStatus() {
+        fetch('/collection_status')
+            .then(response => response.json())
+            .then(data => {
+                // 수집 중인 경우
+                if (data.is_collecting) {
+                    // 진행 상태 업데이트
+                    const currentServiceElement = document.getElementById('current-service');
+                    const progressBarElement = document.getElementById('progress-bar');
+                    const completedCountElement = document.getElementById('completed-count');
+                    const totalServicesElement = document.getElementById('total-services');
+                    const completedServicesListElement = document.getElementById('completed-services-list');
+                    
+                    if (currentServiceElement) currentServiceElement.textContent = data.current_service || '준비 중...';
+                    if (progressBarElement) {
+                        progressBarElement.style.width = data.progress + '%';
+                        progressBarElement.textContent = data.progress + '%';
+                        progressBarElement.setAttribute('aria-valuenow', data.progress);
+                    }
+                    if (completedCountElement) completedCountElement.textContent = data.completed_services.length;
+                    if (totalServicesElement) totalServicesElement.textContent = data.total_services;
+                    
+                    // 완료된 서비스 목록 업데이트
+                    if (completedServicesListElement) {
+                        completedServicesListElement.innerHTML = '';
+                        data.completed_services.forEach(service => {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-success me-1 mb-1';
+                            badge.textContent = service;
+                            completedServicesListElement.appendChild(badge);
+                        });
+                    }
+                } else {
+                    // 수집이 완료된 경우
+                    if (data.error) {
+                        // 오류가 있는 경우
+                        alert('데이터 수집 중 오류가 발생했습니다: ' + data.error);
+                    } else if (data.completed_services && data.completed_services.length > 0) {
+                        // 수집이 성공적으로 완료된 경우
+                        // 페이지 새로고침
+                        location.reload();
+                    }
+                    
+                    // 상태 확인 중지
+                    clearInterval(statusCheckInterval);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+    
+    // 이 함수는 collection-progress.js로 이동했습니다
+    
+    // 이 함수는 collection-progress.js로 이동했습니다
+    
+    // 페이지 로드 시 수집 상태 확인 시작
+    if (document.getElementById('collection-progress-container')) {
+        statusCheckInterval = setInterval(checkCollectionStatus, 2000);
+        checkCollectionStatus(); // 즉시 한 번 확인
+    }
     
     expandAllBtn.addEventListener('click', function() {
         // card-header 클래스를 가진 요소 내의 버튼만 선택
@@ -165,10 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-
-
 </script>
     
 {% endblock %}
-

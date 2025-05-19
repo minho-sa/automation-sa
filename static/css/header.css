@@ -1,0 +1,234 @@
+/* Cloudscape Design Header 스타일 */
+.awsui-header-container {
+    background-color: #0f1b2a;
+    color: #ffffff;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.awsui-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    padding: 0 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.awsui-header-title {
+    display: flex;
+    align-items: center;
+}
+
+.awsui-header-logo {
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 18px;
+    margin-right: 40px;
+}
+
+.awsui-header-logo:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.awsui-header-logo i {
+    margin-right: 8px;
+    font-size: 20px;
+}
+
+.awsui-header-nav {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.awsui-header-nav-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.awsui-header-nav-item {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.awsui-header-nav-link {
+    color: #d1d5db;
+    text-decoration: none;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 400;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.awsui-header-nav-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.awsui-header-nav-link.active {
+    color: #ffffff;
+    border-bottom-color: #ec7211;
+    font-weight: 500;
+}
+
+.awsui-header-utilities {
+    display: flex;
+    align-items: center;
+}
+
+.awsui-header-button {
+    background: transparent;
+    border: none;
+    color: #d1d5db;
+    padding: 0 12px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.awsui-header-button:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.awsui-header-button i {
+    margin-right: 6px;
+}
+
+/* 모바일 메뉴 토글 버튼 */
+.awsui-header-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+    .awsui-header-toggle {
+        display: block;
+    }
+    
+    .awsui-header-nav {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background-color: #0f1b2a;
+        flex-direction: column;
+        align-items: flex-start;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .awsui-header-nav.show {
+        display: block;
+    }
+    
+    .awsui-header-nav-list {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .awsui-header-nav-item {
+        width: 100%;
+        height: auto;
+    }
+    
+    .awsui-header-nav-link {
+        width: 100%;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 3px solid transparent;
+    }
+    
+    .awsui-header-nav-link.active {
+        border-bottom-color: transparent;
+        border-left-color: #ec7211;
+    }
+    
+    .awsui-header-utilities {
+        margin-top: 8px;
+        padding: 8px 20px 16px;
+        width: 100%;
+    }
+}
+
+/* 서브 헤더 스타일 */
+.awsui-subheader {
+    background-color: #ffffff;
+    border-bottom: 1px solid #eaeded;
+    padding: 16px 20px;
+}
+
+.awsui-subheader-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.awsui-breadcrumb {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.awsui-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #5f6b7a;
+}
+
+.awsui-breadcrumb-item:not(:last-child)::after {
+    content: "/";
+    margin: 0 8px;
+    color: #d1d5db;
+}
+
+.awsui-breadcrumb-link {
+    color: #0972d3;
+    text-decoration: none;
+}
+
+.awsui-breadcrumb-link:hover {
+    text-decoration: underline;
+    color: #033160;
+}
+
+.awsui-breadcrumb-text {
+    color: #000716;
+    font-weight: 400;
+}
+
+.awsui-subheader-actions {
+    display: flex;
+    align-items: center;
+}

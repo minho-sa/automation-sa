@@ -89,12 +89,19 @@
 </div>
 
 {% elif recommendations %}
-    <!-- 요약 정보 -->
-    <div class="alert alert-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-3 fs-4"></i>
-            <div>
-                <p class="mb-0">총 <strong>{{ recommendations|length }}개</strong>의 추천 사항이 있습니다. 추천 사항을 구현하여 AWS 서비스 사용을 최적화하세요.</p>
+    <!-- 요약 정보 - Cloudscape Alert 스타일 -->
+    <div class="awsui-alert-container mb-4">
+        <div class="awsui-alert awsui-alert-info">
+            <div class="awsui-alert-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="awsui-alert-content">
+                <div class="awsui-alert-header">
+                    <h3>추천 사항</h3>
+                </div>
+                <div class="awsui-alert-message">
+                    총 <strong>{{ recommendations|length }}개</strong>의 추천 사항이 있습니다. 추천 사항을 구현하여 AWS 서비스 사용을 최적화하세요.
+                </div>
             </div>
         </div>
     </div>
@@ -202,7 +209,9 @@
 {% endif %}
 
 <div class="mt-4">
-    <a href="{{ url_for('consolidated_view') }}" class="btn btn-outline-dark">통합 대시보드로 돌아가기</a>
+    <a href="{{ url_for('consolidated_view') }}" class="awsui-button awsui-button-normal">
+        <i class="fas fa-arrow-left"></i>통합 대시보드로 돌아가기
+    </a>
 </div>
 {% endblock %}
 
@@ -235,6 +244,77 @@
     
     .animate-bounce {
         animation: bounce 2s infinite;
+    }
+    
+    /* Cloudscape Alert 스타일 컴포넌트 */
+    .awsui-alert-container {
+        margin-bottom: 20px;
+    }
+    
+    .awsui-alert {
+        display: flex;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+        margin-bottom: 20px;
+    }
+    
+    .awsui-alert-info {
+        background-color: #f1faff;
+        border: 2px solid #0972d3;
+    }
+    
+    .awsui-alert-error {
+        background-color: #fff8f8;
+        border: 2px solid #d91515;
+    }
+    
+    .awsui-alert-warning {
+        background-color: #fffdf7;
+        border: 2px solid #d09118;
+    }
+    
+    .awsui-alert-success {
+        background-color: #f2fcf3;
+        border: 2px solid #037f0c;
+    }
+    
+    .awsui-alert-icon {
+        color: #0972d3;
+        font-size: 20px;
+        margin-right: 12px;
+        display: flex;
+        align-items: flex-start;
+        padding-top: 2px;
+    }
+    
+    .awsui-alert-error .awsui-alert-icon {
+        color: #d91515;
+    }
+    
+    .awsui-alert-warning .awsui-alert-icon {
+        color: #d09118;
+    }
+    
+    .awsui-alert-success .awsui-alert-icon {
+        color: #037f0c;
+    }
+    
+    .awsui-alert-content {
+        flex: 1;
+    }
+    
+    .awsui-alert-header h3 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000716;
+    }
+    
+    .awsui-alert-message {
+        color: #000716;
+        font-size: 14px;
+        line-height: 20px;
     }
 </style>
 {% endblock %}

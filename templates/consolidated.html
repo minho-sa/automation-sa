@@ -112,22 +112,62 @@
 </div>
 
 {% elif all_services_data %}
-<!-- 데이터 수집이 완료된 경우 -->
-{% include 'sections/ec2_section.html' with context %}
-{% include 'sections/s3_section.html' with context %}
+<!-- 데이터 수집이 완료된 경우 - 선택한 서비스만 표시 -->
+{% if 'ec2' in selected_services %}
+    {% include 'sections/ec2_section.html' with context %}
+{% endif %}
 
-{% include 'sections/rds_section.html' with context %}
-{% include 'sections/lambda_section.html' with context %}
-{% include 'sections/cloudwatch_section.html' with context %}
-{% include 'sections/iam_section.html' with context %}
-{% include 'sections/dynamodb_section.html' with context %}
-{% include 'sections/ecs_section.html' with context %}
-{% include 'sections/eks_section.html' with context %}
-{% include 'sections/elasticache_section.html' with context %}
-{% include 'sections/route53_section.html' with context %}
-{% include 'sections/sns_section.html' with context %}
-{% include 'sections/sqs_section.html' with context %}
-{% include 'sections/apigateway_section.html' with context %}
+{% if 's3' in selected_services %}
+    {% include 'sections/s3_section.html' with context %}
+{% endif %}
+
+{% if 'rds' in selected_services %}
+    {% include 'sections/rds_section.html' with context %}
+{% endif %}
+
+{% if 'lambda' in selected_services %}
+    {% include 'sections/lambda_section.html' with context %}
+{% endif %}
+
+{% if 'cloudwatch' in selected_services %}
+    {% include 'sections/cloudwatch_section.html' with context %}
+{% endif %}
+
+{% if 'iam' in selected_services %}
+    {% include 'sections/iam_section.html' with context %}
+{% endif %}
+
+{% if 'dynamodb' in selected_services %}
+    {% include 'sections/dynamodb_section.html' with context %}
+{% endif %}
+
+{% if 'ecs' in selected_services %}
+    {% include 'sections/ecs_section.html' with context %}
+{% endif %}
+
+{% if 'eks' in selected_services %}
+    {% include 'sections/eks_section.html' with context %}
+{% endif %}
+
+{% if 'elasticache' in selected_services %}
+    {% include 'sections/elasticache_section.html' with context %}
+{% endif %}
+
+{% if 'route53' in selected_services %}
+    {% include 'sections/route53_section.html' with context %}
+{% endif %}
+
+{% if 'sns' in selected_services %}
+    {% include 'sections/sns_section.html' with context %}
+{% endif %}
+
+{% if 'sqs' in selected_services %}
+    {% include 'sections/sqs_section.html' with context %}
+{% endif %}
+
+{% if 'apigateway' in selected_services %}
+    {% include 'sections/apigateway_section.html' with context %}
+{% endif %}
 
 {% else %}
 <!-- 데이터가 없는 경우 -->

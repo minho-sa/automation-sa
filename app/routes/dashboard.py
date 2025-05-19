@@ -169,10 +169,15 @@ def consolidated_view():
                               is_collecting=False,
                               show_collection_message=True)
                               
-    # 데이터가 있는 경우 표시
+    # 데이터가 있는 경우 표시 (선택한 서비스만)
+    filtered_services_data = {}
+    for service_key in collection_status.get('selected_services', []):
+        if service_key in collection_status['all_services_data']:
+            filtered_services_data[service_key] = collection_status['all_services_data'][service_key]
+    
     return render_template('consolidated.html',
                           services=aws_services,
-                          all_services_data=collection_status['all_services_data'],
+                          all_services_data=filtered_services_data,  # 선택한 서비스 데이터만 전달
                           resource_recommendations={},
                           is_collecting=False,
                           completed_services=collection_status['completed_services'],

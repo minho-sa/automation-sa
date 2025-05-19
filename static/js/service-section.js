@@ -3,7 +3,7 @@
  */
 document.addEventListener('DOMContentLoaded', function() {
     // 서비스 섹션 헤더 토글 기능
-    const sectionHeaders = document.querySelectorAll('.service-section .card-header[data-bs-toggle="collapse"]');
+    const sectionHeaders = document.querySelectorAll('.service-section .card-header[data-bs-toggle="collapse"], .service-section .awsui-card-header[data-bs-toggle="collapse"]');
     
     sectionHeaders.forEach(header => {
         header.addEventListener('click', function() {

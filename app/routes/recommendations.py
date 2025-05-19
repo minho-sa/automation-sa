@@ -66,9 +66,9 @@ def recommendations_view():
         if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
             all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions'], collection_status['collection_id']))
         
-        # # S3 추천 사항
-        # if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
-        #     all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
+        # S3 추천 사항
+        if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
+            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
         
         # RDS 추천 사항
         if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:
@@ -78,9 +78,9 @@ def recommendations_view():
         # if 'cloudwatch' in collection_status['all_services_data'] and 'alarms' in collection_status['all_services_data']['cloudwatch']:
         #     all_recommendations.extend(get_cloudwatch_recommendations(collection_status['all_services_data']['cloudwatch']['alarms']))
         
-        # # IAM 추천 사항
-        # if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
-        #     all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam']['users']))
+        # IAM 추천 사항
+        if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
+            all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam'], collection_status['collection_id']))
         
         
     except Exception as e:

@@ -12,14 +12,27 @@
         <div class="card-body">
             {% if all_services_data.s3 is defined %}
                 {% if all_services_data.s3.error is defined %}
-                    <div class="alert alert-danger">{{ all_services_data.s3.error }}</div>
+                    <div class="awsui-alert awsui-alert-error">
+                        <div class="awsui-alert-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="awsui-alert-content">
+                            <div class="awsui-alert-message">
+                                {{ all_services_data.s3.error }}
+                            </div>
+                        </div>
+                    </div>
                 {% elif all_services_data.s3.status is defined and all_services_data.s3.status == 'collecting' %}
-                    <div class="alert alert-info">
-                        <div class="d-flex align-items-center">
-                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <div class="awsui-alert awsui-alert-info">
+                        <div class="awsui-alert-icon">
+                            <div class="spinner-border spinner-border-sm" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <span>데이터 수집 중입니다. 잠시만 기다려주세요.</span>
+                        </div>
+                        <div class="awsui-alert-content">
+                            <div class="awsui-alert-message">
+                                데이터 수집 중입니다. 잠시만 기다려주세요.
+                            </div>
                         </div>
                     </div>
                 {% elif all_services_data.s3.buckets|default([])|length > 0 %}
@@ -266,10 +279,28 @@
                     </div>
                 </div>
                 {% else %}
-                    <div class="alert alert-info">S3 버킷이 없습니다.</div>
+                    <div class="awsui-alert awsui-alert-info">
+                        <div class="awsui-alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="awsui-alert-content">
+                            <div class="awsui-alert-message">
+                                S3 버킷이 없습니다.
+                            </div>
+                        </div>
+                    </div>
                 {% endif %}
             {% else %}
-                <div class="alert alert-info">S3 데이터가 수집되지 않았습니다.</div>
+                <div class="awsui-alert awsui-alert-info">
+                    <div class="awsui-alert-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="awsui-alert-content">
+                        <div class="awsui-alert-message">
+                            S3 데이터가 수집되지 않았습니다.
+                        </div>
+                    </div>
+                </div>
             {% endif %}
         </div>
     </div>

@@ -138,15 +138,13 @@
                     <td>{{ rec.service }}</td>
                     <td>{{ rec.resource }}</td>
                     <td>{{ rec.message }}</td>
-                    <td>
+                    <td class="text-center">
                         <span class="badge bg-{{ 'danger' if rec.severity == '높음' else 'warning' if rec.severity == '중간' else 'info' }}">{{ rec.severity }}</span>
                     </td>
                     <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-primary toggle-details" data-bs-toggle="collapse" data-bs-target="#details-rec-{{ loop.index }}">
-                                <i class="fas fa-chevron-down me-1"></i> 세부 작업 보기
-                            </button>
-                        </div>
+                        <button class="btn btn-sm btn-outline-primary toggle-details" data-bs-toggle="collapse" data-bs-target="#details-rec-{{ loop.index }}">
+                            <i class="fas fa-chevron-down me-1"></i> 세부 작업 보기
+                        </button>
                     </td>
                 </tr>
                 <tr class="details-row">
@@ -210,6 +208,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendation-table.css') }}">
 <style>
     .table-sortable th {
         cursor: pointer;
@@ -241,6 +240,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/recommendation-toggle.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 서비스별 필터링

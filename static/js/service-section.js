@@ -23,22 +23,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 상세 보기 버튼 토글 기능
-    const detailButtons = document.querySelectorAll('[data-bs-toggle="collapse"]');
-    detailButtons.forEach(button => {
-        if (!button.classList.contains('card-header')) {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-bs-target');
-                const targetElement = document.querySelector(targetId);
-                
-                if (targetElement) {
-                    if (targetElement.classList.contains('show')) {
-                        this.textContent = '상세 보기';
-                    } else {
-                        this.textContent = '접기';
-                    }
-                }
-            });
-        }
-    });
+    // 상세 보기 버튼 토글 기능 - detailed-view.js에서 처리하므로 여기서는 제거
 });

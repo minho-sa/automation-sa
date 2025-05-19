@@ -1,0 +1,34 @@
+/**
+ * 추천 사항 테이블 스타일
+ */
+
+/* 리소스 열 너비 조정 */
+.table-sortable th:nth-child(2),
+.table-sortable td:nth-child(2) {
+    min-width: 200px;
+}
+
+/* 메시지 열 너비 조정 */
+.table-sortable th:nth-child(3),
+.table-sortable td:nth-child(3) {
+    min-width: 250px;
+}
+
+/* 위험도 열 스타일 */
+.table-sortable th:nth-child(4),
+.table-sortable td:nth-child(4) {
+    min-width: 80px;
+    text-align: center;
+}
+
+/* 위험도 배지 스타일 */
+.table-sortable .badge {
+    display: inline-block;
+    min-width: 60px;
+    white-space: nowrap;
+}
+
+/* 세부 작업 보기 버튼 스타일 */
+.toggle-details {
+    white-space: nowrap;
+}

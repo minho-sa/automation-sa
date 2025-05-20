@@ -1,6 +1,6 @@
 <!-- EC2 섹션 -->
 <div class="awsui-card service-section" id="ec2-section">
-    <div class="awsui-card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#ec2-content" aria-expanded="true">
+    <div class="awsui-card-header d-flex justify-content-between align-items-center" data-bs-target="#ec2-content" aria-expanded="true">
         <h5 class="mb-0">
             <i class="fas fa-server"></i> {{ services.ec2.name }}
         </h5>
@@ -59,7 +59,10 @@
                     <div class="col-md-3">
                         <div class="awsui-metric-container awsui-metric-warning">
                             <div class="awsui-metric-title">인스턴스 타입</div>
-                            <div class="awsui-metric-value">{{ all_services_data.ec2.instances|map(attribute='type')|list|unique|list|length }} 종류</div>
+                            <div class="awsui-metric-value">
+                                {{ all_services_data.ec2.instances|map(attribute='type')|list|unique|list|length }}
+                                <span class="metric-unit">종류</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -67,7 +70,7 @@
                 <!-- 인스턴스 타입별 분포 -->
                 <div class="awsui-container mb-4">
                     <h6 class="mb-3">인스턴스 타입별 분포</h6>
-                    <div class="row">
+                    <div class="instance-type-distribution">
                         {% set instance_types = {} %}
                         {% for instance in all_services_data.ec2.instances %}
                             {% if instance.type in instance_types %}
@@ -77,14 +80,16 @@
                             {% endif %}
                         {% endfor %}
                         
-                        {% for type, count in instance_types.items() %}
-                        <div class="col-md-3 mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>{{ type }}</span>
-                                <span class="badge bg-primary">{{ count }}</span>
+                        <div class="row">
+                            {% for type, count in instance_types.items() %}
+                            <div class="col-md-3 mb-2">
+                                <div class="instance-type-item">
+                                    <span class="instance-type-name">{{ type }}</span>
+                                    <span class="instance-type-count">{{ count }}</span>
+                                </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
                 
@@ -154,16 +159,16 @@
                                     <div class="awsui-container p-4">
                                         <div class="row mb-4">
                                             <div class="col-md-6">
-                                                <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">기본 정보</h6>
-                                                <table class="awsui-table" style="border: none;">
+                                                <h6 class="detail-section-title">기본 정보</h6>
+                                                <table class="ec2-detail-table">
                                                     <tbody>
                                                         <tr>
                                                             <th>인스턴스 ID</th>
-                                                            <td>{{ instance.id }}</td>
+                                                            <td>&nbsp;&nbsp;{{ instance.id }}</td>
                                                         </tr>
                                                         <tr>
                                                             <th>인스턴스 유형</th>
-                                                            <td>{{ instance.type }}</td>
+                                                            <td>&nbsp;&nbsp;{{ instance.type }}</td>
                                                         </tr>
                                                         <tr>
                                                             <th>상태</th>
@@ -185,11 +190,11 @@
                                                         </tr>
                                                         <tr>
                                                             <th>가용 영역</th>
-                                                            <td>{{ instance.az }}</td>
+                                                            <td>&nbsp;&nbsp;{{ instance.az }}</td>
                                                         </tr>
                                                         <tr>
                                                             <th>시작 시간</th>
-                                                            <td>{{ instance.launch_time|default('-') }}</td>
+                                                            <td>&nbsp;&nbsp;{{ instance.launch_time|default('-') }}</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -198,7 +203,7 @@
                                             <div class="col-md-6">
                                                 <!-- CPU 메트릭 정보 -->
                                                 {% if instance.cpu_metrics|default([]) %}
-                                                <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">CPU 사용률 (최근 7일)</h6>
+                                                <h6 class="detail-section-title">CPU 사용률 (최근 7일)</h6>
                                                 <div class="progress mb-4" style="height: 20px; border-radius: 10px; background-color: #f1f2f3;">
                                                     {% set avg_cpu = (instance.cpu_metrics|sum) / instance.cpu_metrics|length if instance.cpu_metrics|length > 0 else 0 %}
                                                     <div class="progress-bar {% if avg_cpu < 30 %}bg-success{% elif avg_cpu < 70 %}bg-warning{% else %}bg-danger{% endif %}" 
@@ -214,7 +219,7 @@
                                                 
                                                 <!-- 네트워크 메트릭 정보 -->
                                                 {% if instance.network_metrics|default({}) %}
-                                                <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">네트워크 트래픽 (최근 7일)</h6>
+                                                <h6 class="detail-section-title">네트워크 트래픽 (최근 7일)</h6>
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <div style="display: flex; align-items: center; margin-bottom: 8px;">
@@ -235,8 +240,8 @@
                                         
                                         <!-- 태그 정보 -->
                                         {% if instance.tags|default([]) %}
-                                        <div class="mb-4">
-                                            <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">태그</h6>
+                                        <div class="detail-section">
+                                            <h6 class="detail-section-title">태그</h6>
                                             <div class="row">
                                                 {% for tag in instance.tags %}
                                                 <div class="col-md-3 mb-2">
@@ -249,10 +254,10 @@
                                         
                                         <!-- 보안 그룹 정보 -->
                                         {% if instance.security_groups|default([]) %}
-                                        <div class="mb-4">
-                                            <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">보안 그룹</h6>
+                                        <div class="detail-section">
+                                            <h6 class="detail-section-title">보안 그룹</h6>
                                             <div class="table-responsive">
-                                                <table class="awsui-table" style="border: none;">
+                                                <table class="security-group-table">
                                                     <thead>
                                                         <tr>
                                                             <th>그룹 ID</th>
@@ -263,7 +268,7 @@
                                                     <tbody>
                                                         {% for sg in instance.security_groups %}
                                                         <tr>
-                                                            <td>{{ sg.group_id }}</td>
+                                                            <td>&nbsp;&nbsp;&nbsp;&nbsp;{{ sg.group_id }}</td>
                                                             <td>
                                                                 {% for ip_range in sg.ip_ranges|default([]) %}
                                                                 <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #f1f2f3; color: #5f6b7a; font-size: 12px; margin-right: 4px;">{{ ip_range }}</span>
@@ -284,10 +289,10 @@
                                         
                                         <!-- 볼륨 정보 -->
                                         {% if instance.volumes|default([]) %}
-                                        <div class="mb-4">
-                                            <h6 style="font-size: 14px; font-weight: 700; color: #000716; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ebed;">볼륨</h6>
+                                        <div class="detail-section">
+                                            <h6 class="detail-section-title">볼륨</h6>
                                             <div class="table-responsive">
-                                                <table class="awsui-table" style="border: none;">
+                                                <table class="volume-table">
                                                     <thead>
                                                         <tr>
                                                             <th>볼륨 ID</th>
@@ -299,7 +304,7 @@
                                                     <tbody>
                                                         {% for volume in instance.volumes %}
                                                         <tr>
-                                                            <td>{{ volume.VolumeId }}</td>
+                                                            <td>&nbsp;&nbsp;&nbsp;&nbsp;{{ volume.VolumeId }}</td>
                                                             <td>{{ volume.Size }}</td>
                                                             <td>{{ volume.VolumeType }}</td>
                                                             <td>{{ volume.State }}</td>

@@ -1,66 +1,7 @@
-/**
- * EC2 섹션 전용 스타일
- */
+.toggle-icon i {
+    transition: transform 0.3s ease;
+}
 
-/* 테이블 헤더 스타일 */
-#ec2-instance-table th {
-    background-color: #f8f9fa;
-    position: relative;
+#ec2-section .awsui-card-header {
     cursor: pointer;
-}
-
-/* 정렬 아이콘 스타일 */
-#ec2-instance-table th i.fas {
-    font-size: 0.8rem;
-    margin-left: 5px;
-}
-
-/* 상세 보기 버튼 스타일 */
-#ec2-section .btn-outline-primary {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-}
-
-/* 상세 정보 헤더 스타일 */
-#ec2-section h6.border-bottom {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #495057;
-}
-
-/* 상세 정보 테이블 스타일 */
-#ec2-section .table-sm th {
-    width: 40%;
-    background-color: rgba(0,0,0,0.03);
-}
-
-/* 배지 스타일 */
-#ec2-section .badge {
-    font-size: 0.75rem;
-    padding: 0.35em 0.65em;
-}
-
-/* 모달 애니메이션 */
-.modal.fade .modal-dialog {
-    transition: transform 0.3s ease-out;
-}
-
-.modal.show .modal-dialog {
-    transform: none;
-}
-
-/* 모달 내용 애니메이션 */
-.instance-details {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }

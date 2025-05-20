@@ -51,7 +51,7 @@ cp .env.example .env
 ### 빠른 시작
 1. 애플리케이션 시작:
 ```bash
-python3 run.py  aa
+python3 run.py
 ```
 
 2. 웹 인터페이스 접속:

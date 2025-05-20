@@ -1,12 +1,10 @@
 import boto3
 
-def assume_role(server_access_key, server_secret_key, role_arn, region, session_name="AssumedRoleSession", duration_seconds=3600):
+def assume_role(role_arn, region, session_name="AssumedRoleSession", duration_seconds=3600):
     """
     지정된 IAM 역할을 수임하여 임시 자격 증명을 반환합니다.
     
     Args:
-        server_access_key: 서버의 AWS 액세스 키 ID
-        server_secret_key: 서버의 AWS 시크릿 액세스 키
         role_arn: 수임할 역할의 ARN
         region: AWS 리전 이름
         session_name: 세션 이름 (기본값: "AssumedRoleSession")
@@ -15,13 +13,8 @@ def assume_role(server_access_key, server_secret_key, role_arn, region, session_
     Returns:
         임시 자격 증명 딕셔너리 (access_key, secret_key, session_token)
     """
-    # 서버 자격 증명으로 STS 클라이언트 생성
-    sts_client = boto3.client(
-        'sts',
-        aws_access_key_id=server_access_key,
-        aws_secret_access_key=server_secret_key,
-        region_name=region
-    )
+    # 기본 자격 증명 공급자 체인 사용
+    sts_client = boto3.client('sts', region_name=region)
     
     # 역할 수임
     response = sts_client.assume_role(
@@ -63,10 +56,8 @@ def create_boto3_client(service_name, region, auth_type='access_key', **auth_par
             client_kwargs['aws_session_token'] = auth_params['aws_session_token']
     
     elif auth_type == 'role_arn':
-        # 서버 자격 증명으로 역할 수임하여 임시 자격 증명 획득
+        # 역할 수임하여 임시 자격 증명 획득
         temp_credentials = assume_role(
-            server_access_key=auth_params.get('server_access_key'),
-            server_secret_key=auth_params.get('server_secret_key'),
             role_arn=auth_params.get('role_arn'),
             region=region
         )

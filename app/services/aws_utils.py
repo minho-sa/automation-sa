@@ -22,7 +22,9 @@ def get_credentials_from_role_arn(role_arn: str, session_name: str = "AssumeRole
         임시 자격 증명을 포함하는 딕셔너리
     """
     try:
+        # 기본 자격 증명 공급자 체인 사용
         sts_client = boto3.client('sts')
+            
         assumed_role = sts_client.assume_role(
             RoleArn=role_arn,
             RoleSessionName=session_name
@@ -55,6 +57,7 @@ def get_aws_credentials(access_key: Optional[str] = None,
         ValueError: 유효한 자격 증명 조합이 제공되지 않은 경우
     """
     if role_arn:
+        # 역할 ARN으로 자격 증명 획득
         return get_credentials_from_role_arn(role_arn)
     elif access_key and secret_key:
         return get_credentials_from_access_key(access_key, secret_key)

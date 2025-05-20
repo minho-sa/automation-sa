@@ -39,19 +39,15 @@ def login():
                     
                 elif auth_method == 'role_arn':
                     role_arn = request.form.get('role_arn')
-                    server_access_key = app.config['AWS_ACCESS_KEY']
-                    server_secret_key = app.config['AWS_SECRET_KEY']
                     
                     if not role_arn:
                         flash('역할 ARN을 입력해주세요.')
                         return render_template('login.html')
                     
-                    # 세션에 역할 ARN과 서버 자격 증명 저장
+                    # 세션에 역할 ARN만 저장 (서버 자격 증명은 저장하지 않음)
                     session['auth_type'] = 'role_arn'
                     session['auth_params'] = {
-                        'role_arn': role_arn,
-                        'server_access_key': server_access_key,
-                        'server_secret_key': server_secret_key
+                        'role_arn': role_arn
                     }
                 
                 return redirect(url_for('consolidated_view'))

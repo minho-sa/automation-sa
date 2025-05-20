@@ -656,7 +656,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.error) {
                         // 오류가 있는 경우
                         const modalBody = document.querySelector('#selectServicesModal .modal-body');
-                        modalBody.innerHTML += `<div class="alert alert-danger mt-3">오류: ${data.error}</div>`;
+                        modalBody.innerHTML += `
+                        <div class="awsui-flashbar mt-3" style="margin-top: 20px;">
+                            <div class="awsui-flashbar-item awsui-flashbar-error" style="display: flex; align-items: flex-start; border-radius: 8px; padding: 16px; background-color: #fff8f8; border-left: 4px solid #d91515; box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);">
+                                <div class="awsui-flashbar-icon" style="margin-right: 12px; color: #d91515;">
+                                    <i class="fas fa-exclamation-circle" style="font-size: 20px;"></i>
+                                </div>
+                                <div class="awsui-flashbar-content" style="flex: 1;">
+                                    <div class="awsui-flashbar-header" style="margin-bottom: 4px;">
+                                        <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #000716;">오류</h3>
+                                    </div>
+                                    <div class="awsui-flashbar-message" style="font-size: 14px; color: #000716;">
+                                        ${data.error}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
                         
                         // 3초 후 모달 닫기
                         setTimeout(() => {
@@ -666,7 +681,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (data.completed_services && data.completed_services.length > 0) {
                         // 수집이 성공적으로 완료된 경우
                         const modalBody = document.querySelector('#selectServicesModal .modal-body');
-                        modalBody.innerHTML += `<div class="alert alert-success mt-3">데이터 수집이 완료되었습니다!</div>`;
+                        modalBody.innerHTML += `
+                        <div class="awsui-flashbar mt-3" style="margin-top: 20px;">
+                            <div class="awsui-flashbar-item awsui-flashbar-success" style="display: flex; align-items: flex-start; border-radius: 8px; padding: 16px; background-color: #f2fcf3; border-left: 4px solid #037f0c; box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);">
+                                <div class="awsui-flashbar-icon" style="margin-right: 12px; color: #037f0c;">
+                                    <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+                                </div>
+                                <div class="awsui-flashbar-content" style="flex: 1;">
+                                    <div class="awsui-flashbar-header" style="margin-bottom: 4px;">
+                                        <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #000716;">성공</h3>
+                                    </div>
+                                    <div class="awsui-flashbar-message" style="font-size: 14px; color: #000716;">
+                                        데이터 수집이 완료되었습니다!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
                         
                         // 1초 후 모달 닫고 페이지 새로고침 (캐시 무효화)
                         setTimeout(() => {

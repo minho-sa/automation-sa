@@ -1,4 +1,4 @@
-import boto3
+from app.services.resource.base_service import create_boto3_client
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import pytz
@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
+def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
     """Lambda 함수 데이터 수집"""
     # collection_id가 None이 아닌지 확인
     if collection_id is None:
@@ -23,19 +23,8 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, colle
     log_prefix = f"[{collection_id}]"
     logger.info(f"{log_prefix} Starting Lambda data collection")
     try:
-        lambda_client = boto3.client(
-            'lambda',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
-        
-        cloudwatch = boto3.client(
-            'cloudwatch',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        lambda_client = create_boto3_client('lambda', region, aws_access_key, aws_secret_key, aws_session_token)
+        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
 
         response = lambda_client.list_functions()
         functions = []
@@ -114,7 +103,7 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, colle
             # 로그 출력 검사
             logger.debug(f"{log_prefix} Checking debug logs for {function['FunctionName']}")
             function_data['DebugLogsDetected'] = _check_debug_logs(
-                aws_access_key, aws_secret_key, region, function['FunctionName'], collection_id
+                region, function['FunctionName'], aws_access_key, aws_secret_key, aws_session_token, collection_id
             )
             
             functions.append(function_data)
@@ -126,8 +115,8 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, colle
         logger.error(f"{log_prefix} Error in get_lambda_data: {str(e)}")
         return {'error': str(e)}
 
-def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str, 
-                     function_name: str, collection_id: str = None) -> bool:
+def _check_debug_logs(region: str, function_name: str, aws_access_key: str = None, 
+                     aws_secret_key: str = None, aws_session_token: str = None, collection_id: str = None) -> bool:
     """디버깅 로그 출력 검사"""
     # collection_id가 None이 아닌지 확인
     if collection_id is None:
@@ -135,12 +124,7 @@ def _check_debug_logs(aws_access_key: str, aws_secret_key: str, region: str,
         
     log_prefix = f"[{collection_id}]"
     try:
-        logs_client = boto3.client(
-            'logs',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        logs_client = create_boto3_client('logs', region, aws_access_key, aws_secret_key, aws_session_token)
         
         # 로그 그룹 이름 형식
         log_group_name = f"/aws/lambda/{function_name}"

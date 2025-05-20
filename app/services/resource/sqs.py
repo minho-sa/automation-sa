@@ -1,14 +1,9 @@
-import boto3
+from app.services.resource.base_service import create_boto3_client
 
-def get_sqs_data(aws_access_key, aws_secret_key, region):
+def get_sqs_data(aws_access_key, aws_secret_key, region, collection_id=None, aws_session_token=None):
     """SQS 대기열 데이터 수집"""
     try:
-        sqs_client = boto3.client(
-            'sqs',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        sqs_client = create_boto3_client('sqs', region, aws_access_key, aws_secret_key, aws_session_token)
         
         response = sqs_client.list_queues()
         queues = []

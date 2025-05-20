@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 import logging
 from datetime import datetime, timedelta
 import pytz
+from app.services.resource.base_service import create_boto3_client
 
 # 로깅 설정
 logging.basicConfig(
@@ -14,7 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
+def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
     """RDS 인스턴스 데이터 수집
     
     Args:
@@ -22,55 +23,19 @@ def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collecti
         aws_secret_key: AWS 시크릿 키
         region: AWS 리전
         collection_id: 수집 ID (로깅용)
+        aws_session_token: AWS 세션 토큰 (선택 사항)
         
     Returns:
         Dict: RDS 인스턴스 정보가 담긴 딕셔너리
-        
-    Examples:
-        >>> rds_data = get_rds_data(aws_access_key, aws_secret_key, 'ap-northeast-2', '20250516_123456')
-        >>> print(f"총 {len(rds_data['instances'])}개의 RDS 인스턴스가 수집되었습니다.")
-        
-    Instance Classes:
-        - db.t3.micro: 1 vCPU, 1 GiB 메모리, 버스트 가능한 성능의 저비용 인스턴스
-        - db.t3.small: 2 vCPU, 2 GiB 메모리, 버스트 가능한 성능의 저비용 인스턴스
-        - db.m5.large: 2 vCPU, 8 GiB 메모리, 범용 인스턴스
-        - db.m5.xlarge: 4 vCPU, 16 GiB 메모리, 범용 인스턴스
-        - db.r5.large: 2 vCPU, 16 GiB 메모리, 메모리 최적화 인스턴스
-        - db.r5.xlarge: 4 vCPU, 32 GiB 메모리, 메모리 최적화 인스턴스
-        
-    Storage Types:
-        - gp2: 범용 SSD 스토리지 (3 IOPS/GB, 최대 10,000 IOPS)
-        - gp3: 범용 SSD 스토리지 (3,000 IOPS 기본, 최대 16,000 IOPS)
-        - io1: 프로비저닝된 IOPS SSD (최대 64,000 IOPS)
-        - standard: 마그네틱 스토리지 (레거시)
-        
-    Database Engines:
-        - mysql: MySQL 5.7, 8.0 - 오픈 소스 관계형 데이터베이스
-        - postgres: PostgreSQL 10, 11, 12, 13, 14, 15 - 고급 기능을 갖춘 오픈 소스 객체 관계형 데이터베이스
-        - mariadb: MariaDB 10.3, 10.4, 10.5, 10.6 - MySQL 포크로 개발된 오픈 소스 데이터베이스
-        - oracle: Oracle 12c, 19c - 엔터프라이즈급 상용 관계형 데이터베이스
-        - sqlserver: SQL Server 2017, 2019 - Microsoft의 관계형 데이터베이스 관리 시스템
-        - aurora-mysql: Aurora MySQL 5.7, 8.0 - AWS에서 개발한 MySQL 호환 데이터베이스
-        - aurora-postgresql: Aurora PostgreSQL 10, 11, 12, 13, 14 - AWS에서 개발한 PostgreSQL 호환 데이터베이스
     """
     log_prefix = f"[{collection_id}] " if collection_id else ""
     logger.info(f"{log_prefix}Starting RDS data collection")
     try:
         # RDS 클라이언트 생성
-        rds_client = boto3.client(
-            'rds',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        rds_client = create_boto3_client('rds', region, aws_access_key, aws_secret_key, aws_session_token)
         
         # CloudWatch 클라이언트 생성 (메트릭 수집용)
-        cloudwatch = boto3.client(
-            'cloudwatch',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
         
         # RDS 인스턴스 목록 가져오기
         response = rds_client.describe_db_instances()

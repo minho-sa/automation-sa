@@ -2,6 +2,7 @@ import boto3
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Dict, List, Any
+from app.services.resource.base_service import create_boto3_client
 
 # 로깅 설정
 logging.basicConfig(
@@ -13,17 +14,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_iam_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
+def get_iam_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
     """IAM 데이터 수집"""
     log_prefix = f"[{collection_id}] " if collection_id else ""
     logger.info(f"{log_prefix}Starting IAM data collection")
     try:
-        iam_client = boto3.client(
-            'iam',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        iam_client = create_boto3_client('iam', region, aws_access_key, aws_secret_key, aws_session_token)
         
         result = {
             'users': [],

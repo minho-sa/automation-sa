@@ -53,7 +53,7 @@ service_collectors = {
 }
 
 # 데이터 수집 함수
-def collect_data(aws_access_key, aws_secret_key, region, user_id, selected_services=None):
+def collect_data(aws_access_key, aws_secret_key, region, user_id, selected_services=None, aws_session_token=None):
     global collection_status
     
     # 선택된 서비스가 없으면 오류 로그 기록
@@ -90,9 +90,9 @@ def collect_data(aws_access_key, aws_secret_key, region, user_id, selected_servi
                 
                 app.logger.info(f"[{collection_id}] {service_name} 데이터 수집 시작")
                 
-                # 해당 서비스의 데이터 수집 함수 호출
+                # 해당 서비스의 데이터 수집 함수 호출 (세션 토큰 포함)
                 collection_status['all_services_data'][service_key] = service_collectors[service_key](
-                    aws_access_key, aws_secret_key, region, collection_status['collection_id']
+                    aws_access_key, aws_secret_key, region, collection_status['collection_id'], aws_session_token
                 )
                 
                 # 완료된 서비스 추가 (서비스 키를 저장)
@@ -116,6 +116,7 @@ def consolidated_view():
     # AWS 자격 증명 가져오기
     aws_access_key = session.get('aws_access_key')
     aws_secret_key = session.get('aws_secret_key')
+    aws_session_token = session.get('aws_session_token')  # STS Assume Role을 통해 얻은 임시 자격 증명
     
     if not aws_access_key or not aws_secret_key:
         flash('AWS 자격 증명이 없습니다. 다시 로그인해주세요.')
@@ -193,6 +194,7 @@ def start_collection():
         # AWS 자격 증명 가져오기
         aws_access_key = session.get('aws_access_key')
         aws_secret_key = session.get('aws_secret_key')
+        aws_session_token = session.get('aws_session_token')  # STS Assume Role을 통해 얻은 임시 자격 증명
         
         if not aws_access_key or not aws_secret_key:
             return jsonify({'status': 'error', 'message': 'AWS 자격 증명이 없습니다. 다시 로그인해주세요.'}), 401
@@ -227,8 +229,11 @@ def start_collection():
         # 수집 상태를 먼저 설정하여 중복 요청 방지
         collection_status['is_collecting'] = True
         
+        # 세션 토큰 가져오기
+        aws_session_token = session.get('aws_session_token')
+        
         # 데이터 수집 시작
-        thread = threading.Thread(target=collect_data, args=(aws_access_key, aws_secret_key, region, user_id, selected_services))
+        thread = threading.Thread(target=collect_data, args=(aws_access_key, aws_secret_key, region, user_id, selected_services, aws_session_token))
         thread.daemon = True
         thread.start()
         

@@ -1,14 +1,9 @@
-import boto3
+from app.services.resource.base_service import create_boto3_client
 
-def get_ecs_data(aws_access_key, aws_secret_key, region):
+def get_ecs_data(aws_access_key, aws_secret_key, region, collection_id=None, aws_session_token=None):
     """ECS 클러스터 데이터 수집"""
     try:
-        ecs_client = boto3.client(
-            'ecs',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        ecs_client = create_boto3_client('ecs', region, aws_access_key, aws_secret_key, aws_session_token)
         
         # 클러스터 목록 가져오기
         clusters_response = ecs_client.list_clusters()

@@ -21,14 +21,46 @@
                     </div>
                     <hr>
                     <h5>AWS 자격 증명</h5>
+                    
+                    <!-- 인증 방식 선택 -->
                     <div class="mb-3">
-                        <label for="aws_access_key" class="form-label">AWS 액세스 키 ID</label>
-                        <input type="text" class="form-control" id="aws_access_key" name="aws_access_key" required>
+                        <label class="form-label">인증 방식 선택</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="auth_method" id="auth_access_key" value="access_key" checked>
+                            <label class="form-check-label" for="auth_access_key">
+                                액세스 키 사용
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="auth_method" id="auth_role_arn" value="role_arn">
+                            <label class="form-check-label" for="auth_role_arn">
+                                역할 ARN 사용 (STS Assume Role)
+                            </label>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="aws_secret_key" class="form-label">AWS 시크릿 액세스 키</label>
-                        <input type="password" class="form-control" id="aws_secret_key" name="aws_secret_key" required>
+                    
+                    <!-- 액세스 키 인증 필드 -->
+                    <div id="access-key-fields">
+                        <div class="mb-3">
+                            <label for="aws_access_key" class="form-label">AWS 액세스 키 ID</label>
+                            <input type="text" class="form-control" id="aws_access_key" name="aws_access_key">
+                        </div>
+                        <div class="mb-3">
+                            <label for="aws_secret_key" class="form-label">AWS 시크릿 액세스 키</label>
+                            <input type="password" class="form-control" id="aws_secret_key" name="aws_secret_key">
+                        </div>
                     </div>
+                    
+                    <!-- 역할 ARN 인증 필드 -->
+                    <div id="role-arn-fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="role_arn" class="form-label">역할 ARN</label>
+                            <input type="text" class="form-control" id="role_arn" name="role_arn" 
+                                   placeholder="arn:aws:iam::123456789012:role/RoleName">
+                            <small class="form-text text-muted">예: arn:aws:iam::123456789012:role/RoleName</small>
+                        </div>
+                    </div>
+                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">로그인</button>
                     </div>
@@ -40,4 +72,37 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const authAccessKey = document.getElementById('auth_access_key');
+    const authRoleArn = document.getElementById('auth_role_arn');
+    const accessKeyFields = document.getElementById('access-key-fields');
+    const roleArnFields = document.getElementById('role-arn-fields');
+    
+    // 인증 방식 변경 시 해당 필드 표시/숨김
+    function toggleAuthFields() {
+        if (authAccessKey.checked) {
+            accessKeyFields.style.display = 'block';
+            roleArnFields.style.display = 'none';
+            document.getElementById('aws_access_key').setAttribute('required', '');
+            document.getElementById('aws_secret_key').setAttribute('required', '');
+            document.getElementById('role_arn').removeAttribute('required');
+        } else {
+            accessKeyFields.style.display = 'none';
+            roleArnFields.style.display = 'block';
+            document.getElementById('aws_access_key').removeAttribute('required');
+            document.getElementById('aws_secret_key').removeAttribute('required');
+            document.getElementById('role_arn').setAttribute('required', '');
+        }
+    }
+    
+    // 초기 상태 설정
+    toggleAuthFields();
+    
+    // 이벤트 리스너 등록
+    authAccessKey.addEventListener('change', toggleAuthFields);
+    authRoleArn.addEventListener('change', toggleAuthFields);
+});
+</script>
 {% endblock %}

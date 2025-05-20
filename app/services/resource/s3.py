@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 import logging
 from datetime import datetime, timedelta
 import pytz
+from app.services.resource.base_service import create_boto3_client
 
 # 로깅 설정
 logging.basicConfig(
@@ -14,18 +15,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
+def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
     """S3 버킷 데이터 수집"""
     log_prefix = f"[{collection_id}] " if collection_id else ""
     logger.info(f"{log_prefix}Starting S3 data collection")
     try:
         # S3 클라이언트 생성
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        s3_client = create_boto3_client('s3', region, aws_access_key, aws_secret_key, aws_session_token)
         
         # 버킷 목록 가져오기
         response = s3_client.list_buckets()
@@ -106,12 +102,7 @@ def get_s3_data(aws_access_key: str, aws_secret_key: str, region: str, collectio
             
             # 버킷 크기 및 객체 수 확인 (CloudWatch 메트릭 사용)
             try:
-                cloudwatch = boto3.client(
-                    'cloudwatch',
-                    aws_access_key_id=aws_access_key,
-                    aws_secret_access_key=aws_secret_key,
-                    region_name=region
-                )
+                cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
                 
                 # 버킷 크기 메트릭
                 # 현재 시간과 24시간 전 시간을 사용하여 시간 범위 설정

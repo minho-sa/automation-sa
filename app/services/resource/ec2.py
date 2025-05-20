@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import pytz
 import logging
+from app.services.resource.base_service import create_boto3_client
 
 # 로깅 설정
 logging.basicConfig(
@@ -14,25 +15,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_ec2_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None) -> Dict:
+def get_ec2_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
     """EC2 인스턴스 데이터 수집"""
     log_prefix = f"[{collection_id}] " if collection_id else ""
     logger.info(f"{log_prefix}Starting EC2 data collection")
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
-        ec2_client = boto3.client(
-            'ec2',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
-        
-        cloudwatch = boto3.client(
-            'cloudwatch',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        ec2_client = create_boto3_client('ec2', region, aws_access_key, aws_secret_key, aws_session_token)
+        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
 
         # 현재 시간 설정 - 시스템 시간 사용
         current_time = datetime.now(pytz.UTC)

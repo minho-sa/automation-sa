@@ -1,14 +1,9 @@
-import boto3
+from app.services.resource.base_service import create_boto3_client
 
-def get_apigateway_data(aws_access_key, aws_secret_key, region):
+def get_apigateway_data(aws_access_key, aws_secret_key, region, collection_id=None, aws_session_token=None):
     """API Gateway 데이터 수집"""
     try:
-        apigateway_client = boto3.client(
-            'apigateway',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=region
-        )
+        apigateway_client = create_boto3_client('apigateway', region, aws_access_key, aws_secret_key, aws_session_token)
         
         response = apigateway_client.get_rest_apis()
         apis = []

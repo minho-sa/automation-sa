@@ -195,7 +195,7 @@
         
         /* 상세 정보 행 스타일 */
         tr.details-row {
-            background-color: #f8f8f8 !important;
+            background-color: #f9f9f9 !important;
         }
         
         tr.details-row > td {
@@ -354,7 +354,7 @@
         }
     </style>
 </head>
-<body style="background-color: #f8f8f8; font-family: 'Amazon Ember', 'Helvetica Neue', Roboto, Arial, sans-serif;">
+<body style="background-color: #fafafa; font-family: 'Amazon Ember', 'Helvetica Neue', Roboto, Arial, sans-serif;">
     <header class="awsui-header-container">
         <div class="awsui-header">
             <div class="awsui-header-title">
@@ -414,7 +414,7 @@
         {% block content %}{% endblock %}
     </div>
 
-    <footer style="margin-top: 40px; padding: 20px 0; background-color: #f8f9fa; border-top: 1px solid #eaeded;">
+    <footer style="margin-top: 40px; padding: 20px 0; background-color: #fafafa; border-top: 1px solid #eaeded;">
         <div class="container text-center" style="max-width: 1400px;">
             <span style="color: #5f6b7a; font-size: 12px;">© 2025 AWS 콘솔 체크</span>
         </div>
@@ -428,6 +428,7 @@
     <script src="{{ url_for('static', filename='js/detailed-view.js') }}"></script>
     <script src="{{ url_for('static', filename='js/table-sort.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ec2-section.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/service-selection.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

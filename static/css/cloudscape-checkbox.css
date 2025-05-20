@@ -1,0 +1,159 @@
+/* Cloudscape Design 체크박스 스타일 */
+.awsui-checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.awsui-checkbox-container input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.awsui-checkbox-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  margin-top: 2px;
+  background-color: #ffffff;
+  border: 2px solid #7d8998;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: all 0.1s ease-out;
+}
+
+.awsui-checkbox-container:hover .awsui-checkbox-control {
+  border-color: #0972d3;
+  box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.2);
+}
+
+.awsui-checkbox-container input[type="checkbox"]:checked ~ .awsui-checkbox-control {
+  background-color: #0972d3;
+  border-color: #0972d3;
+}
+
+.awsui-checkbox-container input[type="checkbox"]:focus ~ .awsui-checkbox-control {
+  border-color: #0972d3;
+  box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.4);
+}
+
+.awsui-checkbox-control:after {
+  content: "";
+  position: absolute;
+  display: none;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  top: 1px;
+}
+
+.awsui-checkbox-container input[type="checkbox"]:checked ~ .awsui-checkbox-control:after {
+  display: block;
+}
+
+.awsui-checkbox-label {
+  font-size: 14px;
+  color: #000716;
+  user-select: none;
+}
+
+/* 서비스 체크박스 컨테이너 스타일 */
+.col-md-4 .awsui-checkbox-container {
+  margin-bottom: 10px;
+}
+
+/* AWS 구분선 스타일 */
+.aws-divider {
+  border: 0;
+  height: 1px;
+  background-color: #e9ebed;
+  margin: 16px 0;
+}
+
+/* Alert 컴포넌트 크기 조정 */
+#selectServicesModal .awsui-alert {
+  padding: 10px;
+  border-width: 1px;
+}
+
+#selectServicesModal .awsui-alert-icon {
+  margin-right: 8px;
+  padding-top: 1px;
+}
+
+/* 모달 내 AWS 타이포그래피 스타일 */
+#selectServicesModal {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+}
+
+#selectServicesModal .modal-title {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #16191f;
+}
+
+#selectServicesModal .awsui-alert-header h3 {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #16191f;
+}
+
+#selectServicesModal .awsui-alert-message {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+  font-size: 13px;
+  color: #16191f;
+}
+
+#selectServicesModal .awsui-checkbox-label {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+  font-size: 14px;
+  color: #16191f;
+}
+
+#selectServicesModal .modal-footer button {
+  font-family: 'Amazon Ember', Arial, sans-serif;
+}
+
+/* 서비스 선택 모달 스타일 개선 */
+.awsui-modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e9ebed;
+}
+
+.awsui-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000716;
+}
+
+.awsui-modal-body {
+  padding: 24px;
+}
+
+.awsui-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e9ebed;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 선택 버튼 스타일 */
+.awsui-selection-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}

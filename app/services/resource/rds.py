@@ -15,27 +15,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_rds_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
-    """RDS 인스턴스 데이터 수집
+def get_rds_data(region: str, collection_id: str = None, auth_type: str = 'access_key', **auth_params) -> Dict:
+    """
+    RDS 인스턴스 데이터 수집
     
     Args:
-        aws_access_key: AWS 액세스 키
-        aws_secret_key: AWS 시크릿 키
         region: AWS 리전
         collection_id: 수집 ID (로깅용)
-        aws_session_token: AWS 세션 토큰 (선택 사항)
+        auth_type: 인증 유형 ('access_key' 또는 'role_arn')
+        **auth_params: 인증 유형에 따른 추가 파라미터
+            - access_key 인증: aws_access_key, aws_secret_key, aws_session_token(선택)
+            - role_arn 인증: role_arn, server_access_key, server_secret_key
         
     Returns:
         Dict: RDS 인스턴스 정보가 담긴 딕셔너리
     """
     log_prefix = f"[{collection_id}] " if collection_id else ""
-    logger.info(f"{log_prefix}Starting RDS data collection")
+    logger.info(f"{log_prefix}Starting RDS data collection using {auth_type} authentication")
     try:
         # RDS 클라이언트 생성
-        rds_client = create_boto3_client('rds', region, aws_access_key, aws_secret_key, aws_session_token)
+        rds_client = create_boto3_client('rds', region, auth_type=auth_type, **auth_params)
         
         # CloudWatch 클라이언트 생성 (메트릭 수집용)
-        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
+        cloudwatch = create_boto3_client('cloudwatch', region, auth_type=auth_type, **auth_params)
         
         # RDS 인스턴스 목록 가져오기
         response = rds_client.describe_db_instances()

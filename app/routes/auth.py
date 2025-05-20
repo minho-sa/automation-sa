@@ -31,24 +31,28 @@ def login():
                         return render_template('login.html')
                     
                     # 세션에 자격 증명 저장
-                    session['aws_access_key'] = aws_access_key
-                    session['aws_secret_key'] = aws_secret_key
-                    session['auth_method'] = 'access_key'
+                    session['auth_type'] = 'access_key'
+                    session['auth_params'] = {
+                        'aws_access_key': aws_access_key,
+                        'aws_secret_key': aws_secret_key
+                    }
                     
                 elif auth_method == 'role_arn':
                     role_arn = request.form.get('role_arn')
+                    server_access_key = app.config['AWS_ACCESS_KEY']
+                    server_secret_key = app.config['AWS_SECRET_KEY']
                     
                     if not role_arn:
                         flash('역할 ARN을 입력해주세요.')
                         return render_template('login.html')
                     
-                    # STS를 통해 자격 증명 획득 및 세션에 저장
-                    credentials = get_aws_credentials(role_arn=role_arn)
-                    session['aws_access_key'] = credentials['aws_access_key_id']
-                    session['aws_secret_key'] = credentials['aws_secret_access_key']
-                    session['aws_session_token'] = credentials.get('aws_session_token')
-                    session['auth_method'] = 'role_arn'
-                    session['role_arn'] = role_arn
+                    # 세션에 역할 ARN과 서버 자격 증명 저장
+                    session['auth_type'] = 'role_arn'
+                    session['auth_params'] = {
+                        'role_arn': role_arn,
+                        'server_access_key': server_access_key,
+                        'server_secret_key': server_secret_key
+                    }
                 
                 return redirect(url_for('consolidated_view'))
                 
@@ -64,10 +68,7 @@ def login():
 def logout():
     logout_user()
     # AWS 자격 증명 제거
-    session.pop('aws_access_key', None)
-    session.pop('aws_secret_key', None)
-    session.pop('aws_session_token', None)
-    session.pop('auth_method', None)
-    session.pop('role_arn', None)
+    session.pop('auth_type', None)
+    session.pop('auth_params', None)
     flash('로그아웃되었습니다.')
     return redirect(url_for('login'))

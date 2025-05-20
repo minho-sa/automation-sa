@@ -87,3 +87,4 @@ credentials.json
 *.pem
 *.key
 *.crt
+config.py

@@ -15,14 +15,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_ec2_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
-    """EC2 인스턴스 데이터 수집"""
+def get_ec2_data(region: str, collection_id: str = None, auth_type: str = 'access_key', **auth_params) -> Dict:
+    """
+    EC2 인스턴스 데이터 수집
+    
+    Args:
+        region: AWS 리전
+        collection_id: 수집 ID (선택 사항)
+        auth_type: 인증 유형 ('access_key' 또는 'role_arn')
+        **auth_params: 인증 유형에 따른 추가 파라미터
+            - access_key 인증: aws_access_key, aws_secret_key, aws_session_token(선택)
+            - role_arn 인증: role_arn, server_access_key, server_secret_key
+    
+    Returns:
+        수집된 EC2 데이터
+    """
     log_prefix = f"[{collection_id}] " if collection_id else ""
-    logger.info(f"{log_prefix}Starting EC2 data collection")
+    logger.info(f"{log_prefix}Starting EC2 data collection using {auth_type} authentication")
     try:
         log_prefix = f"[{collection_id}] " if collection_id else ""
-        ec2_client = create_boto3_client('ec2', region, aws_access_key, aws_secret_key, aws_session_token)
-        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
+        ec2_client = create_boto3_client('ec2', region, auth_type=auth_type, **auth_params)
+        cloudwatch = create_boto3_client('cloudwatch', region, auth_type=auth_type, **auth_params)
 
         # 현재 시간 설정 - 시스템 시간 사용
         current_time = datetime.now(pytz.UTC)

@@ -14,17 +14,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, collection_id: str = None, aws_session_token: str = None) -> Dict:
-    """Lambda 함수 데이터 수집"""
+def get_lambda_data(region: str, collection_id: str = None, auth_type: str = 'access_key', **auth_params) -> Dict:
+    """
+    Lambda 함수 데이터 수집
+    
+    Args:
+        region: AWS 리전
+        collection_id: 수집 ID (선택 사항)
+        auth_type: 인증 유형 ('access_key' 또는 'role_arn')
+        **auth_params: 인증 유형에 따른 추가 파라미터
+            - access_key 인증: aws_access_key, aws_secret_key, aws_session_token(선택)
+            - role_arn 인증: role_arn, server_access_key, server_secret_key
+    
+    Returns:
+        수집된 Lambda 데이터
+    """
     # collection_id가 None이 아닌지 확인
     if collection_id is None:
         collection_id = "lambda-collection"
     
     log_prefix = f"[{collection_id}]"
-    logger.info(f"{log_prefix} Starting Lambda data collection")
+    logger.info(f"{log_prefix} Starting Lambda data collection using {auth_type} authentication")
     try:
-        lambda_client = create_boto3_client('lambda', region, aws_access_key, aws_secret_key, aws_session_token)
-        cloudwatch = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
+        lambda_client = create_boto3_client('lambda', region, auth_type=auth_type, **auth_params)
+        cloudwatch = create_boto3_client('cloudwatch', region, auth_type=auth_type, **auth_params)
 
         response = lambda_client.list_functions()
         functions = []
@@ -103,7 +116,7 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, colle
             # 로그 출력 검사
             logger.debug(f"{log_prefix} Checking debug logs for {function['FunctionName']}")
             function_data['DebugLogsDetected'] = _check_debug_logs(
-                region, function['FunctionName'], aws_access_key, aws_secret_key, aws_session_token, collection_id
+                region, function['FunctionName'], collection_id, auth_type, **auth_params
             )
             
             functions.append(function_data)
@@ -115,16 +128,27 @@ def get_lambda_data(aws_access_key: str, aws_secret_key: str, region: str, colle
         logger.error(f"{log_prefix} Error in get_lambda_data: {str(e)}")
         return {'error': str(e)}
 
-def _check_debug_logs(region: str, function_name: str, aws_access_key: str = None, 
-                     aws_secret_key: str = None, aws_session_token: str = None, collection_id: str = None) -> bool:
-    """디버깅 로그 출력 검사"""
+def _check_debug_logs(region: str, function_name: str, collection_id: str = None, auth_type: str = 'access_key', **auth_params) -> bool:
+    """
+    디버깅 로그 출력 검사
+    
+    Args:
+        region: AWS 리전
+        function_name: Lambda 함수 이름
+        collection_id: 수집 ID (선택 사항)
+        auth_type: 인증 유형 ('access_key' 또는 'role_arn')
+        **auth_params: 인증 유형에 따른 추가 파라미터
+    
+    Returns:
+        디버깅 로그 존재 여부
+    """
     # collection_id가 None이 아닌지 확인
     if collection_id is None:
         collection_id = "lambda-collection"
         
     log_prefix = f"[{collection_id}]"
     try:
-        logs_client = create_boto3_client('logs', region, aws_access_key, aws_secret_key, aws_session_token)
+        logs_client = create_boto3_client('logs', region, auth_type=auth_type, **auth_params)
         
         # 로그 그룹 이름 형식
         log_group_name = f"/aws/lambda/{function_name}"

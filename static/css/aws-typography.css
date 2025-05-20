@@ -1,0 +1,30 @@
+/* AWS 글꼴 및 타이포그래피 스타일 */
+@font-face {
+    font-family: 'Amazon Ember';
+    src: url('https://a0.awsstatic.com/libra-css/fonts/amazon-ember/AmazonEmber_W_Rg.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Amazon Ember';
+    src: url('https://a0.awsstatic.com/libra-css/fonts/amazon-ember/AmazonEmber_W_Bd.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+.aws-heading-1 {
+    font-family: 'Amazon Ember', Arial, sans-serif;
+    font-size: 36px;
+    font-weight: bold;
+    color: #16191f;
+    margin-top: 60px;
+    margin-bottom: 16px;
+}
+
+.aws-subtitle {
+    font-family: 'Amazon Ember', Arial, sans-serif;
+    font-size: 20px;
+    color: #545b64;
+    margin-bottom: 48px;
+}

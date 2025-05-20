@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/toggle-button.css') }}">
 <!-- collection-progress.js 비활성화 -->
 <script>
     // collection-progress.js 로드 방지
@@ -30,27 +31,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="awsui-subheader">
-    <div class="awsui-subheader-container">
-        <ul class="awsui-breadcrumb">
-            <li class="awsui-breadcrumb-item">
-                <span class="awsui-breadcrumb-text">통합 대시보드</span>
-            </li>
-        </ul>
-    </div>
-</div>
-
-<h1 class="mb-4">AWS 서비스 통합 대시보드</h1>
-<p class="lead">모든 AWS 서비스의 정보를 한 페이지에서 확인하세요.</p>
+<h1 class="aws-heading-1">AWS 서비스 통합 대시보드</h1>
+<p class="aws-subtitle">모든 AWS 서비스의 정보를 한 페이지에서 확인하세요.</p>
 
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <button class="awsui-button awsui-button-primary" id="expand-all">
-                <i class="fas fa-chevron-down"></i>모두 펼치기
-            </button>
-            <button class="awsui-button awsui-button-normal ms-2" id="collapse-all">
-                <i class="fas fa-chevron-up"></i>모두 접기
+            <button class="awsui-button awsui-button-primary toggle-sections-btn" id="toggle-sections-btn">
+                <i class="fas fa-chevron-down"></i><span id="toggle-btn-text">모두 펼치기</span>
             </button>
             {% if not is_collecting %}
             <button class="awsui-button awsui-button-success ms-2" id="select-services-btn">
@@ -660,28 +648,77 @@ document.addEventListener('DOMContentLoaded', function() {
         checkCollectionStatus(); // 즉시 한 번 확인
     }
     
-    expandAllBtn.addEventListener('click', function() {
-        // card-header와 awsui-card-header 클래스를 가진 요소 모두 선택
-        const accordionButtons = document.querySelectorAll('.card-header[data-bs-toggle="collapse"].collapsed, .awsui-card-header[data-bs-toggle="collapse"].collapsed');
-        accordionButtons.forEach(button => {
-            const targetId = button.getAttribute('data-bs-target');
-            const target = document.querySelector(targetId);
-            if (!target.classList.contains('show')) {
-                button.click();
-            }
-        });
+    const toggleSectionsBtn = document.getElementById('toggle-sections-btn');
+    const toggleBtnText = document.getElementById('toggle-btn-text');
+    
+    // 초기 상태 확인 - 모든 섹션이 펼쳐져 있는지 확인
+    const allSections = document.querySelectorAll('.card-header[data-bs-target], .awsui-card-header[data-bs-target]');
+    let allExpanded = true;
+    allSections.forEach(section => {
+        const targetId = section.getAttribute('data-bs-target');
+        const target = document.querySelector(targetId);
+        if (target && !target.classList.contains('show')) {
+            allExpanded = false;
+        }
     });
     
-    collapseAllBtn.addEventListener('click', function() {
-        // card-header와 awsui-card-header 클래스를 가진 요소 모두 선택
-        const accordionButtons = document.querySelectorAll('.card-header[data-bs-toggle="collapse"]:not(.collapsed), .awsui-card-header[data-bs-toggle="collapse"]:not(.collapsed)');
-        accordionButtons.forEach(button => {
-            const targetId = button.getAttribute('data-bs-target');
-            const target = document.querySelector(targetId);
-            if (target.classList.contains('show')) {
-                button.click();
-            }
-        });
+    // 초기 상태 설정
+    let isExpanded = allExpanded;
+    if (isExpanded) {
+        toggleBtnText.textContent = '모두 접기';
+        toggleSectionsBtn.querySelector('i').className = 'fas fa-chevron-up';
+    }
+    
+    toggleSectionsBtn.addEventListener('click', function() {
+        const icon = this.querySelector('i');
+        
+        if (isExpanded) {
+            // 모두 접기
+            const accordionButtons = document.querySelectorAll('.card-header[data-bs-toggle="collapse"]:not(.collapsed), .awsui-card-header[data-bs-target]');
+            accordionButtons.forEach(button => {
+                const targetId = button.getAttribute('data-bs-target');
+                const target = document.querySelector(targetId);
+                if (target && target.classList.contains('show')) {
+                    if (button.hasAttribute('data-bs-toggle')) {
+                        button.click();
+                    } else {
+                        // EC2 섹션 처리
+                        target.classList.remove('show');
+                        button.setAttribute('aria-expanded', 'false');
+                        const toggleIcon = button.querySelector('.toggle-icon i');
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+            
+            // 버튼 상태 변경
+            icon.className = 'fas fa-chevron-down';
+            toggleBtnText.textContent = '모두 펼치기';
+            isExpanded = false;
+        } else {
+            // 모두 펼치기
+            const accordionButtons = document.querySelectorAll('.card-header[data-bs-toggle="collapse"].collapsed, .awsui-card-header[data-bs-target]');
+            accordionButtons.forEach(button => {
+                const targetId = button.getAttribute('data-bs-target');
+                const target = document.querySelector(targetId);
+                if (target && !target.classList.contains('show')) {
+                    if (button.hasAttribute('data-bs-toggle')) {
+                        button.click();
+                    } else {
+                        // EC2 섹션 처리
+                        target.classList.add('show');
+                        button.setAttribute('aria-expanded', 'true');
+                        const toggleIcon = button.querySelector('.toggle-icon i');
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(180deg)';
+                    }
+                }
+            });
+            
+            // 버튼 상태 변경
+            icon.className = 'fas fa-chevron-up';
+            toggleBtnText.textContent = '모두 접기';
+            isExpanded = true;
+        }
     });
 });
 </script>

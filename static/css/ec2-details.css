@@ -1,0 +1,177 @@
+/* EC2 상세 정보 테이블 스타일 */
+.ec2-detail-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.ec2-detail-table th {
+    background-color: #f2f3f3;
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    white-space: nowrap;
+    width: 25%;
+}
+
+.ec2-detail-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    vertical-align: middle;
+}
+
+.ec2-detail-table tbody tr:last-child td,
+.ec2-detail-table tbody tr:last-child th {
+    border-bottom: none;
+}
+
+.ec2-detail-table tbody tr:hover {
+    background-color: #f2f8fd;
+}
+
+/* 볼륨 테이블 스타일 */
+.volume-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+    table-layout: fixed;
+}
+
+.volume-table th {
+    background-color: #f2f3f3;
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.volume-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    vertical-align: middle;
+}
+
+.volume-table th:nth-child(1) {
+    width: 20%;
+}
+
+.volume-table th:nth-child(2) {
+    width: 20%;
+    text-align: center;
+}
+
+.volume-table th:nth-child(3) {
+    width: 20%;
+    text-align: center;
+}
+
+.volume-table th:nth-child(4) {
+    width: 20%;
+    text-align: center;
+}
+
+.volume-table td:nth-child(2),
+.volume-table td:nth-child(3),
+.volume-table td:nth-child(4) {
+    text-align: center;
+}
+
+.volume-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.volume-table tbody tr:hover {
+    background-color: #f2f8fd;
+}
+
+/* 보안 그룹 테이블 스타일 */
+.security-group-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+    table-layout: fixed;
+}
+
+.security-group-table th {
+    background-color: #f2f3f3;
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.security-group-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    vertical-align: middle;
+}
+
+.security-group-table th:nth-child(1) {
+    width: 30%;
+}
+
+.security-group-table th:nth-child(2) {
+    width: 15%;
+    text-align: center;
+}
+
+.security-group-table th:nth-child(3) {
+    width: 55%;
+    text-align: center;
+}
+
+.security-group-table td:nth-child(2),
+.security-group-table td:nth-child(3) {
+    text-align: center;
+}
+
+.security-group-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.security-group-table tbody tr:hover {
+    background-color: #f2f8fd;
+}
+
+/* 상세 정보 섹션 스타일 */
+.detail-section {
+    margin-bottom: 24px;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #000716;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ebed;
+}

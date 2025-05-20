@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/detailed-view.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/s3-section.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ec2-section.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ec2-details.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aws-typography.css') }}">
     {% block extra_css %}{% endblock %}
     <style>
         .modal {
@@ -324,6 +326,15 @@
             font-size: 24px;
             font-weight: 500;
             color: #000716;
+            display: flex;
+            align-items: baseline;
+        }
+        
+        .metric-unit {
+            font-size: 16px;
+            margin-left: 4px;
+            color: #5f6b7a;
+            font-weight: normal;
         }
         
         .awsui-metric-primary {
@@ -416,6 +427,7 @@
     <script src="{{ url_for('static', filename='js/collection-progress.js') }}"></script>
     <script src="{{ url_for('static', filename='js/detailed-view.js') }}"></script>
     <script src="{{ url_for('static', filename='js/table-sort.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ec2-section.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

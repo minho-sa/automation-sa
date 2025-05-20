@@ -83,7 +83,8 @@
 
 .awsui-header-nav-link.active {
     color: #ffffff;
-    border-bottom-color: #ec7211;
+    border-bottom-color: #0972d3;
+    border-bottom-width: 5px;
     font-weight: 500;
 }
 
@@ -168,7 +169,8 @@
     
     .awsui-header-nav-link.active {
         border-bottom-color: transparent;
-        border-left-color: #ec7211;
+        border-left-color: #0972d3;
+        border-left-width: 5px;
     }
     
     .awsui-header-utilities {

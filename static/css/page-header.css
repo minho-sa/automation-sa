@@ -1,0 +1,26 @@
+/* AWS Cloudscape Design System 페이지 헤더 스타일 */
+.awsui-page-header {
+    padding: 20px 0;
+    margin-bottom: 24px;
+}
+
+.awsui-page-header-content {
+    margin-bottom: 8px;
+}
+
+.awsui-page-header h1 {
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #000716;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.awsui-page-header-description {
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    font-size: 14px;
+    color: #5f6b7a;
+    margin: 0;
+    line-height: 1.4;
+}

@@ -1,0 +1,24 @@
+/* AWS Cloudscape Design System 글꼴 */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    color: #000716;
+}
+
+h1, h2, h3, h4, h5, h6, .lead {
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.lead {
+    font-size: 14px;
+    font-weight: 400;
+    color: #5f6b7a;
+    margin-bottom: 24px;
+}

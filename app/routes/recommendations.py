@@ -16,10 +16,10 @@ from app.routes.dashboard import collection_status
 @login_required
 def recommendations_view():
     # AWS 자격 증명 가져오기
-    aws_access_key = session.get('aws_access_key')
-    aws_secret_key = session.get('aws_secret_key')
+    auth_type = session.get('auth_type')
+    auth_params = session.get('auth_params', {})
     
-    if not aws_access_key or not aws_secret_key:
+    if not auth_type or not auth_params:
         flash('AWS 자격 증명이 없습니다. 다시 로그인해주세요.')
         return redirect(url_for('login'))
     

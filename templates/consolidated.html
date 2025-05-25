@@ -28,12 +28,39 @@
     .animate-bounce {
         animation: bounce 2s infinite;
     }
+    
+    /* 데이터 수집 진행 중 모달 스타일 */
+    #modal-completed-services-list .badge {
+        font-size: 14px;
+        padding: 6px 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    
+    #completed-services-list .badge {
+        font-size: 14px;
+        padding: 6px 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    
+    #modal-completed-services-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    #completed-services-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1 class="aws-heading-1">AWS 서비스 통합 대시보드</h1>
-<p class="aws-subtitle">모든 AWS 서비스의 정보를 한 페이지에서 확인하세요.</p>
+<h1 class="mb-4">AWS 서비스 통합 대시보드</h1>
+<p class="lead">모든 AWS 서비스의 정보를 한 페이지에서 확인하세요.</p>
 
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
@@ -54,7 +81,7 @@
 <div id="collection-progress-container" class="mb-4">
     <div class="awsui-card" style="max-width: 800px; margin: 0 auto; width: 95%;">
         <div class="awsui-card-header" style="background-color: #fafafa; border-bottom: 1px solid #eaeded; padding: 16px 20px;">
-            <h5 class="mb-0" style="font-family: 'Amazon Ember', Arial, sans-serif; font-size: 16px; font-weight: 700; color: #16191f;"><i class="fas fa-sync-alt me-2" style="color: #0972d3;"></i>데이터 수집 진행 상황</h5>
+            <h5 class="mb-0" style="font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 700; color: #16191f;"><i class="fas fa-sync-alt me-2" style="color: #0972d3;"></i>데이터 수집 진행 상황</h5>
         </div>
         <div class="awsui-card-body" style="padding: 24px;">
             {% if error %}
@@ -70,7 +97,7 @@
             </div>
             {% else %}
             <div class="aws-typography" style="margin-bottom: 24px;">
-                <p class="aws-text" style="font-family: 'Amazon Ember', Arial, sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
+                <p class="aws-text" style="font-family: 'Noto Sans KR', sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
                     <span style="color: #545b64; font-weight: 500;">현재 수집 중인 서비스:</span> 
                     <strong id="current-service" style="color: #0972d3; font-weight: 500;">{{ current_service }}</strong>
                 </p>
@@ -81,7 +108,7 @@
                          aria-valuemin="0" aria-valuemax="100">
                     </div>
                 </div>
-                <p class="aws-text" style="font-family: 'Amazon Ember', Arial, sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
+                <p class="aws-text" style="font-family: 'Noto Sans KR', sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
                     <span style="color: #545b64; font-weight: 500;">완료된 서비스:</span> 
                     <span id="completed-count" style="font-weight: 500;">{{ completed_services|length }}</span> / 
                     <span id="total-services" style="font-weight: 500;">{{ total_services }}</span>
@@ -100,7 +127,7 @@
             {% endif %}
         </div>
         <div class="awsui-card-body" style="border-top: 1px solid #eaeded; background-color: #f8f8f8; padding: 12px 20px;">
-            <small style="color: #5f6b7a; font-family: 'Amazon Ember', Arial, sans-serif; font-size: 12px;">데이터 수집이 완료되면 자동으로 페이지가 새로고침됩니다.</small>
+            <small style="color: #5f6b7a; font-family: 'Noto Sans KR', sans-serif; font-size: 12px;">데이터 수집이 완료되면 자동으로 페이지가 새로고침됩니다.</small>
         </div>
     </div>
 </div>
@@ -137,8 +164,8 @@
 
 <div class="text-center my-5">
     <i class="fas fa-arrow-up fa-3x mb-3 text-primary animate-bounce"></i>
-    <h3>데이터 수집 버튼을 클릭하세요</h3>
-    <p class="lead">AWS 서비스 데이터를 수집한 후 서비스 정보를 확인할 수 있습니다.</p>
+    <h3 style="font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 600; color: #000716; margin-bottom: 8px;">데이터 수집 버튼을 클릭하세요</h3>
+    <p style="font-family: 'Noto Sans KR', sans-serif; font-size: 14px; color: #5f6b7a; margin-bottom: 0;">AWS 서비스 데이터를 수집한 후 서비스 정보를 확인할 수 있습니다.</p>
 </div>
 
 {% elif all_services_data %}
@@ -215,30 +242,16 @@
 
 <!-- 서비스 선택 모달 -->
 <div class="modal fade" id="selectServicesModal" tabindex="-1" aria-labelledby="selectServicesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" style="max-width: 800px; width: 95%;">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 1px 5px 0 rgba(0, 28, 36, 0.15), 0 3px 6px 0 rgba(0, 28, 36, 0.1); font-family: 'Amazon Ember', Arial, sans-serif;">
-            <div class="modal-header awsui-modal-header">
-                <h5 class="modal-title awsui-modal-title" id="selectServicesModalLabel">수집할 AWS 서비스 선택</h5>
+    <div class="modal-dialog" style="max-width: 90%; width: 1200px;">
+        <div class="modal-content" style="border-radius: 8px; border: none; box-shadow: 0 1px 5px 0 rgba(0, 28, 36, 0.15), 0 3px 6px 0 rgba(0, 28, 36, 0.1);">
+            <div class="modal-header" style="background-color: #ffffff; border-bottom: 1px solid #e9ebed;">
+                <h5 class="modal-title" id="selectServicesModalLabel" style="font-size: 20px; font-weight: 700; color: #000716; font-family: 'Noto Sans KR', sans-serif;">수집할 AWS 서비스 선택</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body awsui-modal-body">
-                <div class="awsui-alert awsui-alert-info mb-4" style="padding: 12px; border-radius: 8px;">
-                    <div class="awsui-alert-icon" style="font-size: 14px;">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="awsui-alert-content">
-                        <div class="awsui-alert-header">
-                            <h3>서비스 선택</h3>
-                        </div>
-                        <div class="awsui-alert-message">
-                            데이터를 수집할 AWS 서비스를 선택하세요
-                        </div>
-                    </div>
-                </div>
+            <div class="modal-body">
+                <p class="mb-3">데이터를 수집할 AWS 서비스를 선택하세요:</p>
                 
-                <hr class="aws-divider mb-4">
-                
-                <div class="awsui-selection-buttons">
+                <div class="mb-4">
                     <button class="awsui-button awsui-button-primary" id="select-all-services" style="height: 28px; font-size: 12px;">
                         <i class="fas fa-check-square"></i>모두 선택
                     </button>
@@ -396,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // 진행 상황 표시 HTML 생성
                     modalBody.innerHTML = `
-                        <div class="awsui-alert awsui-alert-info mb-3" style="padding: 20px; font-size: 16px;">
+                        <div class="awsui-alert awsui-alert-info mb-3" style="padding: 24px; font-size: 18px;">
                             <div class="awsui-alert-icon" style="font-size: 24px;">
                                 <i class="fas fa-info-circle"></i>
                             </div>
@@ -407,28 +420,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="aws-typography" style="margin: 20px 0;">
-                            <p class="aws-text" style="font-family: 'Amazon Ember', Arial, sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
+                            <p class="aws-text" style="font-family: 'Noto Sans KR', sans-serif; font-size: 16px; color: #16191f; margin-bottom: 20px;">
                                 <span style="color: #545b64; font-weight: 500;">현재 수집 중인 서비스:</span> 
                                 <strong id="modal-current-service" style="color: #0972d3; font-weight: 500;">준비 중...</strong>
                             </p>
-                            <div class="progress mb-4" style="height: 16px; border-radius: 8px; background-color: #eaeded;">
+                            <div class="progress mb-4" style="height: 20px; border-radius: 8px; background-color: #eaeded;">
                                 <div id="modal-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
                                      role="progressbar" style="width: 0%; background-color: #0972d3; border-radius: 8px;" 
                                      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                                 </div>
                             </div>
-                            <p class="aws-text" style="font-family: 'Amazon Ember', Arial, sans-serif; font-size: 14px; color: #16191f; margin-bottom: 20px;">
+                            <p class="aws-text" style="font-family: 'Noto Sans KR', sans-serif; font-size: 16px; color: #16191f; margin-bottom: 20px;">
                                 <span style="color: #545b64; font-weight: 500;">완료된 서비스:</span> 
                                 <span id="modal-completed-count" style="font-weight: 500;">0</span> / 
                                 <span id="modal-total-services" style="font-weight: 500;">${selectedServices.length}</span>
                             </p>
                             <div class="mb-4">
-                                <span class="badge" style="background-color: #037f0c; color: white; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 12px; margin-right: 8px;">완료됨</span>
-                                <span class="badge" style="background-color: #0972d3; color: white; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 12px; margin-right: 8px;">수집 중</span>
-                                <span class="badge" style="background-color: #d1d5db; color: #16191f; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 12px; margin-right: 8px;">수집 예정</span>
+                                <span class="badge" style="background-color: #037f0c; color: white; font-weight: 500; font-size: 14px; padding: 6px 10px; border-radius: 12px; margin-right: 10px;">완료됨</span>
+                                <span class="badge" style="background-color: #0972d3; color: white; font-weight: 500; font-size: 14px; padding: 6px 10px; border-radius: 12px; margin-right: 10px;">수집 중</span>
+                                <span class="badge" style="background-color: #d1d5db; color: #16191f; font-weight: 500; font-size: 14px; padding: 6px 10px; border-radius: 12px; margin-right: 10px;">수집 예정</span>
                             </div>
                         </div>
-                        <div id="modal-completed-services-list" style="margin-top: 20px; margin-bottom: 20px;"></div>
+                        <div id="modal-completed-services-list" style="margin-top: 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
                     `;
                     
                     // 모달 푸터 변경

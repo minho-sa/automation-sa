@@ -1,10 +1,10 @@
 from app.services.resource.base_service import create_boto3_client
 from datetime import datetime, timezone
 
-def get_cloudwatch_data(aws_access_key, aws_secret_key, region, collection_id=None, aws_session_token=None):
+def get_cloudwatch_data(region, collection_id=None, auth_type='access_key', **auth_params):
     """CloudWatch 상세 데이터 수집"""
     try:
-        cloudwatch_client = create_boto3_client('cloudwatch', region, aws_access_key, aws_secret_key, aws_session_token)
+        cloudwatch_client = create_boto3_client('cloudwatch', region, auth_type, **auth_params)
         
         # 기본 경보 정보 수집
         alarm_response = cloudwatch_client.describe_alarms()

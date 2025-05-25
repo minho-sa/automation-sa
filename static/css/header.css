@@ -71,7 +71,7 @@
     height: 100%;
     display: flex;
     align-items: center;
-    border-bottom: 3px solid transparent;
+    border-bottom: 4px solid transparent;
     transition: all 0.2s ease;
 }
 
@@ -164,7 +164,7 @@
         width: 100%;
         padding: 16px 20px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        border-left: 3px solid transparent;
+        border-left: 4px solid transparent;
     }
     
     .awsui-header-nav-link.active {

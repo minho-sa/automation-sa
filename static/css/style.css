@@ -10,9 +10,45 @@
     z-index: 1050;
 }
 
+/* 데이터 수집 모달 크기 조정 - AWS Cloudscape 스타일 */
+#selectServicesModal .modal-dialog {
+    max-width: 800px !important;
+    width: 80% !important;
+}
+
 .modal-content {
     transform: none !important;
     z-index: 1051;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 5px 0 rgba(0, 28, 36, 0.15), 0 3px 6px 0 rgba(0, 28, 36, 0.1) !important;
+}
+
+/* AWS Cloudscape 스타일 모달 헤더 */
+.modal-header {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e9ebed !important;
+    padding: 16px 20px !important;
+}
+
+/* AWS Cloudscape 스타일 모달 제목 */
+.modal-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #000716 !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+}
+
+/* AWS Cloudscape 스타일 모달 본문 */
+.modal-body {
+    padding: 20px !important;
+}
+
+/* AWS Cloudscape 스타일 모달 푸터 */
+.modal-footer {
+    background-color: #f8f8f8 !important;
+    border-top: 1px solid #e9ebed !important;
+    padding: 16px 20px !important;
 }
 
 .modal-open {
@@ -91,6 +127,33 @@ body {
     background-color: #f8f9fa;
 }
 
+/* 진행 막대 크기 조정 - AWS Cloudscape 스타일 */
+.progress {
+    height: 16px !important;
+    border-radius: 8px !important;
+    background-color: #eaeded !important;
+    overflow: hidden !important;
+}
+
+.progress-bar {
+    background-color: #0972d3 !important;
+    border-radius: 8px !important;
+}
+
+/* 텍스트 크기 조정 - AWS Cloudscape 스타일 */
+.aws-text {
+    font-size: 14px !important;
+    color: #16191f !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+}
+
+/* 알림 메시지 패딩 조정 - AWS Cloudscape 스타일 */
+.awsui-alert {
+    padding: 16px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15) !important;
+}
+
 .navbar-brand {
     font-weight: bold;
 }
@@ -144,6 +207,26 @@ body {
 .badge {
     font-weight: normal;
     padding: 0.4em 0.6em;
+}
+
+/* 데이터 수집 진행 중 모달 스타일 */
+#modal-completed-services-list .badge,
+#completed-services-list .badge {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+    margin-right: 6px !important;
+    margin-bottom: 6px !important;
+    display: inline-block !important;
+    border-radius: 12px !important;
+    font-weight: 500 !important;
+}
+
+#modal-completed-services-list,
+#completed-services-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 16px !important;
 }
 
 /* Form styling */

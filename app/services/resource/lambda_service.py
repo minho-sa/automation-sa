@@ -51,12 +51,12 @@ def get_lambda_data(region: str, collection_id: str = None, auth_type: str = 'ac
             function_data = {
                 'FunctionName': function['FunctionName'],
                 'FunctionArn': function['FunctionArn'],
-                'Runtime': function['Runtime'],
+                'Runtime': function.get('Runtime', 'Container Image'),  # Image 패키지 타입인 경우 Runtime 키가 없음
                 'MemorySize': function['MemorySize'],
                 'Timeout': function['Timeout'],
                 'CodeSize': function['CodeSize'],
                 'LastModified': function['LastModified'],
-                'Handler': function['Handler'],
+                'Handler': function.get('Handler', ''),  # Image 패키지 타입인 경우 Handler 키가 없을 수 있음
                 'Environment': function.get('Environment', {}).get('Variables', {}),
                 'TracingConfig': function.get('TracingConfig', {}).get('Mode', 'PassThrough'),
                 'Architectures': function.get('Architectures', ['x86_64']),

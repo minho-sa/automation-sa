@@ -1,6 +1,7 @@
 import boto3
 
-def assume_role(role_arn, region, session_name="AssumedRoleSession", duration_seconds=3600):
+def assume_role(role_arn, region, session_name="AssumedRoleSession", duration_seconds=3600, 
+              aws_access_key=None, aws_secret_key=None, aws_session_token=None):
     """
     지정된 IAM 역할을 수임하여 임시 자격 증명을 반환합니다.
     
@@ -9,12 +10,31 @@ def assume_role(role_arn, region, session_name="AssumedRoleSession", duration_se
         region: AWS 리전 이름
         session_name: 세션 이름 (기본값: "AssumedRoleSession")
         duration_seconds: 세션 유효 기간 (초, 기본값: 3600)
+        aws_access_key: AWS 액세스 키 (선택 사항)
+        aws_secret_key: AWS 시크릿 키 (선택 사항)
+        aws_session_token: AWS 세션 토큰 (선택 사항)
         
     Returns:
         임시 자격 증명 딕셔너리 (access_key, secret_key, session_token)
     """
-    # 기본 자격 증명 공급자 체인 사용
-    sts_client = boto3.client('sts', region_name=region)
+    # 명시적 자격 증명이 제공된 경우 사용
+    if aws_access_key and aws_secret_key:
+        sts_client = boto3.client(
+            'sts', 
+            region_name=region,
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_key,
+            aws_session_token=aws_session_token
+        )
+    else:
+        # 기본 자격 증명 공급자 체인 사용
+        from config import Config
+        sts_client = boto3.client(
+            'sts', 
+            region_name=region,
+            aws_access_key_id=Config.AWS_ACCESS_KEY,
+            aws_secret_access_key=Config.AWS_SECRET_KEY
+        )
     
     # 역할 수임
     response = sts_client.assume_role(
@@ -41,7 +61,7 @@ def create_boto3_client(service_name, region, auth_type='access_key', **auth_par
         auth_type: 인증 유형 ('access_key' 또는 'role_arn')
         **auth_params: 인증 유형에 따른 추가 파라미터
             - access_key 인증: aws_access_key, aws_secret_key, aws_session_token(선택)
-            - role_arn 인증: role_arn, server_access_key, server_secret_key
+            - role_arn 인증: role_arn, aws_access_key, aws_secret_key, aws_session_token(선택)
         
     Returns:
         boto3 클라이언트 객체
@@ -59,7 +79,10 @@ def create_boto3_client(service_name, region, auth_type='access_key', **auth_par
         # 역할 수임하여 임시 자격 증명 획득
         temp_credentials = assume_role(
             role_arn=auth_params.get('role_arn'),
-            region=region
+            region=region,
+            aws_access_key=auth_params.get('aws_access_key'),
+            aws_secret_key=auth_params.get('aws_secret_key'),
+            aws_session_token=auth_params.get('aws_session_token')
         )
         
         # 임시 자격 증명으로 클라이언트 설정

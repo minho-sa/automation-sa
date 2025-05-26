@@ -1,76 +1,75 @@
 <!-- RDS 섹션 -->
-<div class="card mb-4 service-section" id="rds-section">
-    <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#rds-content" aria-expanded="true">
+<div class="awsui-card service-section" id="rds-section">
+    <div class="awsui-card-header d-flex justify-content-between align-items-center" data-bs-target="#rds-content" aria-expanded="true">
         <h5 class="mb-0">
-            <i class="fas fa-database me-2"></i> {{ services.rds.name }}
+            <i class="fas fa-database"></i> {{ services.rds.name }}
         </h5>
         <span class="toggle-icon">
             <i class="fas fa-chevron-down"></i>
         </span>
     </div>
     <div class="collapse show" id="rds-content">
-        <div class="card-body">
+        <div class="awsui-card-body">
             {% if all_services_data.rds is defined %}
                 {% if all_services_data.rds.error is defined %}
-                    <div class="alert alert-danger">{{ all_services_data.rds.error }}</div>
-                {% elif all_services_data.rds.instances|default([])|length > 0 %}
+                <div class="awsui-alert awsui-alert-error">
+                    <div class="awsui-alert-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="awsui-alert-content">
+                        <div class="awsui-alert-message">
+                            {{ all_services_data.rds.error }}
+                        </div>
+                    </div>
+                </div>
+            {% elif all_services_data.rds.instances|default([])|length > 0 %}
                 <!-- RDS Summary Cards -->
                 <div class="row mb-4">
                     <div class="col-md-3">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">총 인스턴스</h5>
-                                <p class="card-text display-6">{{ all_services_data.rds.instances|length }}</p>
-                            </div>
+                        <div class="awsui-metric-container awsui-metric-primary">
+                            <div class="awsui-metric-title">총 인스턴스</div>
+                            <div class="awsui-metric-value">{{ all_services_data.rds.instances|length }}</div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">사용 가능</h5>
-                                <p class="card-text display-6">{{ all_services_data.rds.instances|selectattr('status', 'equalto', 'available')|list|length }}</p>
-                            </div>
+                        <div class="awsui-metric-container awsui-metric-success">
+                            <div class="awsui-metric-title">사용 가능</div>
+                            <div class="awsui-metric-value">{{ all_services_data.rds.instances|selectattr('status', 'equalto', 'available')|list|length }}</div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">엔진 종류</h5>
-                                <p class="card-text">{{ all_services_data.rds.instances|map(attribute='engine')|list|unique|list|length }} 종류</p>
-                            </div>
+                        <div class="awsui-metric-container awsui-metric-info">
+                            <div class="awsui-metric-title">엔진 종류</div>
+                            <div class="awsui-metric-value">{{ all_services_data.rds.instances|map(attribute='engine')|list|unique|list|length }}</div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card bg-warning text-dark">
-                            <div class="card-body">
-                                <h5 class="card-title">인스턴스 클래스</h5>
-                                <p class="card-text">{{ all_services_data.rds.instances|map(attribute='instance_class')|list|unique|list|length }} 종류</p>
-                            </div>
+                        <div class="awsui-metric-container awsui-metric-warning">
+                            <div class="awsui-metric-title">인스턴스 클래스</div>
+                            <div class="awsui-metric-value">{{ all_services_data.rds.instances|map(attribute='instance_class')|list|unique|list|length }}</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 엔진 유형별 분포 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h6 class="mb-0">데이터베이스 엔진 분포</h6>
-                    </div>
-                    <div class="card-body">
+                <div class="awsui-container mb-4">
+                    <h6 class="mb-3">데이터베이스 엔진 분포</h6>
+                    <div class="engine-distribution">
+                        {% set engines = {} %}
+                        {% for instance in all_services_data.rds.instances %}
+                            {% if instance.engine in engines %}
+                                {% set _ = engines.update({instance.engine: engines[instance.engine] + 1}) %}
+                            {% else %}
+                                {% set _ = engines.update({instance.engine: 1}) %}
+                            {% endif %}
+                        {% endfor %}
+                        
                         <div class="row">
-                            {% set engines = {} %}
-                            {% for instance in all_services_data.rds.instances %}
-                                {% if instance.engine in engines %}
-                                    {% set _ = engines.update({instance.engine: engines[instance.engine] + 1}) %}
-                                {% else %}
-                                    {% set _ = engines.update({instance.engine: 1}) %}
-                                {% endif %}
-                            {% endfor %}
-                            
                             {% for engine, count in engines.items() %}
                             <div class="col-md-3 mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>{{ engine }}</span>
-                                    <span class="badge bg-primary">{{ count }}</span>
+                                <div class="engine-item">
+                                    <span class="engine-name">{{ engine }}</span>
+                                    <span class="engine-count">{{ count }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -79,8 +78,8 @@
                 </div>
                 
                 <!-- RDS 인스턴스 테이블 -->
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-sortable">
+                <div class="awsui-table-container">
+                    <table class="awsui-table" id="rds-instance-table">
                         <thead>
                             <tr>
                                 <th>인스턴스 ID</th>
@@ -96,15 +95,19 @@
                         </thead>
                         <tbody>
                             {% for instance in all_services_data.rds.instances %}
-                            <tr>
+                            <tr class="instance-row" data-instance-id="{{ instance.id }}">
                                 <td>{{ instance.id }}</td>
                                 <td>{{ instance.engine }}</td>
                                 <td>{{ instance.engine_version|default('-') }}</td>
                                 <td>
                                     {% if instance.status == 'available' %}
-                                        <span class="badge bg-success">사용 가능</span>
+                                        <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #e9f5e9; color: #037f0c; font-size: 12px;">
+                                            <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>사용 가능
+                                        </span>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ instance.status }}</span>
+                                        <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #f1f2f3; color: #5f6b7a; font-size: 12px;">
+                                            <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>{{ instance.status }}
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>{{ instance.instance_class|default(instance.size)|default('-') }}</td>
@@ -112,93 +115,122 @@
                                 <td>{{ instance.storage_type|default('-') }}</td>
                                 <td>
                                     {% if instance.multi_az|default(false) %}
-                                        <span class="badge bg-success">예</span>
+                                        <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #e9f5e9; color: #037f0c; font-size: 12px;">
+                                            <i class="fas fa-check" style="font-size: 8px; margin-right: 4px;"></i>예
+                                        </span>
                                     {% else %}
-                                        <span class="badge bg-secondary">아니오</span>
+                                        <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #f1f2f3; color: #5f6b7a; font-size: 12px;">
+                                            <i class="fas fa-times" style="font-size: 8px; margin-right: 4px;"></i>아니오
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#rds-details-{{ loop.index }}" aria-expanded="false">
+                                    <button class="instance-detail-btn rds-detail-btn" type="button" data-rds-target="#rds-details-{{ loop.index }}">
                                         상세 보기
                                     </button>
                                 </td>
                             </tr>
-                            <tr class="collapse" id="rds-details-{{ loop.index }}">
+                            <tr class="rds-details-row" id="rds-details-{{ loop.index }}" style="display: none;">
                                 <td colspan="9">
-                                    <div class="card card-body bg-light">
-                                        <h6>데이터베이스 인스턴스 상세 정보</h6>
-                                        
-                                        <div class="row mb-3">
+                                    <div class="awsui-container p-4">
+                                        <div class="row mb-4">
                                             <div class="col-md-6">
-                                                <h6 class="text-muted">기본 정보</h6>
-                                                <ul class="list-group">
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        생성 시간
-                                                        <span>{{ instance.creation_time|default('-') }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        엔드포인트
-                                                        <span>{{ instance.endpoint|default('-') }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        포트
-                                                        <span>{{ instance.port|default('-') }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        스토리지 유형
-                                                        <span>{{ instance.storage_type|default('-') }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        IOPS
-                                                        <span>{{ instance.iops|default('-') }}</span>
-                                                    </li>
-                                                </ul>
+                                                <h6 class="detail-section-title">기본 정보</h6>
+                                                <table class="ec2-detail-table">
+                                                    <tbody>
+                                                        <tr>
+                                                            <th>인스턴스 ID</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.id }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>엔진</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.engine }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>버전</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.engine_version|default('-') }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>생성 시간</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.creation_time|default('-') }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>엔드포인트</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.endpoint|default('-') }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>포트</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.port|default('-') }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
+                                            
                                             <div class="col-md-6">
-                                                <h6 class="text-muted">보안 및 백업 설정</h6>
-                                                <ul class="list-group">
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        퍼블릭 액세스
-                                                        {% if instance.publicly_accessible|default(false) %}
-                                                            <span class="badge bg-danger">활성화</span>
-                                                        {% else %}
-                                                            <span class="badge bg-success">비활성화</span>
-                                                        {% endif %}
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        암호화
-                                                        {% if instance.encrypted|default(false) %}
-                                                            <span class="badge bg-success">활성화</span>
-                                                        {% else %}
-                                                            <span class="badge bg-danger">비활성화</span>
-                                                        {% endif %}
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        자동 백업
-                                                        {% if instance.backup_retention_period|default(0) > 0 %}
-                                                            <span class="badge bg-success">{{ instance.backup_retention_period }} 일</span>
-                                                        {% else %}
-                                                            <span class="badge bg-danger">비활성화</span>
-                                                        {% endif %}
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        백업 기간
-                                                        <span>{{ instance.backup_window|default('-') }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        유지 관리 기간
-                                                        <span>{{ instance.maintenance_window|default('-') }}</span>
-                                                    </li>
-                                                </ul>
+                                                <h6 class="detail-section-title">보안 및 백업 설정</h6>
+                                                <table class="ec2-detail-table">
+                                                    <tbody>
+                                                        <tr>
+                                                            <th>퍼블릭 액세스</th>
+                                                            <td>
+                                                                {% if instance.publicly_accessible|default(false) %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #fff8f8; color: #d91515; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>활성화
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #e9f5e9; color: #037f0c; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>비활성화
+                                                                    </span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>암호화</th>
+                                                            <td>
+                                                                {% if instance.encrypted|default(false) %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #e9f5e9; color: #037f0c; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>활성화
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #fff8f8; color: #d91515; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>비활성화
+                                                                    </span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>자동 백업</th>
+                                                            <td>
+                                                                {% if instance.backup_retention_period|default(0) > 0 %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #e9f5e9; color: #037f0c; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>{{ instance.backup_retention_period }} 일
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; background-color: #fff8f8; color: #d91515; font-size: 12px;">
+                                                                        <i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>비활성화
+                                                                    </span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>백업 기간</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.backup_window|default('-') }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>유지 관리 기간</th>
+                                                            <td>&nbsp;&nbsp;{{ instance.maintenance_window|default('-') }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                         
                                         <!-- 파라미터 그룹 정보 -->
                                         {% if instance.parameter_groups|default([]) %}
-                                        <div class="mb-3">
-                                            <h6 class="text-muted">파라미터 그룹</h6>
+                                        <div class="detail-section">
+                                            <h6 class="detail-section-title">파라미터 그룹</h6>
                                             <div class="table-responsive">
-                                                <table class="table table-sm">
+                                                <table class="security-group-table">
                                                     <thead>
                                                         <tr>
                                                             <th>이름</th>
@@ -208,7 +240,7 @@
                                                     <tbody>
                                                         {% for pg in instance.parameter_groups %}
                                                         <tr>
-                                                            <td>{{ pg.name|default('-') }}</td>
+                                                            <td>&nbsp;&nbsp;&nbsp;&nbsp;{{ pg.name|default('-') }}</td>
                                                             <td>{{ pg.status|default('-') }}</td>
                                                         </tr>
                                                         {% endfor %}
@@ -220,12 +252,12 @@
                                         
                                         <!-- 태그 정보 -->
                                         {% if instance.tags|default([]) %}
-                                        <div class="mb-3">
-                                            <h6 class="text-muted">태그</h6>
+                                        <div class="detail-section">
+                                            <h6 class="detail-section-title">태그</h6>
                                             <div class="row">
                                                 {% for tag in instance.tags %}
-                                                <div class="col-md-3 mb-1">
-                                                    <span class="badge bg-secondary">{{ tag.Key }}: {{ tag.Value }}</span>
+                                                <div class="col-md-3 mb-2">
+                                                    <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; background-color: #f1f2f3; color: #5f6b7a; font-size: 12px;">{{ tag.Key }}: {{ tag.Value }}</span>
                                                 </div>
                                                 {% endfor %}
                                             </div>
@@ -239,11 +271,204 @@
                     </table>
                 </div>
                 {% else %}
-                    <div class="alert alert-info">RDS 데이터가 없습니다.</div>
+                    <div class="awsui-alert awsui-alert-info">
+                        <div class="awsui-alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="awsui-alert-content">
+                            <div class="awsui-alert-message">
+                                RDS 데이터가 없습니다.
+                            </div>
+                        </div>
+                    </div>
                 {% endif %}
             {% else %}
-                <div class="alert alert-info">RDS 데이터가 수집되지 않았습니다.</div>
+                <div class="awsui-alert awsui-alert-info">
+                    <div class="awsui-alert-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="awsui-alert-content">
+                        <div class="awsui-alert-message">
+                            RDS 데이터가 수집되지 않았습니다.
+                        </div>
+                    </div>
+                </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // RDS 섹션 토글 기능
+    const rdsHeader = document.querySelector('#rds-section .awsui-card-header');
+    const toggleIcon = rdsHeader.querySelector('.toggle-icon i');
+    const rdsContent = document.querySelector('#rds-content');
+    const collapse = bootstrap.Collapse.getOrCreateInstance(rdsContent, {toggle: false});
+    
+    rdsHeader.addEventListener('click', function() {
+        if (rdsContent.classList.contains('show')) {
+            collapse.hide();
+            toggleIcon.style.transform = 'rotate(0deg)';
+        } else {
+            collapse.show();
+            toggleIcon.style.transform = 'rotate(180deg)';
+        }
+    });
+    
+    // RDS 테이블 정렬 기능
+    const rdsTable = document.getElementById('rds-instance-table');
+    if (rdsTable) {
+        const headers = rdsTable.querySelectorAll('thead th');
+        headers.forEach((header, index) => {
+            // 정렬 아이콘 추가
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-sort awsui-table-sort-icon';
+            header.appendChild(icon);
+            
+            // 정렬 이벤트 추가
+            header.addEventListener('click', function(e) {
+                e.preventDefault();
+                sortRDSTable(rdsTable, index);
+            });
+            
+            // 커서 스타일 변경
+            header.style.cursor = 'pointer';
+            header.title = '클릭하여 정렬';
+        });
+    }
+    
+    // 상세 보기 버튼 이벤트
+    const detailButtons = document.querySelectorAll('.rds-detail-btn');
+    
+    detailButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // 이벤트 버블링 방지
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 모든 RDS 버튼 선택 상태 초기화 (현재 버튼 제외)
+            document.querySelectorAll('.rds-detail-btn').forEach(btn => {
+                if (btn !== this) {
+                    btn.classList.remove('selected');
+                    btn.textContent = '상세 보기';
+                }
+            });
+            
+            // 현재 행의 상세 정보 행을 찾기
+            const currentRow = this.closest('tr');
+            const detailRow = currentRow.nextElementSibling;
+            const detailId = this.getAttribute('data-rds-target');
+            
+            // 상세 정보 행 토글
+            if (detailRow.style.display !== 'none') {
+                detailRow.style.display = 'none';
+                this.textContent = '상세 보기';
+                this.classList.remove('selected');
+            } else {
+                // 다른 모든 RDS 상세 정보 행 닫기
+                document.querySelectorAll('.rds-details-row').forEach(row => {
+                    if (row.id !== detailId.substring(1)) {
+                        row.style.display = 'none';
+                        const rowButton = document.querySelector(`[data-rds-target="#${row.id}"]`);
+                        if (rowButton) {
+                            rowButton.textContent = '상세 보기';
+                            rowButton.classList.remove('selected');
+                        }
+                    }
+                });
+                
+                // 현재 상세 정보 행 열기
+                detailRow.style.display = 'table-row';
+                this.textContent = '접기';
+                this.classList.add('selected');
+                
+                // 상세 정보 표시 후 스크롤 위치 조정
+                setTimeout(() => {
+                    detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        });
+    });
+});
+
+// RDS 테이블 정렬 함수
+function sortRDSTable(table, columnIndex) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr.instance-row'));
+    
+    // 현재 정렬 방향 확인
+    const currentDirection = table.getAttribute('data-sort-direction') || 'asc';
+    const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+    
+    // 정렬 방향 표시 업데이트
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach(header => {
+        const icon = header.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-sort awsui-table-sort-icon';
+            icon.style.color = '#5f6b7a';
+        }
+    });
+    
+    const currentHeader = headers[columnIndex];
+    const currentIcon = currentHeader.querySelector('i');
+    if (currentIcon) {
+        currentIcon.className = `fas fa-sort-${newDirection === 'asc' ? 'up' : 'down'} awsui-table-sort-icon`;
+        currentIcon.style.color = '#0972d3';
+    }
+    
+    // 각 인스턴스 행과 해당 상세 정보 행을 쌍으로 저장
+    const rowPairs = [];
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const instanceId = row.getAttribute('data-instance-id');
+        const detailId = `rds-details-${i+1}`;
+        const detailRow = document.getElementById(detailId);
+        const isVisible = detailRow.style.display !== 'none';
+        rowPairs.push({ 
+            mainRow: row, 
+            detailRow: detailRow,
+            isVisible: isVisible
+        });
+    }
+    
+    // 행 정렬
+    rowPairs.sort((a, b) => {
+        const aValue = a.mainRow.querySelectorAll('td')[columnIndex].textContent.trim();
+        const bValue = b.mainRow.querySelectorAll('td')[columnIndex].textContent.trim();
+        
+        // 숫자 정렬
+        if (!isNaN(parseFloat(aValue)) && !isNaN(parseFloat(bValue))) {
+            return newDirection === 'asc' 
+                ? parseFloat(aValue) - parseFloat(bValue)
+                : parseFloat(bValue) - parseFloat(aValue);
+        }
+        
+        // 문자열 정렬
+        return newDirection === 'asc'
+            ? aValue.localeCompare(bValue, 'ko')
+            : bValue.localeCompare(aValue, 'ko');
+    });
+    
+    // 정렬된 행을 테이블에 다시 추가
+    tbody.innerHTML = '';
+    rowPairs.forEach(pair => {
+        tbody.appendChild(pair.mainRow);
+        tbody.appendChild(pair.detailRow);
+        
+        // 상세 정보 표시 상태 복원
+        if (pair.isVisible) {
+            pair.detailRow.style.display = 'table-row';
+            const btn = pair.mainRow.querySelector('.rds-detail-btn');
+            if (btn) {
+                btn.textContent = '접기';
+                btn.classList.add('selected');
+            }
+        }
+    });
+    
+    // 정렬 방향 저장
+    table.setAttribute('data-sort-direction', newDirection);
+}
+</script>

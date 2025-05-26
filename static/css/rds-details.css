@@ -1,0 +1,59 @@
+/* RDS 엔진 분포 스타일 */
+.engine-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f1f2f3;
+    border-radius: 8px;
+}
+
+.engine-name {
+    font-weight: 500;
+    color: #000716;
+}
+
+.engine-count {
+    background-color: #0972d3;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* RDS 상세보기 버튼 스타일 */
+.rds-detail-btn {
+    height: 24px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 12px;
+    border: 2px solid #0972d3;
+    background-color: white;
+    color: #0972d3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rds-detail-btn:hover {
+    background-color: #f1faff;
+}
+
+.rds-detail-btn.selected {
+    background-color: #0972d3;
+    color: white;
+}
+
+/* RDS 상세 정보 테이블 스타일 */
+.rds-details-row .detail-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000716;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.rds-details-row .detail-section {
+    margin-top: 20px;
+}

@@ -113,50 +113,70 @@ def get_s3_data(region: str, collection_id: str = None, auth_type: str = 'access
                 # 태그가 없는 경우 예외 발생, 무시
                 pass
             
-            # 버킷 크기 및 객체 수 확인 (CloudWatch 메트릭 사용)
+            # 버킷 크기 및 객체 수 확인 (직접 객체 목록 조회)
             try:
-                cloudwatch = create_boto3_client('cloudwatch', region, auth_type=auth_type, **auth_params)
+                # 버킷 내 객체 목록 조회
+                total_size = 0
+                object_count = 0
+                paginator = s3_client.get_paginator('list_objects_v2')
                 
-                # 버킷 크기 메트릭
-                # 현재 시간과 24시간 전 시간을 사용하여 시간 범위 설정
-                current_time = datetime.now(pytz.UTC)
-                start_time = current_time - timedelta(days=1)
+                # 페이지네이션을 사용하여 모든 객체 조회
+                for page in paginator.paginate(Bucket=bucket_name):
+                    if 'Contents' in page:
+                        for obj in page['Contents']:
+                            total_size += obj['Size']
+                            object_count += 1
                 
-                size_response = cloudwatch.get_metric_statistics(
-                    Namespace='AWS/S3',
-                    MetricName='BucketSizeBytes',
-                    Dimensions=[
-                        {'Name': 'BucketName', 'Value': bucket_name},
-                        {'Name': 'StorageType', 'Value': 'StandardStorage'}
-                    ],
-                    StartTime=start_time,
-                    EndTime=current_time,
-                    Period=86400,
-                    Statistics=['Average']
-                )
+                bucket_data['size'] = total_size
+                bucket_data['object_count'] = object_count
                 
-                if size_response['Datapoints']:
-                    bucket_data['size'] = size_response['Datapoints'][0]['Average']
+                logger.info(f"{log_prefix}Bucket {bucket_name}: {object_count} objects, {total_size} bytes")
                 
-                # 객체 수 메트릭
-                # 현재 시간과 24시간 전 시간을 사용 (위에서 이미 설정한 시간 사용)
-                count_response = cloudwatch.get_metric_statistics(
-                    Namespace='AWS/S3',
-                    MetricName='NumberOfObjects',
-                    Dimensions=[
-                        {'Name': 'BucketName', 'Value': bucket_name},
-                        {'Name': 'StorageType', 'Value': 'AllStorageTypes'}
-                    ],
-                    StartTime=start_time,
-                    EndTime=current_time,
-                    Period=86400,
-                    Statistics=['Average']
-                )
-                
-                if count_response['Datapoints']:
-                    bucket_data['object_count'] = count_response['Datapoints'][0]['Average']
+                # CloudWatch 메트릭도 시도 (위 방법이 실패하거나 권한이 없는 경우 대비)
+                if total_size == 0 or object_count == 0:
+                    try:
+                        cloudwatch = create_boto3_client('cloudwatch', region, auth_type=auth_type, **auth_params)
+                        
+                        # 버킷 크기 메트릭
+                        current_time = datetime.now(pytz.UTC)
+                        start_time = current_time - timedelta(days=1)
+                        
+                        size_response = cloudwatch.get_metric_statistics(
+                            Namespace='AWS/S3',
+                            MetricName='BucketSizeBytes',
+                            Dimensions=[
+                                {'Name': 'BucketName', 'Value': bucket_name},
+                                {'Name': 'StorageType', 'Value': 'StandardStorage'}
+                            ],
+                            StartTime=start_time,
+                            EndTime=current_time,
+                            Period=86400,
+                            Statistics=['Average']
+                        )
+                        
+                        if size_response['Datapoints'] and bucket_data['size'] == 0:
+                            bucket_data['size'] = size_response['Datapoints'][0]['Average']
+                        
+                        # 객체 수 메트릭
+                        count_response = cloudwatch.get_metric_statistics(
+                            Namespace='AWS/S3',
+                            MetricName='NumberOfObjects',
+                            Dimensions=[
+                                {'Name': 'BucketName', 'Value': bucket_name},
+                                {'Name': 'StorageType', 'Value': 'AllStorageTypes'}
+                            ],
+                            StartTime=start_time,
+                            EndTime=current_time,
+                            Period=86400,
+                            Statistics=['Average']
+                        )
+                        
+                        if count_response['Datapoints'] and bucket_data['object_count'] == 0:
+                            bucket_data['object_count'] = count_response['Datapoints'][0]['Average']
+                    except Exception as e:
+                        logger.warning(f"{log_prefix}CloudWatch metrics unavailable for {bucket_name}: {str(e)}")
             except Exception as e:
-                logger.error(f"{log_prefix}Error getting metrics for {bucket_name}: {str(e)}")
+                logger.error(f"{log_prefix}Error getting bucket contents for {bucket_name}: {str(e)}")
             
             buckets.append(bucket_data)
         

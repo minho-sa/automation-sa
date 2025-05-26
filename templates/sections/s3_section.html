@@ -116,12 +116,12 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="instance-detail-btn" type="button" data-bs-toggle="collapse" data-bs-target="#s3-details-{{ loop.index }}" aria-expanded="false" onclick="this.classList.toggle('selected')" style="height: 24px; padding: 0 12px; font-size: 12px; border-radius: 12px; border: 2px solid #0972d3; background-color: white; color: #0972d3; cursor: pointer;">
+                                    <button class="instance-detail-btn s3-detail-btn" type="button" data-s3-target="#s3-details-{{ loop.index }}" style="height: 24px; padding: 0 12px; font-size: 12px; border-radius: 12px; border: 2px solid #0972d3; background-color: white; color: #0972d3; cursor: pointer;">
                                         상세 보기
                                     </button>
                                 </td>
                             </tr>
-                            <tr class="collapse details-row" id="s3-details-{{ loop.index }}">
+                            <tr class="s3-details-row" id="s3-details-{{ loop.index }}" style="display: none;">
                                 <td colspan="5">
                                     <div class="awsui-container p-4">
                                         <div class="row mb-4">
@@ -319,9 +319,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const s3Header = document.querySelector('#s3-section .awsui-card-header');
     const toggleIcon = s3Header.querySelector('.toggle-icon i');
     const s3Content = document.querySelector('#s3-content');
-    const collapse = new bootstrap.Collapse(s3Content, {toggle: false});
     
     s3Header.addEventListener('click', function() {
+        const collapse = bootstrap.Collapse.getOrCreateInstance(s3Content);
         if (s3Content.classList.contains('show')) {
             collapse.hide();
             toggleIcon.style.transform = 'rotate(0deg)';
@@ -353,28 +353,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 상세 보기 버튼 이벤트
-    const detailButtons = document.querySelectorAll('.instance-detail-btn');
+    const detailButtons = document.querySelectorAll('.s3-detail-btn');
     
     detailButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // 모든 버튼 선택 상태 초기화 (현재 버튼 제외)
-            document.querySelectorAll('.instance-detail-btn').forEach(btn => {
+        button.addEventListener('click', function(e) {
+            // 이벤트 버블링 방지
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 모든 S3 버튼 선택 상태 초기화 (현재 버튼 제외)
+            document.querySelectorAll('.s3-detail-btn').forEach(btn => {
                 if (btn !== this) {
                     btn.classList.remove('selected');
+                    btn.textContent = '상세 보기';
                 }
             });
             
             // 현재 행의 상세 정보 행을 찾기
             const currentRow = this.closest('tr');
             const detailRow = currentRow.nextElementSibling;
-            const detailId = this.getAttribute('data-bs-target');
+            const detailId = this.getAttribute('data-s3-target');
             
-            // 다른 모든 상세 정보 행 닫기 (현재 행 제외)
-            document.querySelectorAll('.collapse.show').forEach(row => {
-                if (row.id !== detailId.substring(1)) {
-                    bootstrap.Collapse.getInstance(row)?.hide();
-                }
-            });
+            // 상세 정보 행 토글
+            if (detailRow.style.display !== 'none') {
+                detailRow.style.display = 'none';
+                this.textContent = '상세 보기';
+                this.classList.remove('selected');
+            } else {
+                // 다른 모든 S3 상세 정보 행 닫기
+                document.querySelectorAll('.s3-details-row').forEach(row => {
+                    if (row.id !== detailId.substring(1)) {
+                        row.style.display = 'none';
+                        const rowButton = document.querySelector(`[data-s3-target=\"#${row.id}\"]`);
+                        if (rowButton) {
+                            rowButton.textContent = '상세 보기';
+                            rowButton.classList.remove('selected');
+                        }
+                    }
+                });
+                
+                // 현재 상세 정보 행 열기
+                detailRow.style.display = 'table-row';
+                this.textContent = '접기';
+                this.classList.add('selected');
+                
+                // 상세 정보 표시 후 스크롤 위치 조정
+                setTimeout(() => {
+                    detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
         });
     });
 });

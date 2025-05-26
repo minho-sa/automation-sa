@@ -9,6 +9,11 @@
     margin-bottom: 0;
 }
 
+/* 상세 정보 행 스타일 */
+.details-row {
+    background-color: #f9f9f9;
+}
+
 .ec2-detail-table th {
     background-color: #f2f3f3;
     text-align: left;
@@ -174,4 +179,25 @@
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid #e9ebed;
+}
+/* 상세보기 버튼 스타일 */
+.instance-detail-btn {
+    height: 24px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 12px;
+    border: 2px solid #0972d3;
+    background-color: white;
+    color: #0972d3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.instance-detail-btn:hover {
+    background-color: #f1faff;
+}
+
+.instance-detail-btn.selected {
+    background-color: #0972d3;
+    color: white;
 }

@@ -149,12 +149,12 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="instance-detail-btn" type="button" data-bs-toggle="collapse" data-bs-target="#ec2-details-{{ loop.index }}" aria-expanded="false" onclick="this.classList.toggle('selected')" style="height: 24px; padding: 0 12px; font-size: 12px; border-radius: 12px; border: 2px solid #0972d3; background-color: white; color: #0972d3; cursor: pointer;">
+                                    <button class="instance-detail-btn" type="button" data-bs-toggle="collapse" data-bs-target="#ec2-details-{{ loop.index }}" aria-expanded="false" onclick="this.classList.toggle('selected')">
                                         상세 보기
                                     </button>
                                 </td>
                             </tr>
-                            <tr class="collapse details-row" id="ec2-details-{{ loop.index }}">
+                            <tr class="collapse details-row" id="ec2-details-{{ loop.index }}" data-parent="#ec2-instance-table">
                                 <td colspan="8">
                                     <div class="awsui-container p-4">
                                         <div class="row mb-4">
@@ -392,12 +392,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const detailRow = currentRow.nextElementSibling;
             const detailId = this.getAttribute('data-bs-target');
             
-            // 다른 모든 상세 정보 행 닫기 (현재 행 제외)
-            document.querySelectorAll('.collapse.show').forEach(row => {
+            // 다른 모든 EC2 상세 정보 행만 닫기 (현재 행 제외)
+            document.querySelectorAll('#ec2-instance-table .collapse.show').forEach(row => {
                 if (row.id !== detailId.substring(1)) {
                     bootstrap.Collapse.getInstance(row)?.hide();
                 }
             });
+            
+            // 상세 정보 토글 시 스크롤 위치 조정
+            if (!detailRow.classList.contains('show')) {
+                setTimeout(() => {
+                    detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
         });
     });
 });
@@ -468,10 +475,10 @@ function sortEC2Table(table, columnIndex) {
     rows.forEach(row => {
         tbody.appendChild(row);
         
-        // 상세 정보 행도 함께 이동
-        const detailId = row.getAttribute('data-instance-id');
-        const detailRows = Array.from(tbody.querySelectorAll(`tr.details-row[id^="ec2-details-"]`));
-        const detailRow = detailRows.find(dr => dr.id.includes(detailId));
+        // 상세 정보 행도 함께 이동 - 항상 해당 인스턴스 바로 다음에 위치하도록 함
+        const instanceId = row.getAttribute('data-instance-id');
+        const detailId = `ec2-details-${Array.from(tbody.querySelectorAll('tr.instance-row')).indexOf(row) + 1}`;
+        const detailRow = document.getElementById(detailId);
         if (detailRow) {
             tbody.appendChild(detailRow);
         }

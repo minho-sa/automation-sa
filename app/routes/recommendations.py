@@ -53,39 +53,42 @@ def recommendations_view():
                               error=None,
                               show_collection_message=True)
     
-    # 데이터 수집이 완료된 경우, 이미 수집된 데이터를 기반으로 추천 사항 생성
-    all_recommendations = []
-    region = app.config.get('AWS_DEFAULT_REGION', 'ap-northeast-2')
-    
-    try:
-        # 이미 수집된 데이터를 사용하여 추천 사항 생성
-        #EC2 추천 사항
-        if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-            all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
+    # 데이터 수집이 완료된 경우, 이미 생성된 추천사항 사용
+    # 추천사항이 이미 생성되어 있으면 그대로 사용
+    if 'recommendations' in collection_status and collection_status['recommendations']:
+        all_recommendations = collection_status['recommendations']
+    else:
+        # 추천사항이 없는 경우 생성
+        all_recommendations = []
+        region = app.config.get('AWS_DEFAULT_REGION', 'ap-northeast-2')
         
-        if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
-            all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions'], collection_status['collection_id']))
-        
-        # S3 추천 사항
-        if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
-            all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
-        
-        # RDS 추천 사항
-        if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:
-            all_recommendations.extend(get_rds_recommendations(collection_status['all_services_data']['rds']['instances']))
-        
-        # # CloudWatch 추천 사항
-        # if 'cloudwatch' in collection_status['all_services_data'] and 'alarms' in collection_status['all_services_data']['cloudwatch']:
-        #     all_recommendations.extend(get_cloudwatch_recommendations(collection_status['all_services_data']['cloudwatch']['alarms']))
-        
-        # IAM 추천 사항
-        if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
-            all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam'], collection_status['collection_id']))
-        
-        
-    except Exception as e:
-        app.logger.error(f"[{collection_status['collection_id']}] 추천 사항 생성 중 오류: {str(e)}")
-        flash(f'추천 사항 생성 중 오류가 발생했습니다: {str(e)}')
+        try:
+            # 이미 수집된 데이터를 사용하여 추천 사항 생성
+            #EC2 추천 사항
+            if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
+                all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
+            
+            if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
+                all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions'], collection_status['collection_id']))
+            
+            # S3 추천 사항
+            if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
+                all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
+            
+            # RDS 추천 사항
+            if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:
+                all_recommendations.extend(get_rds_recommendations(collection_status['all_services_data']['rds']['instances']))
+            
+            # IAM 추천 사항
+            if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
+                all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam'], collection_status['collection_id']))
+            
+            # 생성된 추천사항 저장
+            collection_status['recommendations'] = all_recommendations
+            
+        except Exception as e:
+            app.logger.error(f"[{collection_status['collection_id']}] 추천 사항 생성 중 오류: {str(e)}")
+            flash(f'추천 사항 생성 중 오류가 발생했습니다: {str(e)}')
     
     return render_template('recommendations.html', 
                           recommendations=all_recommendations,

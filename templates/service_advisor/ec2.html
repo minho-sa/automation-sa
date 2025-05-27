@@ -212,6 +212,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     resultHtml += createEbsVolumeTable(data.data.volumes);
                 } else if (data.id === 'ec2-tag-compliance' && data.data.resources) {
                     resultHtml += createTagComplianceTable(data.data.resources);
+                } else if (data.id === 'ec2-ami-age' && data.data.amis) {
+                    resultHtml += createAmiAgeTable(data.data.amis);
+                } else if (data.id === 'ec2-auto-scaling' && data.data.auto_scaling_groups) {
+                    resultHtml += createAutoScalingTable(data.data.auto_scaling_groups);
+                } else if (data.id === 'ec2-metadata-service' && data.data.instances) {
+                    resultHtml += createMetadataServiceTable(data.data.instances);
                 }
             }
             
@@ -400,6 +406,119 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <td>${resource.state}</td>
                                     <td>${resource.missing_tags.length > 0 ? resource.missing_tags.join(', ') : '없음'}</td>
                                     <td>${resource.compliance}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // AMI 수명 테이블 생성 함수
+    function createAmiAgeTable(amis) {
+        if (!amis || amis.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>AMI 수명 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>AMI ID</th>
+                                <th>이름</th>
+                                <th>생성일</th>
+                                <th>경과 일수</th>
+                                <th>상태</th>
+                                <th>사용 인스턴스 수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${amis.map(ami => `
+                                <tr>
+                                    <td>${ami.ami_id}</td>
+                                    <td>${ami.name}</td>
+                                    <td>${new Date(ami.creation_date).toLocaleDateString()}</td>
+                                    <td>${ami.days_old}</td>
+                                    <td>${ami.status}</td>
+                                    <td>${ami.instances_count}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Auto Scaling 테이블 생성 함수
+    function createAutoScalingTable(groups) {
+        if (!groups || groups.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>Auto Scaling 구성 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>Auto Scaling 그룹</th>
+                                <th>최소 크기</th>
+                                <th>최대 크기</th>
+                                <th>현재 용량</th>
+                                <th>가용 영역 수</th>
+                                <th>스케일링 정책 수</th>
+                                <th>문제점</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${groups.map(group => `
+                                <tr>
+                                    <td>${group.asg_name}</td>
+                                    <td>${group.min_size}</td>
+                                    <td>${group.max_size}</td>
+                                    <td>${group.desired_capacity}</td>
+                                    <td>${group.az_count}</td>
+                                    <td>${group.scaling_policy_count}</td>
+                                    <td>${group.issues.length > 0 ? group.issues.join(', ') : '없음'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 메타데이터 서비스 테이블 생성 함수
+    function createMetadataServiceTable(instances) {
+        if (!instances || instances.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>인스턴스 메타데이터 서비스 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>인스턴스 ID</th>
+                                <th>이름</th>
+                                <th>인스턴스 타입</th>
+                                <th>HTTP 토큰</th>
+                                <th>HTTP 엔드포인트</th>
+                                <th>IMDSv2 필수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${instances.map(instance => `
+                                <tr>
+                                    <td>${instance.instance_id}</td>
+                                    <td>${instance.name}</td>
+                                    <td>${instance.instance_type}</td>
+                                    <td>${instance.http_tokens}</td>
+                                    <td>${instance.http_endpoint}</td>
+                                    <td>${instance.is_imdsv2_required ? '예' : '아니오'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>

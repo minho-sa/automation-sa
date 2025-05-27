@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Any
 from app.services.service_advisor.ec2.ec2_advisor import EC2Advisor
+from app.services.service_advisor.lambda_service.lambda_service_advisor import LambdaAdvisor
 
 class ServiceAdvisorFactory:
     """
@@ -10,7 +11,8 @@ class ServiceAdvisorFactory:
     def __init__(self):
         """팩토리 초기화"""
         self.advisors = {
-            'ec2': EC2Advisor
+            'ec2': EC2Advisor,
+            'lambda': LambdaAdvisor
         }
     
     def get_advisor(self, service_name: str):
@@ -41,6 +43,12 @@ class ServiceAdvisorFactory:
                 'name': 'EC2',
                 'description': 'Amazon Elastic Compute Cloud',
                 'icon': 'fa-server'
+            },
+            {
+                'id': 'lambda',
+                'name': 'Lambda',
+                'description': 'AWS Lambda',
+                'icon': 'fa-code'
             }
             # 추후 다른 서비스 추가 가능
         ]

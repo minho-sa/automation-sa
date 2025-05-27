@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Lambda 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>Lambda 서비스 어드바이저</h1>
+        <p>Lambda 서비스에 대한 검사 항목을 확인하고 실행할 수 있습니다.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('service_advisor.service_advisor_view') }}" class="awsui-button awsui-button-normal">
+            <i class="fas fa-arrow-left"></i> 서비스 목록으로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="awsui-container">
+            <h2 class="mb-4">검사 항목</h2>
+            
+            <div class="check-items-container">
+                {% for check in checks %}
+                <div class="check-item" data-check-id="{{ check.id }}">
+                    <div class="check-item-header">
+                        <div class="check-item-title">
+                            <h3>{{ check.name }}</h3>
+                            <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
+                            <span class="check-item-severity {{ check.severity }}">{{ check.severity }}</span>
+                        </div>
+                        <div class="check-item-actions">
+                            <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
+                                <i class="fas fa-play"></i> 검사하기
+                            </button>
+                        </div>
+                    </div>
+                    <div class="check-item-description">
+                        {{ check.description }}
+                    </div>
+                    <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
+                        <div class="check-result-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span>검사 중입니다...</span>
+                        </div>
+                        <div class="check-result-content" style="display: none;">
+                            <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 검사 실행 버튼 이벤트 리스너
+    document.querySelectorAll('.run-check-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const checkId = this.getAttribute('data-check-id');
+            runCheck(checkId);
+        });
+    });
+    
+    // 검사 실행 함수
+    function runCheck(checkId) {
+        const resultContainer = document.getElementById(`result-${checkId}`);
+        const loadingElement = resultContainer.querySelector('.check-result-loading');
+        const contentElement = resultContainer.querySelector('.check-result-content');
+        
+        // 결과 컨테이너 표시 및 로딩 표시
+        resultContainer.style.display = 'block';
+        loadingElement.style.display = 'flex';
+        contentElement.style.display = 'none';
+        
+        // API 호출
+        fetch(`/api/service-advisor/lambda/run-check`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ check_id: checkId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 로딩 숨기기
+            loadingElement.style.display = 'none';
+            
+            // 결과 표시
+            contentElement.style.display = 'block';
+            
+            // 결과 상태에 따른 스타일 설정
+            let statusClass = '';
+            let statusIcon = '';
+            
+            switch(data.status) {
+                case 'ok':
+                    statusClass = 'success';
+                    statusIcon = 'check-circle';
+                    break;
+                case 'warning':
+                    statusClass = 'warning';
+                    statusIcon = 'exclamation-triangle';
+                    break;
+                case 'error':
+                    statusClass = 'danger';
+                    statusIcon = 'times-circle';
+                    break;
+                case 'info':
+                    statusClass = 'info';
+                    statusIcon = 'info-circle';
+                    break;
+                default:
+                    statusClass = 'secondary';
+                    statusIcon = 'question-circle';
+            }
+            
+            // 결과 HTML 생성
+            let resultHtml = `
+                <div class="check-result-status ${statusClass}">
+                    <i class="fas fa-${statusIcon}"></i>
+                    <span>${data.message}</span>
+                </div>
+            `;
+            
+            // 권장 사항이 있는 경우
+            if (data.recommendations && data.recommendations.length > 0) {
+                resultHtml += `
+                    <div class="check-result-recommendations">
+                        <h4>권장 사항</h4>
+                        <ul>
+                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            // 데이터가 있는 경우 결과 테이블 생성
+            if (data.data) {
+                // 데이터 유형에 따라 다른 테이블 생성
+                if (data.id === 'lambda-memory-size' && data.data.functions) {
+                    resultHtml += createMemorySizeTable(data.data.functions);
+                } else if (data.id === 'lambda-runtime-version' && data.data.functions) {
+                    resultHtml += createRuntimeVersionTable(data.data.functions);
+                } else if (data.id === 'lambda-timeout-setting' && data.data.functions) {
+                    resultHtml += createTimeoutSettingTable(data.data.functions);
+                } else if (data.id === 'lambda-vpc-configuration' && data.data.functions) {
+                    resultHtml += createVpcConfigurationTable(data.data.functions);
+                } else if (data.id === 'lambda-xray-tracing' && data.data.functions) {
+                    resultHtml += createXrayTracingTable(data.data.functions);
+                }
+            }
+            
+            contentElement.innerHTML = resultHtml;
+        })
+        .catch(error => {
+            // 로딩 숨기기
+            loadingElement.style.display = 'none';
+            
+            // 오류 표시
+            contentElement.style.display = 'block';
+            contentElement.innerHTML = `
+                <div class="check-result-status danger">
+                    <i class="fas fa-times-circle"></i>
+                    <span>검사 실행 중 오류가 발생했습니다: ${error.message}</span>
+                </div>
+            `;
+        });
+    }
+    
+    // 메모리 크기 테이블 생성 함수
+    function createMemorySizeTable(functions) {
+        if (!functions || functions.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>메모리 크기 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>함수 이름</th>
+                                <th>메모리 크기 (MB)</th>
+                                <th>평균 사용률 (%)</th>
+                                <th>최대 사용률 (%)</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${functions.map(func => `
+                                <tr>
+                                    <td>${func.function_name}</td>
+                                    <td>${func.memory_size}</td>
+                                    <td>${func.avg_memory_utilization}</td>
+                                    <td>${func.max_memory_utilization}</td>
+                                    <td>${func.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 런타임 버전 테이블 생성 함수
+    function createRuntimeVersionTable(functions) {
+        if (!functions || functions.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>런타임 버전 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>함수 이름</th>
+                                <th>현재 런타임</th>
+                                <th>권장 런타임</th>
+                                <th>상태</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${functions.map(func => `
+                                <tr>
+                                    <td>${func.function_name}</td>
+                                    <td>${func.current_runtime}</td>
+                                    <td>${func.recommended_runtime}</td>
+                                    <td>${func.status}</td>
+                                    <td>${func.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 타임아웃 설정 테이블 생성 함수
+    function createTimeoutSettingTable(functions) {
+        if (!functions || functions.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>타임아웃 설정 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>함수 이름</th>
+                                <th>타임아웃 (초)</th>
+                                <th>평균 실행 시간 (ms)</th>
+                                <th>최대 실행 시간 (ms)</th>
+                                <th>상태</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${functions.map(func => `
+                                <tr>
+                                    <td>${func.function_name}</td>
+                                    <td>${func.timeout}</td>
+                                    <td>${func.avg_duration_ms}</td>
+                                    <td>${func.max_duration_ms}</td>
+                                    <td>${func.status}</td>
+                                    <td>${func.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // VPC 구성 테이블 생성 함수
+    function createVpcConfigurationTable(functions) {
+        if (!functions || functions.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>VPC 구성 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>함수 이름</th>
+                                <th>VPC 활성화</th>
+                                <th>서브넷 수</th>
+                                <th>보안 그룹 수</th>
+                                <th>상태</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${functions.map(func => `
+                                <tr>
+                                    <td>${func.function_name}</td>
+                                    <td>${func.vpc_enabled ? '예' : '아니오'}</td>
+                                    <td>${func.subnet_count}</td>
+                                    <td>${func.security_group_count}</td>
+                                    <td>${func.status}</td>
+                                    <td>${func.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // X-Ray 추적 테이블 생성 함수
+    function createXrayTracingTable(functions) {
+        if (!functions || functions.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>X-Ray 추적 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>함수 이름</th>
+                                <th>X-Ray 활성화</th>
+                                <th>상태</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${functions.map(func => `
+                                <tr>
+                                    <td>${func.function_name}</td>
+                                    <td>${func.xray_enabled ? '예' : '아니오'}</td>
+                                    <td>${func.status}</td>
+                                    <td>${func.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

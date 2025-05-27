@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
+from app.services.service_advisor.aws_client import create_boto3_client
 
 def run() -> Dict[str, Any]:
     """
@@ -10,8 +11,8 @@ def run() -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        ec2 = boto3.client('ec2')
-        cloudwatch = boto3.client('cloudwatch')
+        ec2 = create_boto3_client('ec2')
+        cloudwatch = create_boto3_client('cloudwatch')
         
         # 실행 중인 인스턴스 정보 수집
         instances = ec2.describe_instances(

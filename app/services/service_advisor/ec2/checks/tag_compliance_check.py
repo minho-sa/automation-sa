@@ -1,5 +1,6 @@
 import boto3
 from typing import Dict, List, Any
+from app.services.service_advisor.aws_client import create_boto3_client
 
 def run() -> Dict[str, Any]:
     """
@@ -9,7 +10,7 @@ def run() -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        ec2 = boto3.client('ec2')
+        ec2 = create_boto3_client('ec2')
         
         # 필수 태그 정의
         required_tags = ['Name', 'Environment', 'Owner', 'Project']

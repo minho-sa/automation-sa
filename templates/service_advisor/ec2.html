@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}EC2 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>EC2 서비스 어드바이저</h1>
+        <p>EC2 서비스에 대한 검사 항목을 확인하고 실행할 수 있습니다.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('service_advisor.service_advisor_view') }}" class="awsui-button awsui-button-normal">
+            <i class="fas fa-arrow-left"></i> 서비스 목록으로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="awsui-container">
+            <h2 class="mb-4">검사 항목</h2>
+            
+            <div class="check-actions mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="select-all-checks">
+                    <label class="form-check-label" for="select-all-checks">
+                        전체 선택
+                    </label>
+                </div>
+                <button id="run-selected-checks" class="awsui-button awsui-button-primary ml-3">
+                    <i class="fas fa-play"></i> 선택한 항목 검사하기
+                </button>
+            </div>
+            
+            <div class="check-items-container">
+                {% for check in checks %}
+                <div class="check-item" data-check-id="{{ check.id }}">
+                    <div class="check-item-header">
+                        <div class="check-item-title">
+                            <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
+                            <h3>{{ check.name }}</h3>
+                            <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
+                            <span class="check-item-severity {{ check.severity }}">{{ check.severity }}</span>
+                        </div>
+                        <div class="check-item-actions">
+                            <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                            <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
+                                <i class="fas fa-play"></i> 검사하기
+                            </button>
+                        </div>
+                    </div>
+                    <div class="check-item-description">
+                        {{ check.description }}
+                    </div>
+                    <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
+                        <div class="check-result-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span>검사 중입니다...</span>
+                        </div>
+                        <div class="check-result-content" style="display: none;">
+                            <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 전체 선택 체크박스 이벤트 리스너
+    document.getElementById('select-all-checks').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.check-select').forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+    });
+    
+    // 선택한 항목 검사하기 버튼 이벤트 리스너
+    document.getElementById('run-selected-checks').addEventListener('click', function() {
+        const selectedChecks = Array.from(document.querySelectorAll('.check-select:checked'))
+            .map(checkbox => checkbox.getAttribute('data-check-id'));
+        
+        if (selectedChecks.length === 0) {
+            alert('검사할 항목을 선택해주세요.');
+            return;
+        }
+        
+        // 선택된 모든 항목 검사 실행
+        selectedChecks.forEach(checkId => {
+            runCheck(checkId);
+        });
+    });
+    
+    // 검사 실행 버튼 이벤트 리스너
+    document.querySelectorAll('.run-check-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const checkId = this.getAttribute('data-check-id');
+            runCheck(checkId);
+        });
+    });
+    
+    // 검사 실행 함수
+    function runCheck(checkId) {
+        const resultContainer = document.getElementById(`result-${checkId}`);
+        const loadingElement = resultContainer.querySelector('.check-result-loading');
+        const contentElement = resultContainer.querySelector('.check-result-content');
+        const lastCheckDateElement = document.getElementById(`last-check-date-${checkId}`);
+        
+        // 현재 날짜와 시간 설정
+        const now = new Date();
+        const dateString = now.toLocaleDateString('ko-KR', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // 마지막 검사 날짜 업데이트
+        if (lastCheckDateElement) {
+            lastCheckDateElement.textContent = `마지막 검사: ${dateString}`;
+        }
+        
+        // 결과 컨테이너 표시 및 로딩 표시
+        resultContainer.style.display = 'block';
+        loadingElement.style.display = 'flex';
+        contentElement.style.display = 'none';
+        
+        // API 호출
+        fetch(`/api/service-advisor/ec2/run-check`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ check_id: checkId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 로딩 숨기기
+            loadingElement.style.display = 'none';
+            
+            // 결과 표시
+            contentElement.style.display = 'block';
+            
+            // 결과 상태에 따른 스타일 설정
+            let statusClass = '';
+            let statusIcon = '';
+            
+            switch(data.status) {
+                case 'ok':
+                    statusClass = 'success';
+                    statusIcon = 'check-circle';
+                    break;
+                case 'warning':
+                    statusClass = 'warning';
+                    statusIcon = 'exclamation-triangle';
+                    break;
+                case 'error':
+                    statusClass = 'danger';
+                    statusIcon = 'times-circle';
+                    break;
+                case 'info':
+                    statusClass = 'info';
+                    statusIcon = 'info-circle';
+                    break;
+                default:
+                    statusClass = 'secondary';
+                    statusIcon = 'question-circle';
+            }
+            
+            // 결과 HTML 생성
+            let resultHtml = `
+                <div class="check-result-status ${statusClass}">
+                    <i class="fas fa-${statusIcon}"></i>
+                    <span>${data.message}</span>
+                </div>
+            `;
+            
+            // 권장 사항이 있는 경우
+            if (data.recommendations && data.recommendations.length > 0) {
+                resultHtml += `
+                    <div class="check-result-recommendations">
+                        <h4>권장 사항</h4>
+                        <ul>
+                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            // 데이터가 있는 경우 결과 테이블 생성
+            if (data.data) {
+                // 데이터 유형에 따라 다른 테이블 생성
+                if (data.id === 'ec2-security-group' && data.data.risky_groups) {
+                    resultHtml += createSecurityGroupTable(data.data.risky_groups);
+                } else if (data.id === 'ec2-instance-type' && data.data.instances) {
+                    resultHtml += createInstanceTypeTable(data.data.instances);
+                } else if (data.id === 'ec2-stopped-instances' && data.data.stopped_instances) {
+                    resultHtml += createStoppedInstancesTable(data.data.stopped_instances);
+                } else if (data.id === 'ec2-ebs-optimization' && data.data.volumes) {
+                    resultHtml += createEbsVolumeTable(data.data.volumes);
+                } else if (data.id === 'ec2-tag-compliance' && data.data.resources) {
+                    resultHtml += createTagComplianceTable(data.data.resources);
+                }
+            }
+            
+            contentElement.innerHTML = resultHtml;
+        })
+        .catch(error => {
+            // 로딩 숨기기
+            loadingElement.style.display = 'none';
+            
+            // 오류 표시
+            contentElement.style.display = 'block';
+            contentElement.innerHTML = `
+                <div class="check-result-status danger">
+                    <i class="fas fa-times-circle"></i>
+                    <span>검사 실행 중 오류가 발생했습니다: ${error.message}</span>
+                </div>
+            `;
+        });
+    }
+    
+    // 보안 그룹 테이블 생성 함수
+    function createSecurityGroupTable(riskyGroups) {
+        if (!riskyGroups || riskyGroups.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>위험한 보안 그룹</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>보안 그룹 ID</th>
+                                <th>보안 그룹 이름</th>
+                                <th>CIDR</th>
+                                <th>프로토콜</th>
+                                <th>포트 범위</th>
+                                <th>위험 요소</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${riskyGroups.map(group => `
+                                <tr>
+                                    <td>${group.sg_id}</td>
+                                    <td>${group.sg_name}</td>
+                                    <td>${group.cidr}</td>
+                                    <td>${group.protocol}</td>
+                                    <td>${group.port_range}</td>
+                                    <td>${group.risk}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 인스턴스 타입 테이블 생성 함수
+    function createInstanceTypeTable(instances) {
+        if (!instances || instances.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>인스턴스 타입 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>인스턴스 ID</th>
+                                <th>인스턴스 타입</th>
+                                <th>평균 CPU 사용률</th>
+                                <th>최대 CPU 사용률</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${instances.map(instance => `
+                                <tr>
+                                    <td>${instance.instance_id}</td>
+                                    <td>${instance.instance_type}</td>
+                                    <td>${instance.avg_cpu}%</td>
+                                    <td>${instance.max_cpu}%</td>
+                                    <td>${instance.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 중지된 인스턴스 테이블 생성 함수
+    function createStoppedInstancesTable(instances) {
+        if (!instances || instances.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>중지된 인스턴스</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>인스턴스 ID</th>
+                                <th>이름</th>
+                                <th>인스턴스 타입</th>
+                                <th>중지 기간 (일)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${instances.map(instance => `
+                                <tr>
+                                    <td>${instance.instance_id}</td>
+                                    <td>${instance.name}</td>
+                                    <td>${instance.instance_type}</td>
+                                    <td>${instance.days_stopped}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // EBS 볼륨 테이블 생성 함수
+    function createEbsVolumeTable(volumes) {
+        if (!volumes || volumes.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>EBS 볼륨 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>볼륨 ID</th>
+                                <th>볼륨 타입</th>
+                                <th>크기 (GB)</th>
+                                <th>인스턴스 ID</th>
+                                <th>평균 IOPS</th>
+                                <th>권장 사항</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${volumes.map(volume => `
+                                <tr>
+                                    <td>${volume.volume_id}</td>
+                                    <td>${volume.volume_type}</td>
+                                    <td>${volume.volume_size}</td>
+                                    <td>${volume.instance_id}</td>
+                                    <td>${volume.avg_total_iops}</td>
+                                    <td>${volume.recommendation}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 태그 규정 준수 테이블 생성 함수
+    function createTagComplianceTable(resources) {
+        if (!resources || resources.length === 0) return '';
+        
+        return `
+            <div class="check-result-data">
+                <h4>태그 규정 준수 분석</h4>
+                <div class="table-responsive">
+                    <table class="awsui-table">
+                        <thead>
+                            <tr>
+                                <th>리소스 ID</th>
+                                <th>리소스 타입</th>
+                                <th>상태</th>
+                                <th>누락된 태그</th>
+                                <th>규정 준수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${resources.map(resource => `
+                                <tr>
+                                    <td>${resource.instance_id || resource.resource_id}</td>
+                                    <td>${resource.resource_type || 'EC2 Instance'}</td>
+                                    <td>${resource.state}</td>
+                                    <td>${resource.missing_tags.length > 0 ? resource.missing_tags.join(', ') : '없음'}</td>
+                                    <td>${resource.compliance}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

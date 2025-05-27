@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>서비스 어드바이저</h1>
+        <p>AWS 서비스별 검사 항목을 확인하고 실행할 수 있습니다.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="awsui-container">
+            <h2 class="mb-4">서비스 선택</h2>
+            <div class="row" id="serviceCards">
+                <!-- 서비스 카드는 JavaScript로 동적 생성됩니다 -->
+                <div class="col-md-4 mb-4">
+                    <div class="service-card" data-service-id="ec2">
+                        <div class="service-card-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <div class="service-card-content">
+                            <h3>EC2</h3>
+                            <p>Amazon Elastic Compute Cloud</p>
+                        </div>
+                        <div class="service-card-action">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='ec2') }}" class="awsui-button awsui-button-normal">
+                                <i class="fas fa-arrow-right"></i> 검사 항목 보기
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 추후 다른 서비스 추가 예정 -->
+                <div class="col-md-4 mb-4">
+                    <div class="service-card disabled">
+                        <div class="service-card-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="service-card-content">
+                            <h3>RDS</h3>
+                            <p>Amazon Relational Database Service</p>
+                        </div>
+                        <div class="service-card-action">
+                            <span class="coming-soon-badge">준비 중</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="service-card disabled">
+                        <div class="service-card-icon">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <div class="service-card-content">
+                            <h3>S3</h3>
+                            <p>Amazon Simple Storage Service</p>
+                        </div>
+                        <div class="service-card-action">
+                            <span class="coming-soon-badge">준비 중</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/service-advisor.js') }}"></script>
+{% endblock %}

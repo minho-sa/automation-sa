@@ -8,6 +8,10 @@ class User(UserMixin):
         self.id = id
         self.username = username
         self.password_hash = password
+    
+    @staticmethod
+    def get(user_id):
+        return users.get(user_id)
 
 # 사용자 데이터 (실제 프로젝트에서는 데이터베이스 사용 권장)
 users = {

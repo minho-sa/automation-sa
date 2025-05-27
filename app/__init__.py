@@ -1,26 +1,35 @@
 from flask import Flask
 from flask_login import LoginManager
-from config import Config
+import logging
 from logging.handlers import RotatingFileHandler
 import os
+import config
 
-# 앱 초기화
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
-app.config.from_object(Config)
+app.config.from_object('config')
+app.secret_key = config.SECRET_KEY
 
+# 로그 설정
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('애플리케이션 시작')
 
 # 로그인 매니저 설정
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-login_manager.login_message = '이 페이지에 접근하려면 로그인이 필요합니다.'
 
-# 모듈 임포트 (순환 임포트 방지를 위해 여기서 임포트)
-from app.models.user import User
-from app.routes.auth import login, logout
-from app.routes.main import index
-from app.routes.dashboard import consolidated_view
-from app.routes.recommendations import recommendations_view
+from app.routes import main, auth, dashboard, recommendations, service_advisor
+from app.models import user
 
-# 사용자 로더 설정
-from app.models.user import load_user
+# 블루프린트 등록
+app.register_blueprint(service_advisor.service_advisor_bp)
+
+# user_loader는 user.py에 정의되어 있음

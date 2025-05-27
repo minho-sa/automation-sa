@@ -199,25 +199,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
             
-            // 데이터가 있는 경우 결과 테이블 생성
+            // 개별 리소스 상태 표시 제거
+            
+            // 데이터가 있는 경우 결과 테이블 생성 (접을 수 있는 섹션으로)
             if (data.data) {
                 // 데이터 유형에 따라 다른 테이블 생성
-                if (data.id === 'ec2-security-group' && data.data.risky_groups) {
-                    resultHtml += createSecurityGroupTable(data.data.risky_groups);
+                if (data.id === 'ec2-security-group' && data.data.security_groups) {
+                    resultHtml += `
+                        <div class="check-result-data">
+                            <h4>보안 그룹 분석 (${data.data.total_groups_count}개)</h4>
+                            ${createSecurityGroupTable(data.data.security_groups)}
+                        </div>
+                    `;
                 } else if (data.id === 'ec2-instance-type' && data.data.instances) {
-                    resultHtml += createInstanceTypeTable(data.data.instances);
-                } else if (data.id === 'ec2-stopped-instances' && data.data.stopped_instances) {
-                    resultHtml += createStoppedInstancesTable(data.data.stopped_instances);
-                } else if (data.id === 'ec2-ebs-optimization' && data.data.volumes) {
-                    resultHtml += createEbsVolumeTable(data.data.volumes);
-                } else if (data.id === 'ec2-tag-compliance' && data.data.resources) {
-                    resultHtml += createTagComplianceTable(data.data.resources);
-                } else if (data.id === 'ec2-ami-age' && data.data.amis) {
-                    resultHtml += createAmiAgeTable(data.data.amis);
-                } else if (data.id === 'ec2-auto-scaling' && data.data.auto_scaling_groups) {
-                    resultHtml += createAutoScalingTable(data.data.auto_scaling_groups);
-                } else if (data.id === 'ec2-metadata-service' && data.data.instances) {
-                    resultHtml += createMetadataServiceTable(data.data.instances);
+                    resultHtml += `
+                        <div class="check-result-data">
+                            <h4>인스턴스 타입 분석 (${data.data.instances.length}개)</h4>
+                            ${createInstanceTypeTable(data.data.instances)}
+                        </div>
+                    `;
                 }
             }
             
@@ -239,38 +239,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 보안 그룹 테이블 생성 함수
-    function createSecurityGroupTable(riskyGroups) {
-        if (!riskyGroups || riskyGroups.length === 0) return '';
+    function createSecurityGroupTable(securityGroups) {
+        if (!securityGroups || securityGroups.length === 0) return '';
         
         return `
-            <div class="check-result-data">
-                <h4>위험한 보안 그룹</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>보안 그룹 ID</th>
-                                <th>보안 그룹 이름</th>
-                                <th>CIDR</th>
-                                <th>프로토콜</th>
-                                <th>포트 범위</th>
-                                <th>위험 요소</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${riskyGroups.map(group => `
+            <div class="table-responsive">
+                <table class="awsui-table">
+                    <thead>
+                        <tr>
+                            <th>보안 그룹 ID</th>
+                            <th>보안 그룹 이름</th>
+                            <th>위험 요소</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${securityGroups.map(group => {
+                            let statusClass = '';
+                            let statusIcon = '';
+                            let riskComment = '';
+                            
+                            if (group.status_code === 'ok') {
+                                statusClass = 'success';
+                                statusIcon = 'check-circle';
+                                riskComment = '안전한 구성';
+                            } else {
+                                statusClass = 'warning';
+                                statusIcon = 'exclamation-triangle';
+                                
+                                if (group.risky_rules && group.risky_rules.length > 0) {
+                                    // 위험 유형 분석
+                                    const hasSSH = group.risky_rules.some(r => r.port_range === '22' || (r.port_range.includes('-') && parseInt(r.port_range.split('-')[0]) <= 22 && parseInt(r.port_range.split('-')[1]) >= 22));
+                                    const hasRDP = group.risky_rules.some(r => r.port_range === '3389' || (r.port_range.includes('-') && parseInt(r.port_range.split('-')[0]) <= 3389 && parseInt(r.port_range.split('-')[1]) >= 3389));
+                                    const hasDB = group.risky_rules.some(r => r.port_range === '3306' || r.port_range === '5432' || (r.port_range.includes('-') && ((parseInt(r.port_range.split('-')[0]) <= 3306 && parseInt(r.port_range.split('-')[1]) >= 3306) || (parseInt(r.port_range.split('-')[0]) <= 5432 && parseInt(r.port_range.split('-')[1]) >= 5432))));
+                                    const hasAllPorts = group.risky_rules.some(r => r.protocol === '-1');
+                                    
+                                    let risks = [];
+                                    if (hasSSH) risks.push('SSH(22)');
+                                    if (hasRDP) risks.push('RDP(3389)');
+                                    if (hasDB) risks.push('DB 포트(3306/5432)');
+                                    if (hasAllPorts) risks.push('모든 포트');
+                                    
+                                    riskComment = `인터넷(0.0.0.0/0)에 ${risks.join(', ')} 개방됨`;
+                                } else {
+                                    riskComment = '위험 규칙 정보 없음';
+                                }
+                            }
+                            
+                            return `
                                 <tr>
                                     <td>${group.sg_id}</td>
                                     <td>${group.sg_name}</td>
-                                    <td>${group.cidr}</td>
-                                    <td>${group.protocol}</td>
-                                    <td>${group.port_range}</td>
-                                    <td>${group.risk}</td>
+                                    <td>${riskComment}</td>
+                                    <td>
+                                        <span class="resource-status ${statusClass}">
+                                            <i class="fas fa-${statusIcon}"></i>
+                                            ${group.status}
+                                        </span>
+                                    </td>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             </div>
         `;
     }
@@ -280,250 +311,57 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!instances || instances.length === 0) return '';
         
         return `
-            <div class="check-result-data">
-                <h4>인스턴스 타입 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>인스턴스 ID</th>
-                                <th>인스턴스 타입</th>
-                                <th>평균 CPU 사용률</th>
-                                <th>최대 CPU 사용률</th>
-                                <th>권장 사항</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${instances.map(instance => `
+            <div class="table-responsive">
+                <table class="awsui-table">
+                    <thead>
+                        <tr>
+                            <th>인스턴스 ID</th>
+                            <th>인스턴스 이름</th>
+                            <th>인스턴스 타입</th>
+                            <th>평균 CPU 사용률</th>
+                            <th>최대 CPU 사용률</th>
+                            <th>권장 사항</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${instances.map(instance => {
+                            let statusClass = '';
+                            let statusIcon = '';
+                            let statusText = '통과';
+                            
+                            if (instance.recommendation === '다운사이징 권장' || instance.recommendation === '업그레이드 권장') {
+                                statusClass = 'warning';
+                                statusIcon = 'exclamation-triangle';
+                                statusText = '최적화 필요';
+                            } else if (instance.recommendation === '적절한 크기') {
+                                statusClass = 'success';
+                                statusIcon = 'check-circle';
+                            } else {
+                                statusClass = 'info';
+                                statusIcon = 'info-circle';
+                                statusText = '정보';
+                            }
+                            
+                            return `
                                 <tr>
                                     <td>${instance.instance_id}</td>
+                                    <td>${instance.instance_name || 'N/A'}</td>
                                     <td>${instance.instance_type}</td>
                                     <td>${instance.avg_cpu}%</td>
                                     <td>${instance.max_cpu}%</td>
                                     <td>${instance.recommendation}</td>
+                                    <td>
+                                        <span class="resource-status ${statusClass}">
+                                            <i class="fas fa-${statusIcon}"></i>
+                                            ${statusText}
+                                        </span>
+                                    </td>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // 중지된 인스턴스 테이블 생성 함수
-    function createStoppedInstancesTable(instances) {
-        if (!instances || instances.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>중지된 인스턴스</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>인스턴스 ID</th>
-                                <th>이름</th>
-                                <th>인스턴스 타입</th>
-                                <th>중지 기간 (일)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${instances.map(instance => `
-                                <tr>
-                                    <td>${instance.instance_id}</td>
-                                    <td>${instance.name}</td>
-                                    <td>${instance.instance_type}</td>
-                                    <td>${instance.days_stopped}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // EBS 볼륨 테이블 생성 함수
-    function createEbsVolumeTable(volumes) {
-        if (!volumes || volumes.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>EBS 볼륨 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>볼륨 ID</th>
-                                <th>볼륨 타입</th>
-                                <th>크기 (GB)</th>
-                                <th>인스턴스 ID</th>
-                                <th>평균 IOPS</th>
-                                <th>권장 사항</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${volumes.map(volume => `
-                                <tr>
-                                    <td>${volume.volume_id}</td>
-                                    <td>${volume.volume_type}</td>
-                                    <td>${volume.volume_size}</td>
-                                    <td>${volume.instance_id}</td>
-                                    <td>${volume.avg_total_iops}</td>
-                                    <td>${volume.recommendation}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // 태그 규정 준수 테이블 생성 함수
-    function createTagComplianceTable(resources) {
-        if (!resources || resources.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>태그 규정 준수 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>리소스 ID</th>
-                                <th>리소스 타입</th>
-                                <th>상태</th>
-                                <th>누락된 태그</th>
-                                <th>규정 준수</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${resources.map(resource => `
-                                <tr>
-                                    <td>${resource.instance_id || resource.resource_id}</td>
-                                    <td>${resource.resource_type || 'EC2 Instance'}</td>
-                                    <td>${resource.state}</td>
-                                    <td>${resource.missing_tags.length > 0 ? resource.missing_tags.join(', ') : '없음'}</td>
-                                    <td>${resource.compliance}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // AMI 수명 테이블 생성 함수
-    function createAmiAgeTable(amis) {
-        if (!amis || amis.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>AMI 수명 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>AMI ID</th>
-                                <th>이름</th>
-                                <th>생성일</th>
-                                <th>경과 일수</th>
-                                <th>상태</th>
-                                <th>사용 인스턴스 수</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${amis.map(ami => `
-                                <tr>
-                                    <td>${ami.ami_id}</td>
-                                    <td>${ami.name}</td>
-                                    <td>${new Date(ami.creation_date).toLocaleDateString()}</td>
-                                    <td>${ami.days_old}</td>
-                                    <td>${ami.status}</td>
-                                    <td>${ami.instances_count}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Auto Scaling 테이블 생성 함수
-    function createAutoScalingTable(groups) {
-        if (!groups || groups.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>Auto Scaling 구성 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>Auto Scaling 그룹</th>
-                                <th>최소 크기</th>
-                                <th>최대 크기</th>
-                                <th>현재 용량</th>
-                                <th>가용 영역 수</th>
-                                <th>스케일링 정책 수</th>
-                                <th>문제점</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${groups.map(group => `
-                                <tr>
-                                    <td>${group.asg_name}</td>
-                                    <td>${group.min_size}</td>
-                                    <td>${group.max_size}</td>
-                                    <td>${group.desired_capacity}</td>
-                                    <td>${group.az_count}</td>
-                                    <td>${group.scaling_policy_count}</td>
-                                    <td>${group.issues.length > 0 ? group.issues.join(', ') : '없음'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // 메타데이터 서비스 테이블 생성 함수
-    function createMetadataServiceTable(instances) {
-        if (!instances || instances.length === 0) return '';
-        
-        return `
-            <div class="check-result-data">
-                <h4>인스턴스 메타데이터 서비스 분석</h4>
-                <div class="table-responsive">
-                    <table class="awsui-table">
-                        <thead>
-                            <tr>
-                                <th>인스턴스 ID</th>
-                                <th>이름</th>
-                                <th>인스턴스 타입</th>
-                                <th>HTTP 토큰</th>
-                                <th>HTTP 엔드포인트</th>
-                                <th>IMDSv2 필수</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${instances.map(instance => `
-                                <tr>
-                                    <td>${instance.instance_id}</td>
-                                    <td>${instance.name}</td>
-                                    <td>${instance.instance_type}</td>
-                                    <td>${instance.http_tokens}</td>
-                                    <td>${instance.http_endpoint}</td>
-                                    <td>${instance.is_imdsv2_required ? '예' : '아니오'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             </div>
         `;
     }

@@ -31,6 +31,13 @@ def run() -> Dict[str, Any]:
                 instance_id = instance['InstanceId']
                 instance_type = instance['InstanceType']
                 
+                # 인스턴스 이름 태그 가져오기
+                instance_name = "N/A"
+                for tag in instance.get('Tags', []):
+                    if tag['Key'] == 'Name':
+                        instance_name = tag['Value']
+                        break
+                
                 # CPU 사용률 데이터 가져오기
                 try:
                     cpu_response = cloudwatch.get_metric_statistics(
@@ -51,6 +58,7 @@ def run() -> Dict[str, Any]:
                         
                         # 인스턴스 타입 최적화 분석
                         recommendation = None
+                        
                         if avg_cpu < 10 and max_cpu < 40:
                             recommendation = '다운사이징 권장'
                         elif avg_cpu > 80 or max_cpu > 90:
@@ -60,6 +68,7 @@ def run() -> Dict[str, Any]:
                         
                         instance_analysis.append({
                             'instance_id': instance_id,
+                            'instance_name': instance_name,
                             'instance_type': instance_type,
                             'avg_cpu': round(avg_cpu, 2),
                             'max_cpu': round(max_cpu, 2),
@@ -68,6 +77,7 @@ def run() -> Dict[str, Any]:
                     else:
                         instance_analysis.append({
                             'instance_id': instance_id,
+                            'instance_name': instance_name,
                             'instance_type': instance_type,
                             'avg_cpu': 'N/A',
                             'max_cpu': 'N/A',
@@ -77,6 +87,7 @@ def run() -> Dict[str, Any]:
                 except Exception as e:
                     instance_analysis.append({
                         'instance_id': instance_id,
+                        'instance_name': instance_name,
                         'instance_type': instance_type,
                         'avg_cpu': 'Error',
                         'max_cpu': 'Error',

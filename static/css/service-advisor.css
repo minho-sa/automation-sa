@@ -264,3 +264,86 @@
     color: #666;
     font-style: italic;
 }
+
+/* 리소스 상태 스타일 */
+.resource-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.resource-status.success {
+    background-color: #f2fcf3;
+    color: #037f0c;
+}
+
+.resource-status.warning {
+    background-color: #fffdf7;
+    color: #d09118;
+}
+
+.resource-status.danger {
+    background-color: #fff8f8;
+    color: #d91515;
+}
+
+.resource-status.info {
+    background-color: #f1faff;
+    color: #0972d3;
+}
+
+.resource-status.secondary {
+    background-color: #f2f3f3;
+    color: #5f6b7a;
+}
+
+/* 접을 수 있는 섹션 스타일 */
+.collapsible-section {
+    margin-bottom: 15px;
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.collapsible-header:hover {
+    background-color: #f2f2f2;
+}
+
+.collapsible-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #000716;
+}
+
+.collapsible-content {
+    display: none;
+    padding: 15px;
+    background-color: #ffffff;
+}
+
+.collapsible-content.active {
+    display: block;
+}
+
+.collapsible-header i {
+    transition: transform 0.3s;
+}
+
+.collapsible-header.active i {
+    transform: rotate(180deg);
+}

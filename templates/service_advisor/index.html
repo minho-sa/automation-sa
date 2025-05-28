@@ -6,6 +6,10 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
 {% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/service-advisor/index.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div class="page-header-title">
@@ -19,7 +23,6 @@
         <div class="awsui-container">
             <h2 class="mb-4">서비스 선택</h2>
             <div class="row" id="serviceCards">
-                <!-- 서비스 카드는 JavaScript로 동적 생성됩니다 -->
                 <div class="col-md-4 mb-4">
                     <div class="service-card" data-service-id="ec2">
                         <div class="service-card-icon">
@@ -53,43 +56,8 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- 추후 다른 서비스 추가 예정 -->
-                <div class="col-md-4 mb-4">
-                    <div class="service-card disabled">
-                        <div class="service-card-icon">
-                            <i class="fas fa-database"></i>
-                        </div>
-                        <div class="service-card-content">
-                            <h3>RDS</h3>
-                            <p>Amazon Relational Database Service</p>
-                        </div>
-                        <div class="service-card-action">
-                            <span class="coming-soon-badge">준비 중</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4 mb-4">
-                    <div class="service-card disabled">
-                        <div class="service-card-icon">
-                            <i class="fas fa-hdd"></i>
-                        </div>
-                        <div class="service-card-content">
-                            <h3>S3</h3>
-                            <p>Amazon Simple Storage Service</p>
-                        </div>
-                        <div class="service-card-action">
-                            <span class="coming-soon-badge">준비 중</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/service-advisor.js') }}"></script>
 {% endblock %}

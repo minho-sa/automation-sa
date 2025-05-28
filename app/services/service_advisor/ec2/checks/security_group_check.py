@@ -1,6 +1,11 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
+from app.services.service_advisor.check_result import (
+    create_check_result, create_resource_result,
+    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL
+)
 
 def run() -> Dict[str, Any]:
     """
@@ -55,53 +60,104 @@ def run() -> Dict[str, Any]:
                             })
             
             # 보안 그룹 상태 결정
-            status = '안전' if not risky_rules else '위험'
-            status_code = 'ok' if not risky_rules else 'warning'
+            status = RESOURCE_STATUS_PASS if not risky_rules else RESOURCE_STATUS_FAIL
+            status_text = '안전' if not risky_rules else '위험'
             
-            sg_analysis.append({
-                'sg_id': sg_id,
-                'sg_name': sg_name,
-                'vpc_id': vpc_id,
-                'description': description,
-                'risky_rules': risky_rules,
-                'risky_rules_count': len(risky_rules),
-                'status': status,
-                'status_code': status_code
-            })
+            # 권장 사항 설명
+            advice = None
+            
+            if risky_rules:
+                # 위험 유형 분석
+                has_ssh = any(r['port_range'] == '22' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 22 and int(r['port_range'].split('-')[1]) >= 22) for r in risky_rules)
+                has_rdp = any(r['port_range'] == '3389' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 3389 and int(r['port_range'].split('-')[1]) >= 3389) for r in risky_rules)
+                has_db = any(r['port_range'] in ['3306', '5432'] or (r['port_range'].find('-') > 0 and ((int(r['port_range'].split('-')[0]) <= 3306 and int(r['port_range'].split('-')[1]) >= 3306) or (int(r['port_range'].split('-')[0]) <= 5432 and int(r['port_range'].split('-')[1]) >= 5432))) for r in risky_rules)
+                has_all = any(r['protocol'] == '-1' for r in risky_rules)
+                
+                advice_items = []
+                if has_ssh:
+                    advice_items.append("SSH 접속은 특정 IP 주소로 제한하거나 VPN/배스천 호스트를 통해 접근하도록 설정하세요")
+                if has_rdp:
+                    advice_items.append("RDP 접속은 특정 IP 주소로 제한하고 가능하면 VPN을 통해 접근하도록 설정하세요")
+                if has_db:
+                    advice_items.append("데이터베이스 포트는 인터넷에 직접 노출하지 말고 내부 네트워크에서만 접근 가능하도록 설정하세요")
+                if has_all:
+                    advice_items.append("모든 포트를 개방하는 규칙은 제거하고 필요한 포트만 선택적으로 개방하세요")
+                
+                advice = ". ".join(advice_items)
+            else:
+                advice = "적절하게 구성되어 있습니다"
+            
+            # 표준화된 리소스 결과 생성
+            sg_result = create_resource_result(
+                resource_id=sg_id,
+                status=status,
+                advice=advice,
+                status_text=status_text,
+                sg_name=sg_name,
+                vpc_id=vpc_id,
+                description=description,
+                risky_rules=risky_rules,
+                risky_rules_count=len(risky_rules)
+            )
+            
+            sg_analysis.append(sg_result)
+        
+        # 결과 분류
+        passed_groups = [sg for sg in sg_analysis if sg['status'] == RESOURCE_STATUS_PASS]
+        failed_groups = [sg for sg in sg_analysis if sg['status'] == RESOURCE_STATUS_FAIL]
         
         # 위험한 보안 그룹 수 계산
-        risky_groups_count = sum(1 for sg in sg_analysis if sg['status_code'] == 'warning')
+        risky_groups_count = len(failed_groups)
+        
+        # 권장사항 생성 (문자열 배열)
+        recommendations = []
+        
+        if risky_groups_count > 0:
+            # SSH 관련 권장사항
+            ssh_groups = [sg for sg in failed_groups if any(r['port_range'] == '22' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 22 and int(r['port_range'].split('-')[1]) >= 22) for r in sg['risky_rules'])]
+            if ssh_groups:
+                recommendations.append(f'SSH 접속은 특정 IP 주소로 제한하거나 VPN/배스천 호스트를 통해 접근하도록 설정하세요. (영향받는 보안 그룹: {", ".join([sg["sg_name"] for sg in ssh_groups])})')
+            
+            # RDP 관련 권장사항
+            rdp_groups = [sg for sg in failed_groups if any(r['port_range'] == '3389' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 3389 and int(r['port_range'].split('-')[1]) >= 3389) for r in sg['risky_rules'])]
+            if rdp_groups:
+                recommendations.append(f'RDP 접속은 특정 IP 주소로 제한하고 가능하면 VPN을 통해 접근하도록 설정하세요. (영향받는 보안 그룹: {", ".join([sg["sg_name"] for sg in rdp_groups])})')
+            
+            # 데이터베이스 포트 관련 권장사항
+            db_groups = [sg for sg in failed_groups if any(r['port_range'] in ['3306', '5432'] or (r['port_range'].find('-') > 0 and ((int(r['port_range'].split('-')[0]) <= 3306 and int(r['port_range'].split('-')[1]) >= 3306) or (int(r['port_range'].split('-')[0]) <= 5432 and int(r['port_range'].split('-')[1]) >= 5432))) for r in sg['risky_rules'])]
+            if db_groups:
+                recommendations.append(f'데이터베이스 포트는 인터넷에 직접 노출하지 말고 내부 네트워크에서만 접근 가능하도록 설정하세요. (영향받는 보안 그룹: {", ".join([sg["sg_name"] for sg in db_groups])})')
+            
+            # 모든 포트 개방 관련 권장사항
+            all_port_groups = [sg for sg in failed_groups if any(r['protocol'] == '-1' for r in sg['risky_rules'])]
+            if all_port_groups:
+                recommendations.append(f'모든 포트를 개방하는 규칙은 제거하고 필요한 포트만 선택적으로 개방하세요. (영향받는 보안 그룹: {", ".join([sg["sg_name"] for sg in all_port_groups])})')
         
         # 결과 생성
+        data = {
+            'security_groups': sg_analysis,
+            'passed_groups': passed_groups,
+            'failed_groups': failed_groups,
+            'risky_groups_count': risky_groups_count,
+            'total_groups_count': len(sg_analysis)
+        }
+        
         if risky_groups_count > 0:
-            return {
-                'status': 'warning',
-                'data': {
-                    'security_groups': sg_analysis,
-                    'risky_groups_count': risky_groups_count,
-                    'total_groups_count': len(sg_analysis)
-                },
-                'recommendations': [
-                    '보안 그룹 규칙을 특정 IP 주소나 CIDR 범위로 제한하세요.',
-                    '필요한 경우에만 포트를 개방하고, 사용하지 않는 포트는 닫으세요.',
-                    'SSH 접속은 VPN이나 배스천 호스트를 통해 접근하도록 설정하세요.'
-                ],
-                'message': f'{len(sg_analysis)}개의 보안 그룹 중 {risky_groups_count}개에서 잠재적인 보안 위험이 발견되었습니다.'
-            }
+            message = f'{len(sg_analysis)}개의 보안 그룹 중 {risky_groups_count}개에서 잠재적인 보안 위험이 발견되었습니다.'
+            return create_check_result(
+                status=STATUS_WARNING,
+                message=message,
+                data=data,
+                recommendations=recommendations
+            )
         else:
-            return {
-                'status': 'ok',
-                'data': {
-                    'security_groups': sg_analysis,
-                    'risky_groups_count': 0,
-                    'total_groups_count': len(sg_analysis)
-                },
-                'recommendations': [],
-                'message': '모든 보안 그룹이 적절하게 구성되어 있습니다.'
-            }
+            message = '모든 보안 그룹이 적절하게 구성되어 있습니다.'
+            return create_check_result(
+                status=STATUS_OK,
+                message=message,
+                data=data,
+                recommendations=['모든 보안 그룹이 적절하게 구성되어 있습니다.']
+            )
     
     except Exception as e:
-        return {
-            'status': 'error',
-            'message': f'보안 그룹 검사 중 오류가 발생했습니다: {str(e)}'
-        }
+        return create_error_result(f'보안 그룹 검사 중 오류가 발생했습니다: {str(e)}')

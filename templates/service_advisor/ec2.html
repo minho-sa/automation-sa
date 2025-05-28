@@ -76,5 +76,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/service-advisor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/ec2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/main.js') }}"></script>
 {% endblock %}

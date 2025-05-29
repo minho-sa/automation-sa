@@ -18,6 +18,13 @@ from app.services.recommendation.check.lambda_service.debug_logs_output import c
 from app.services.recommendation.check.lambda_service.reserved_concurrency import check_reserved_concurrency
 from app.services.recommendation.check.lambda_service.dead_letter_queue import check_dead_letter_queue
 from app.services.recommendation.check.lambda_service.version_alias_usage import check_version_alias_usage
+# 새로 추가된 체크 함수 임포트
+from app.services.recommendation.check.lambda_service.provisioned_concurrency import check_provisioned_concurrency
+from app.services.recommendation.check.lambda_service.layer_optimization import check_layer_optimization
+from app.services.recommendation.check.lambda_service.least_privilege_permissions import check_least_privilege_permissions
+from app.services.recommendation.check.lambda_service.log_retention import check_log_retention
+from app.services.recommendation.check.lambda_service.code_signing import check_code_signing
+from app.services.recommendation.check.lambda_service.async_config import check_async_config
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -147,6 +154,41 @@ def get_lambda_recommendations(functions: List[Dict], collection_id: str = None)
                     version_rec = check_version_alias_usage(function, collection_id)
                     if version_rec:
                         function_recommendations.append(version_rec)
+                
+                # 프로비저닝된 동시성 체크
+                invocation_frequency = function.get('InvocationFrequency', {})
+                if invocation_frequency:
+                    provisioned_rec = check_provisioned_concurrency(function, collection_id)
+                    if provisioned_rec:
+                        function_recommendations.append(provisioned_rec)
+                
+                # 계층(Layer) 최적화 체크
+                layer_rec = check_layer_optimization(function, collection_id)
+                if layer_rec:
+                    function_recommendations.append(layer_rec)
+                
+                # 최소 권한 원칙 체크
+                if function.get('Role'):
+                    permission_rec = check_least_privilege_permissions(function, collection_id)
+                    if permission_rec:
+                        function_recommendations.append(permission_rec)
+                
+                # 로그 보존 기간 체크
+                if function.get('LogGroup'):
+                    log_rec = check_log_retention(function, collection_id)
+                    if log_rec:
+                        function_recommendations.append(log_rec)
+                
+                # 코드 서명 체크
+                code_signing_rec = check_code_signing(function, collection_id)
+                if code_signing_rec:
+                    function_recommendations.append(code_signing_rec)
+                
+                # 비동기 호출 구성 체크
+                if function.get('EventSourceMappings'):
+                    async_rec = check_async_config(function, collection_id)
+                    if async_rec:
+                        function_recommendations.append(async_rec)
                 
             except Exception as e:
                 logger.error(f"{log_prefix}Error checking function {function_name}: {str(e)}")

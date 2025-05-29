@@ -21,6 +21,18 @@ class ServiceAdvisorLambda extends ServiceAdvisorCommon {
       'lambda-tags': {
         createResultHtml: this.createTagsResultHtml.bind(this),
         createTable: this.createTagsTable.bind(this)
+      },
+      'lambda-provisioned-concurrency': {
+        createResultHtml: this.createProvisionedConcurrencyResultHtml.bind(this),
+        createTable: this.createProvisionedConcurrencyTable.bind(this)
+      },
+      'lambda-code-signing': {
+        createResultHtml: this.createCodeSigningResultHtml.bind(this),
+        createTable: this.createCodeSigningTable.bind(this)
+      },
+      'lambda-least-privilege': {
+        createResultHtml: this.createLeastPrivilegeResultHtml.bind(this),
+        createTable: this.createLeastPrivilegeTable.bind(this)
       }
     };
   }
@@ -651,6 +663,429 @@ class ServiceAdvisorLambda extends ServiceAdvisorCommon {
                   <td>${func.function_name || ''}</td>
                   <td>${func.existing_tags && func.existing_tags.length > 0 ? func.existing_tags.join(', ') : '없음'}</td>
                   <td>${func.missing_tags && func.missing_tags.length > 0 ? func.missing_tags.join(', ') : '없음'}</td>
+                  <td>${func.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${func.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 프로비저닝된 동시성 결과 HTML 생성
+  createProvisionedConcurrencyResultHtml(data) {
+    const checkId = 'lambda-provisioned-concurrency';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.functions.forEach(func => {
+      const statusText = func.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(func);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.functions.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${funcs.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createProvisionedConcurrencyTable(data.data.functions)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createProvisionedConcurrencyTable(funcs)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>프로비저닝된 동시성 분석 (${data.data.total_functions_count}개)</h4>
+        <ul class="nav nav-tabs" id="provisionedConcurrencyTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="provisionedConcurrencyTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 프로비저닝된 동시성 테이블 생성
+  createProvisionedConcurrencyTable(functions) {
+    if (!functions || functions.length === 0) return '<div class="alert alert-info">표시할 함수가 없습니다.</div>';
+    
+    return `
+      <style>
+        .provisioned-concurrency-table th:nth-child(1) { width: 25%; }
+        .provisioned-concurrency-table th:nth-child(2) { width: 15%; }
+        .provisioned-concurrency-table th:nth-child(3) { width: 15%; }
+        .provisioned-concurrency-table th:nth-child(4) { width: 15%; }
+        .provisioned-concurrency-table th:nth-child(5) { width: 15%; }
+        .provisioned-concurrency-table th:nth-child(6) { width: 15%; }
+        .provisioned-concurrency-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table provisioned-concurrency-table">
+          <thead>
+            <tr>
+              <th>함수 이름</th>
+              <th>프로비저닝된 동시성</th>
+              <th>시간당 평균 호출</th>
+              <th>최대 동시 실행</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${functions.map(func => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (func.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (func.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (func.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (func.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${func.function_name || ''}</td>
+                  <td>${func.provisioned_concurrency !== null && func.provisioned_concurrency !== undefined ? func.provisioned_concurrency : '설정 안됨'}</td>
+                  <td>${func.avg_invocations_per_hour !== 'N/A' && func.avg_invocations_per_hour !== 'Error' ? func.avg_invocations_per_hour : func.avg_invocations_per_hour}</td>
+                  <td>${func.max_concurrent_executions !== 'N/A' && func.max_concurrent_executions !== 'Error' ? func.max_concurrent_executions : func.max_concurrent_executions}</td>
+                  <td>${func.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${func.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 코드 서명 결과 HTML 생성
+  createCodeSigningResultHtml(data) {
+    const checkId = 'lambda-code-signing';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.functions.forEach(func => {
+      const statusText = func.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(func);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.functions.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${funcs.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createCodeSigningTable(data.data.functions)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createCodeSigningTable(funcs)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>코드 서명 구성 분석 (${data.data.total_functions_count}개)</h4>
+        <ul class="nav nav-tabs" id="codeSigningTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="codeSigningTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 코드 서명 테이블 생성
+  createCodeSigningTable(functions) {
+    if (!functions || functions.length === 0) return '<div class="alert alert-info">표시할 함수가 없습니다.</div>';
+    
+    return `
+      <style>
+        .code-signing-table th:nth-child(1) { width: 25%; }
+        .code-signing-table th:nth-child(2) { width: 15%; }
+        .code-signing-table th:nth-child(3) { width: 15%; }
+        .code-signing-table th:nth-child(4) { width: 30%; }
+        .code-signing-table th:nth-child(5) { width: 15%; }
+        .code-signing-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table code-signing-table">
+          <thead>
+            <tr>
+              <th>함수 이름</th>
+              <th>프로덕션 환경</th>
+              <th>코드 서명 구성</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${functions.map(func => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (func.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (func.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (func.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (func.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${func.function_name || ''}</td>
+                  <td>${func.is_production ? '예' : '아니오'}</td>
+                  <td>${func.has_code_signing ? '구성됨' : '구성되지 않음'}</td>
+                  <td>${func.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${func.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 최소 권한 원칙 결과 HTML 생성
+  createLeastPrivilegeResultHtml(data) {
+    const checkId = 'lambda-least-privilege';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.functions.forEach(func => {
+      const statusText = func.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(func);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.functions.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${funcs.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createLeastPrivilegeTable(data.data.functions)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const funcs = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createLeastPrivilegeTable(funcs)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>최소 권한 원칙 분석 (${data.data.total_functions_count}개)</h4>
+        <ul class="nav nav-tabs" id="leastPrivilegeTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="leastPrivilegeTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 최소 권한 원칙 테이블 생성
+  createLeastPrivilegeTable(functions) {
+    if (!functions || functions.length === 0) return '<div class="alert alert-info">표시할 함수가 없습니다.</div>';
+    
+    return `
+      <style>
+        .least-privilege-table th:nth-child(1) { width: 25%; }
+        .least-privilege-table th:nth-child(2) { width: 15%; }
+        .least-privilege-table th:nth-child(3) { width: 25%; }
+        .least-privilege-table th:nth-child(4) { width: 20%; }
+        .least-privilege-table th:nth-child(5) { width: 15%; }
+        .least-privilege-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table least-privilege-table">
+          <thead>
+            <tr>
+              <th>함수 이름</th>
+              <th>실행 역할</th>
+              <th>위험한 정책</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${functions.map(func => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (func.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (func.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (func.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (func.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${func.function_name || ''}</td>
+                  <td>${func.role_name || ''}</td>
+                  <td>${func.risky_policies && func.risky_policies.length > 0 ? func.risky_policies.join(', ') : '없음'}</td>
                   <td>${func.advice || ''}</td>
                   <td>
                     <span class="resource-status ${statusClass}">

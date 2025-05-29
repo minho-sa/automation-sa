@@ -14,3 +14,10 @@ from app.services.recommendation.check.lambda_service.timeout_setting import che
 from app.services.recommendation.check.lambda_service.version_alias_usage import check_version_alias_usage
 from app.services.recommendation.check.lambda_service.vpc_configuration import check_vpc_configuration
 from app.services.recommendation.check.lambda_service.xray_tracing import check_xray_tracing
+# 새로 추가된 체크 함수 임포트
+from app.services.recommendation.check.lambda_service.provisioned_concurrency import check_provisioned_concurrency
+from app.services.recommendation.check.lambda_service.layer_optimization import check_layer_optimization
+from app.services.recommendation.check.lambda_service.least_privilege_permissions import check_least_privilege_permissions
+from app.services.recommendation.check.lambda_service.log_retention import check_log_retention
+from app.services.recommendation.check.lambda_service.code_signing import check_code_signing
+from app.services.recommendation.check.lambda_service.async_config import check_async_config

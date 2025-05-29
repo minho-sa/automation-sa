@@ -3,7 +3,10 @@ from typing import Dict, List, Any
 from app.services.service_advisor.base_advisor import BaseAdvisor
 from app.services.service_advisor.iam.checks import (
     access_key_rotation,
-    password_policy
+    password_policy,
+    mfa_check,
+    inactive_users_check,
+    root_account_check
 )
 
 class IAMAdvisor(BaseAdvisor):
@@ -30,6 +33,36 @@ class IAMAdvisor(BaseAdvisor):
             name='암호 정책',
             description='계정의 암호 정책을 검사하여 보안 모범 사례를 준수하는지 확인합니다. 강력한 암호 정책은 무단 액세스를 방지하는 데 중요합니다.',
             function=password_policy.run,
+            category='보안',
+            severity='high'
+        )
+        
+        # MFA 설정 검사
+        self.register_check(
+            check_id='iam-mfa',
+            name='MFA 설정',
+            description='IAM 사용자의 MFA(다중 인증) 설정 상태를 검사합니다. 특히 관리자 권한이 있는 사용자에게 MFA를 설정하여 계정 보안을 강화하는 것이 중요합니다.',
+            function=mfa_check.run,
+            category='보안',
+            severity='high'
+        )
+        
+        # 비활성 사용자 검사
+        self.register_check(
+            check_id='iam-inactive-users',
+            name='비활성 사용자',
+            description='장기간 활동이 없는 IAM 사용자를 식별합니다. 비활성 계정은 보안 위험을 초래할 수 있으므로 정기적으로 검토하고 필요하지 않은 계정은 삭제하는 것이 좋습니다.',
+            function=inactive_users_check.run,
+            category='보안',
+            severity='medium'
+        )
+        
+        # 루트 계정 보안 검사
+        self.register_check(
+            check_id='iam-root-account',
+            name='루트 계정 보안',
+            description='AWS 계정의 루트 사용자 보안 설정을 검사합니다. 루트 계정에 MFA 설정 및 액세스 키 삭제 등의 보안 모범 사례를 준수하는지 확인합니다.',
+            function=root_account_check.run,
             category='보안',
             severity='high'
         )

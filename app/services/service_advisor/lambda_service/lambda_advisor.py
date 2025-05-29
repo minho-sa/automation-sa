@@ -5,7 +5,10 @@ from app.services.service_advisor.lambda_service.checks import (
     memory_size_check,
     timeout_check,
     runtime_check,
-    tag_check
+    tag_check,
+    provisioned_concurrency_check,
+    code_signing_check,
+    least_privilege_check
 )
 
 class LambdaAdvisor(BaseAdvisor):
@@ -54,4 +57,34 @@ class LambdaAdvisor(BaseAdvisor):
             function=tag_check.run,
             category='거버넌스',
             severity='low'
+        )
+        
+        # 프로비저닝된 동시성 검사
+        self.register_check(
+            check_id='lambda-provisioned-concurrency',
+            name='프로비저닝된 동시성 최적화',
+            description='Lambda 함수의 호출 패턴을 분석하여 프로비저닝된 동시성 설정이 필요한 함수를 식별합니다. 호출 빈도가 높은 함수에 프로비저닝된 동시성을 설정하여 콜드 스타트 지연 시간을 줄이고 성능을 개선하는 방안을 제시합니다.',
+            function=provisioned_concurrency_check.run,
+            category='성능 최적화',
+            severity='medium'
+        )
+        
+        # 코드 서명 검사
+        self.register_check(
+            check_id='lambda-code-signing',
+            name='코드 서명 구성',
+            description='Lambda 함수의 코드 서명 구성을 검사하여 프로덕션 환경에서 코드 무결성과 보안을 강화할 수 있는 방안을 제시합니다. 코드 서명을 통해 승인된 코드만 배포되도록 하여 보안을 강화합니다.',
+            function=code_signing_check.run,
+            category='보안',
+            severity='medium'
+        )
+        
+        # 최소 권한 원칙 검사
+        self.register_check(
+            check_id='lambda-least-privilege',
+            name='최소 권한 원칙 준수',
+            description='Lambda 함수의 실행 역할(IAM Role)이 최소 권한 원칙을 따르는지 검사합니다. 과도하게 넓은 권한이 부여된 역할을 식별하고, 필요한 권한만 부여하도록 IAM 정책을 수정하는 방안을 제시합니다.',
+            function=least_privilege_check.run,
+            category='보안',
+            severity='high'
         )

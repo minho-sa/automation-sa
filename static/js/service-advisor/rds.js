@@ -13,6 +13,18 @@ class ServiceAdvisorRDS extends ServiceAdvisorCommon {
       'rds-multi-az': {
         createResultHtml: this.createMultiAZResultHtml.bind(this),
         createTable: this.createMultiAZTable.bind(this)
+      },
+      'rds-encryption': {
+        createResultHtml: this.createEncryptionResultHtml.bind(this),
+        createTable: this.createEncryptionTable.bind(this)
+      },
+      'rds-public-access': {
+        createResultHtml: this.createPublicAccessResultHtml.bind(this),
+        createTable: this.createPublicAccessTable.bind(this)
+      },
+      'rds-instance-sizing': {
+        createResultHtml: this.createInstanceSizingResultHtml.bind(this),
+        createTable: this.createInstanceSizingTable.bind(this)
       }
     };
   }
@@ -360,6 +372,441 @@ class ServiceAdvisorRDS extends ServiceAdvisorCommon {
                   <td>${instance.instance_id || ''}</td>
                   <td>${instance.instance_class || ''}</td>
                   <td>${instance.multi_az ? '예' : '아니오'}</td>
+                  <td>${instance.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${instance.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 암호화 설정 결과 HTML 생성
+  createEncryptionResultHtml(data) {
+    const checkId = 'rds-encryption';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.instances.forEach(instance => {
+      const statusText = instance.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(instance);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.instances.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${instances.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createEncryptionTable(data.data.instances)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createEncryptionTable(instances)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>암호화 설정 분석 (${data.data.total_instances_count}개)</h4>
+        <ul class="nav nav-tabs" id="encryptionTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="encryptionTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 암호화 설정 테이블 생성
+  createEncryptionTable(instances) {
+    if (!instances || instances.length === 0) return '<div class="alert alert-info">표시할 인스턴스가 없습니다.</div>';
+    
+    return `
+      <style>
+        .encryption-table th:nth-child(1) { width: 25%; }
+        .encryption-table th:nth-child(2) { width: 15%; }
+        .encryption-table th:nth-child(3) { width: 15%; }
+        .encryption-table th:nth-child(4) { width: 15%; }
+        .encryption-table th:nth-child(5) { width: 15%; }
+        .encryption-table th:nth-child(6) { width: 15%; }
+        .encryption-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table encryption-table">
+          <thead>
+            <tr>
+              <th>인스턴스 ID</th>
+              <th>엔진</th>
+              <th>암호화됨</th>
+              <th>프로덕션 환경</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${instances.map(instance => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (instance.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (instance.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (instance.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${instance.instance_id || ''}</td>
+                  <td>${instance.engine || ''}</td>
+                  <td>${instance.storage_encrypted ? '예' : '아니오'}</td>
+                  <td>${instance.is_production ? '예' : '아니오'}</td>
+                  <td>${instance.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${instance.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 공개 액세스 설정 결과 HTML 생성
+  createPublicAccessResultHtml(data) {
+    const checkId = 'rds-public-access';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.instances.forEach(instance => {
+      const statusText = instance.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(instance);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.instances.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${instances.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createPublicAccessTable(data.data.instances)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createPublicAccessTable(instances)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>공개 액세스 설정 분석 (${data.data.total_instances_count}개)</h4>
+        <ul class="nav nav-tabs" id="publicAccessTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="publicAccessTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 공개 액세스 설정 테이블 생성
+  createPublicAccessTable(instances) {
+    if (!instances || instances.length === 0) return '<div class="alert alert-info">표시할 인스턴스가 없습니다.</div>';
+    
+    return `
+      <style>
+        .public-access-table th:nth-child(1) { width: 25%; }
+        .public-access-table th:nth-child(2) { width: 15%; }
+        .public-access-table th:nth-child(3) { width: 15%; }
+        .public-access-table th:nth-child(4) { width: 30%; }
+        .public-access-table th:nth-child(5) { width: 15%; }
+        .public-access-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table public-access-table">
+          <thead>
+            <tr>
+              <th>인스턴스 ID</th>
+              <th>엔진</th>
+              <th>공개 액세스</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${instances.map(instance => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (instance.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (instance.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (instance.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${instance.instance_id || ''}</td>
+                  <td>${instance.engine || ''}</td>
+                  <td>${instance.publicly_accessible ? '예' : '아니오'}</td>
+                  <td>${instance.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${instance.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 인스턴스 크기 최적화 결과 HTML 생성
+  createInstanceSizingResultHtml(data) {
+    const checkId = 'rds-instance-sizing';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.instances.forEach(instance => {
+      const statusText = instance.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(instance);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.instances.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${instances.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createInstanceSizingTable(data.data.instances)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const instances = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createInstanceSizingTable(instances)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>인스턴스 크기 최적화 분석 (${data.data.total_instances_count}개)</h4>
+        <ul class="nav nav-tabs" id="instanceSizingTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="instanceSizingTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 인스턴스 크기 최적화 테이블 생성
+  createInstanceSizingTable(instances) {
+    if (!instances || instances.length === 0) return '<div class="alert alert-info">표시할 인스턴스가 없습니다.</div>';
+    
+    return `
+      <style>
+        .instance-sizing-table th:nth-child(1) { width: 15%; }
+        .instance-sizing-table th:nth-child(2) { width: 15%; }
+        .instance-sizing-table th:nth-child(3) { width: 10%; }
+        .instance-sizing-table th:nth-child(4) { width: 10%; }
+        .instance-sizing-table th:nth-child(5) { width: 30%; }
+        .instance-sizing-table th:nth-child(6) { width: 10%; }
+        .instance-sizing-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table instance-sizing-table">
+          <thead>
+            <tr>
+              <th>인스턴스 ID</th>
+              <th>인스턴스 클래스</th>
+              <th>평균 CPU</th>
+              <th>최대 CPU</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${instances.map(instance => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (instance.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (instance.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (instance.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (instance.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${instance.instance_id || ''}</td>
+                  <td>${instance.instance_class || ''}</td>
+                  <td>${instance.avg_cpu !== 'N/A' && instance.avg_cpu !== 'Error' ? `${instance.avg_cpu}%` : instance.avg_cpu}</td>
+                  <td>${instance.max_cpu !== 'N/A' && instance.max_cpu !== 'Error' ? `${instance.max_cpu}%` : instance.max_cpu}</td>
                   <td>${instance.advice || ''}</td>
                   <td>
                     <span class="resource-status ${statusClass}">

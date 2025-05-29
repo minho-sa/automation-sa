@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
     advisor = new ServiceAdvisorEC2();
   } else if (currentPath.includes('/service-advisor/lambda')) {
     advisor = new ServiceAdvisorLambda();
+  } else if (currentPath.includes('/service-advisor/iam')) {
+    advisor = new ServiceAdvisorIAM();
+  } else if (currentPath.includes('/service-advisor/rds')) {
+    advisor = new ServiceAdvisorRDS();
+  } else if (currentPath.includes('/service-advisor/s3')) {
+    advisor = new ServiceAdvisorS3();
   } else if (currentPath.includes('/service-advisor')) {
     // 인덱스 페이지는 별도 초기화 필요 없음 (service-advisor/index.js에서 처리)
     return;

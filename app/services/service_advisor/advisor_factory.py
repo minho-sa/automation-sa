@@ -2,6 +2,9 @@ from typing import Dict, List, Optional, Any
 import logging
 from app.services.service_advisor.ec2.ec2_advisor import EC2Advisor
 from app.services.service_advisor.lambda_service.lambda_advisor import LambdaAdvisor
+from app.services.service_advisor.iam.iam_advisor import IAMAdvisor
+from app.services.service_advisor.rds.rds_advisor import RDSAdvisor
+from app.services.service_advisor.s3.s3_advisor import S3Advisor
 
 class ServiceAdvisorFactory:
     """
@@ -16,7 +19,10 @@ class ServiceAdvisorFactory:
         self.logger = logging.getLogger(__name__)
         self.service_mapping = {
             'ec2': EC2Advisor,
-            'lambda': LambdaAdvisor
+            'lambda': LambdaAdvisor,
+            'iam': IAMAdvisor,
+            'rds': RDSAdvisor,
+            's3': S3Advisor
         }
     
     def get_advisor(self, service_name: str) -> Optional[Any]:
@@ -24,7 +30,7 @@ class ServiceAdvisorFactory:
         서비스 이름에 맞는 어드바이저 객체를 반환합니다.
         
         Args:
-            service_name: 서비스 이름 (ec2, lambda 등)
+            service_name: 서비스 이름 (ec2, lambda, iam, rds, s3 등)
             
         Returns:
             Optional[Any]: 서비스 어드바이저 객체 또는 None
@@ -67,7 +73,10 @@ class ServiceAdvisorFactory:
         """
         service_display_names = {
             'ec2': 'Amazon EC2',
-            'lambda': 'AWS Lambda'
+            'lambda': 'AWS Lambda',
+            'iam': 'AWS IAM',
+            'rds': 'Amazon RDS',
+            's3': 'Amazon S3'
         }
         
         return service_display_names.get(service_name, service_name.upper())

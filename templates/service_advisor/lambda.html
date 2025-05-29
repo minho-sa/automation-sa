@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Lambda 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>Lambda 서비스 어드바이저</h1>
+        <p>Lambda 서비스에 대한 검사 항목을 확인하고 실행할 수 있습니다.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('service_advisor.service_advisor_view') }}" class="awsui-button awsui-button-normal">
+            <i class="fas fa-arrow-left"></i> 서비스 목록으로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="awsui-container">
+            <h2 class="mb-4">검사 항목</h2>
+            
+            <div class="check-actions mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="select-all-checks">
+                    <label class="form-check-label" for="select-all-checks">
+                        전체 선택
+                    </label>
+                </div>
+                <button id="run-selected-checks" class="awsui-button awsui-button-primary ml-3">
+                    <i class="fas fa-play"></i> 선택한 항목 검사하기
+                </button>
+            </div>
+            
+            <div class="check-items-container">
+                {% for check in checks %}
+                <div class="check-item" data-check-id="{{ check.id }}">
+                    <div class="check-item-header">
+                        <div class="check-item-title">
+                            <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
+                            <h3>{{ check.name }}</h3>
+                            <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
+                            <span class="check-item-severity {{ check.severity }}">{{ check.severity }}</span>
+                        </div>
+                        <div class="check-item-actions">
+                            <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                            <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
+                                <i class="fas fa-play"></i> 검사하기
+                            </button>
+                        </div>
+                    </div>
+                    <div class="check-item-description">
+                        {{ check.description }}
+                    </div>
+                    <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
+                        <div class="check-result-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span>검사 중입니다...</span>
+                        </div>
+                        <div class="check-result-content" style="display: none;">
+                            <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/service-advisor/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/lambda.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/main.js') }}"></script>
+{% endblock %}

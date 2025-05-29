@@ -25,6 +25,18 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
       'iam-root-account': {
         createResultHtml: this.createRootAccountResultHtml.bind(this),
         createTable: this.createRootAccountTable.bind(this)
+      },
+      'iam-policy-analyzer': {
+        createResultHtml: this.createPolicyAnalyzerResultHtml.bind(this),
+        createTable: this.createPolicyAnalyzerTable.bind(this)
+      },
+      'iam-credential-report': {
+        createResultHtml: this.createCredentialReportResultHtml.bind(this),
+        createTable: this.createCredentialReportTable.bind(this)
+      },
+      'iam-service-control-policy': {
+        createResultHtml: this.createServiceControlPolicyResultHtml.bind(this),
+        createTable: this.createServiceControlPolicyTable.bind(this)
       }
     };
   }
@@ -866,6 +878,511 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
                     <span class="resource-status ${statusClass}">
                       <i class="fas fa-${statusIcon}"></i>
                       ${item.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 정책 분석 결과 HTML 생성
+  createPolicyAnalyzerResultHtml(data) {
+    const checkId = 'iam-policy-analyzer';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.policies.forEach(policy => {
+      const statusText = policy.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(policy);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.policies.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const policies = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${policies.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createPolicyAnalyzerTable(data.data.policies)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const policies = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createPolicyAnalyzerTable(policies)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>정책 분석 (${data.data.total_policies_count}개)</h4>
+        <ul class="nav nav-tabs" id="policyAnalyzerTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="policyAnalyzerTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+        <div class="mt-3">
+          <h5>권장 사항</h5>
+          <ul>
+            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  // 정책 분석 테이블 생성
+  createPolicyAnalyzerTable(policies) {
+    if (!policies || policies.length === 0) return '<div class="alert alert-info">표시할 정책이 없습니다.</div>';
+    
+    return `
+      <style>
+        .policy-analyzer-table th:nth-child(1) { width: 25%; }
+        .policy-analyzer-table th:nth-child(2) { width: 35%; }
+        .policy-analyzer-table th:nth-child(3) { width: 25%; }
+        .policy-analyzer-table th:nth-child(4) { width: 15%; }
+        .policy-analyzer-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table policy-analyzer-table">
+          <thead>
+            <tr>
+              <th>정책 이름</th>
+              <th>위험한 설정</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${policies.map(policy => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (policy.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (policy.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (policy.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (policy.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (policy.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              // 위험한 설정 정보 생성
+              let riskyStatementsHtml = '';
+              if (policy.risky_statements && policy.risky_statements.length > 0) {
+                riskyStatementsHtml = policy.risky_statements.map(statement => {
+                  return `<div class="text-danger">${statement}</div>`;
+                }).join('');
+              } else {
+                riskyStatementsHtml = '없음';
+              }
+              
+              return `
+                <tr>
+                  <td>${policy.policy_name || ''}</td>
+                  <td>${riskyStatementsHtml}</td>
+                  <td>${policy.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${policy.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 자격 증명 보고서 결과 HTML 생성
+  createCredentialReportResultHtml(data) {
+    const checkId = 'iam-credential-report';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.users.forEach(user => {
+      const statusText = user.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(user);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.users.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const users = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${users.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createCredentialReportTable(data.data.users)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const users = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createCredentialReportTable(users)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>자격 증명 보고서 분석 (${data.data.total_users_count}명)</h4>
+        <ul class="nav nav-tabs" id="credentialReportTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="credentialReportTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+        <div class="mt-3">
+          <h5>권장 사항</h5>
+          <ul>
+            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  // 자격 증명 보고서 테이블 생성
+  createCredentialReportTable(users) {
+    if (!users || users.length === 0) return '<div class="alert alert-info">표시할 사용자가 없습니다.</div>';
+    
+    return `
+      <style>
+        .credential-report-table th:nth-child(1) { width: 15%; }
+        .credential-report-table th:nth-child(2) { width: 10%; }
+        .credential-report-table th:nth-child(3) { width: 10%; }
+        .credential-report-table th:nth-child(4) { width: 10%; }
+        .credential-report-table th:nth-child(5) { width: 15%; }
+        .credential-report-table th:nth-child(6) { width: 25%; }
+        .credential-report-table th:nth-child(7) { width: 15%; }
+        .credential-report-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table credential-report-table">
+          <thead>
+            <tr>
+              <th>사용자 이름</th>
+              <th>콘솔 액세스</th>
+              <th>MFA</th>
+              <th>액세스 키</th>
+              <th>마지막 활동</th>
+              <th>문제점</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(user => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (user.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (user.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (user.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (user.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (user.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              // 문제점 정보 생성
+              let issuesHtml = '';
+              if (user.issues && user.issues.length > 0) {
+                issuesHtml = user.issues.map(issue => {
+                  return `<div class="text-danger">${issue}</div>`;
+                }).join('');
+              } else {
+                issuesHtml = '없음';
+              }
+              
+              return `
+                <tr>
+                  <td>${user.user_name || ''}</td>
+                  <td>${user.has_console_access ? '예' : '아니오'}</td>
+                  <td>${user.has_mfa ? '예' : '아니오'}</td>
+                  <td>${user.has_access_key_1 || user.has_access_key_2 ? '있음' : '없음'}</td>
+                  <td>${user.last_activity || 'N/A'}</td>
+                  <td>${issuesHtml}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${user.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 서비스 제어 정책 결과 HTML 생성
+  createServiceControlPolicyResultHtml(data) {
+    const checkId = 'iam-service-control-policy';
+    
+    // Organizations가 활성화되어 있지 않은 경우
+    if (!data.data.org_enabled) {
+      return `
+        <div class="check-result-data">
+          <h4>서비스 제어 정책 분석</h4>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>AWS Organizations가 활성화되어 있지 않습니다.</span>
+          </div>
+          <div class="mt-3">
+            <h5>권장 사항</h5>
+            <ul>
+              ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+    
+    // SCP가 활성화되어 있지 않은 경우
+    if (!data.data.scp_enabled) {
+      return `
+        <div class="check-result-data">
+          <h4>서비스 제어 정책 분석</h4>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>서비스 제어 정책(SCP)이 활성화되어 있지 않습니다.</span>
+          </div>
+          <div class="mt-3">
+            <h5>권장 사항</h5>
+            <ul>
+              ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.scp_implementation_results.forEach(scp => {
+      const statusText = scp.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(scp);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.scp_implementation_results.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const scps = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${scps.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createServiceControlPolicyTable(data.data.scp_implementation_results)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const scps = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createServiceControlPolicyTable(scps)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>서비스 제어 정책 분석 (${data.data.total_scps_count}개)</h4>
+        <ul class="nav nav-tabs" id="scpTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="scpTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+        <div class="mt-3">
+          <h5>권장 사항</h5>
+          <ul>
+            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  // 서비스 제어 정책 테이블 생성
+  createServiceControlPolicyTable(scps) {
+    if (!scps || scps.length === 0) return '<div class="alert alert-info">표시할 SCP가 없습니다.</div>';
+    
+    return `
+      <style>
+        .scp-table th:nth-child(1) { width: 30%; }
+        .scp-table th:nth-child(2) { width: 15%; }
+        .scp-table th:nth-child(3) { width: 40%; }
+        .scp-table th:nth-child(4) { width: 15%; }
+        .scp-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table scp-table">
+          <thead>
+            <tr>
+              <th>SCP 이름</th>
+              <th>구현 상태</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scps.map(scp => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (scp.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (scp.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (scp.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (scp.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (scp.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${scp.scp_name || ''}</td>
+                  <td>${scp.implemented ? '구현됨' : '미구현'}</td>
+                  <td>${scp.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${scp.status_text || ''}
                     </span>
                   </td>
                 </tr>

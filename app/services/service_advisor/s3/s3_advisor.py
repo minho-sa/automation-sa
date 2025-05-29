@@ -6,7 +6,11 @@ from app.services.service_advisor.s3.checks import (
     encryption,
     versioning_check,
     lifecycle_check,
-    logging_check
+    logging_check,
+    cors_check,
+    object_lock_check,
+    replication_check,
+    intelligent_tiering_check
 )
 
 class S3Advisor(BaseAdvisor):
@@ -65,4 +69,44 @@ class S3Advisor(BaseAdvisor):
             function=logging_check.run,
             category='보안',
             severity='medium'
+        )
+        
+        # CORS 설정 검사
+        self.register_check(
+            check_id='s3-cors',
+            name='CORS 설정',
+            description='S3 버킷의 CORS(Cross-Origin Resource Sharing) 설정을 검사하여 보안 위험을 식별합니다. 과도하게 허용적인 CORS 설정이 있는 버킷을 찾아 개선 방안을 제시합니다.',
+            function=cors_check.run,
+            category='보안',
+            severity='medium'
+        )
+        
+        # 객체 잠금 설정 검사
+        self.register_check(
+            check_id='s3-object-lock',
+            name='객체 잠금 설정',
+            description='S3 버킷의 객체 잠금(Object Lock) 설정을 검사하여 데이터 보호 수준을 평가합니다. 중요한 데이터를 저장하는 버킷에 객체 잠금이 활성화되지 않은 경우 개선 방안을 제시합니다.',
+            function=object_lock_check.run,
+            category='데이터 보호',
+            severity='medium'
+        )
+        
+        # 복제 설정 검사
+        self.register_check(
+            check_id='s3-replication',
+            name='복제 설정',
+            description='S3 버킷의 복제(Replication) 설정을 검사하여 재해 복구 수준을 평가합니다. 프로덕션 환경의 버킷에 복제가 구성되지 않은 경우 개선 방안을 제시합니다.',
+            function=replication_check.run,
+            category='재해 복구',
+            severity='medium'
+        )
+        
+        # Intelligent-Tiering 설정 검사
+        self.register_check(
+            check_id='s3-intelligent-tiering',
+            name='Intelligent-Tiering 설정',
+            description='S3 버킷의 Intelligent-Tiering 설정을 검사하여 비용 최적화 기회를 식별합니다. 액세스 패턴이 예측할 수 없는 데이터에 대해 Intelligent-Tiering 사용을 권장합니다.',
+            function=intelligent_tiering_check.run,
+            category='비용 최적화',
+            severity='low'
         )

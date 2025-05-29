@@ -25,6 +25,22 @@ class ServiceAdvisorS3 extends ServiceAdvisorCommon {
       's3-logging': {
         createResultHtml: this.createLoggingResultHtml.bind(this),
         createTable: this.createLoggingTable.bind(this)
+      },
+      's3-cors': {
+        createResultHtml: this.createCorsResultHtml.bind(this),
+        createTable: this.createCorsTable.bind(this)
+      },
+      's3-object-lock': {
+        createResultHtml: this.createObjectLockResultHtml.bind(this),
+        createTable: this.createObjectLockTable.bind(this)
+      },
+      's3-replication': {
+        createResultHtml: this.createReplicationResultHtml.bind(this),
+        createTable: this.createReplicationTable.bind(this)
+      },
+      's3-intelligent-tiering': {
+        createResultHtml: this.createIntelligentTieringResultHtml.bind(this),
+        createTable: this.createIntelligentTieringTable.bind(this)
       }
     };
   }
@@ -810,6 +826,605 @@ class ServiceAdvisorS3 extends ServiceAdvisorCommon {
                   <td>${bucket.logging_enabled ? '활성화됨' : '비활성화됨'}</td>
                   <td>${bucket.target_bucket || ''}</td>
                   <td>${bucket.is_production ? '예' : '아니오'}</td>
+                  <td>${bucket.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${bucket.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // CORS 설정 결과 HTML 생성
+  createCorsResultHtml(data) {
+    const checkId = 's3-cors';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.buckets.forEach(bucket => {
+      const statusText = bucket.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(bucket);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.buckets.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${buckets.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createCorsTable(data.data.buckets)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createCorsTable(buckets)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>CORS 설정 분석 (${data.data.total_buckets_count}개)</h4>
+        <ul class="nav nav-tabs" id="corsTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="corsTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // CORS 설정 테이블 생성
+  createCorsTable(buckets) {
+    if (!buckets || buckets.length === 0) return '<div class="alert alert-info">표시할 버킷이 없습니다.</div>';
+    
+    return `
+      <style>
+        .cors-table th:nth-child(1) { width: 25%; }
+        .cors-table th:nth-child(2) { width: 10%; }
+        .cors-table th:nth-child(3) { width: 15%; }
+        .cors-table th:nth-child(4) { width: 15%; }
+        .cors-table th:nth-child(5) { width: 20%; }
+        .cors-table th:nth-child(6) { width: 15%; }
+        .cors-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table cors-table">
+          <thead>
+            <tr>
+              <th>버킷 이름</th>
+              <th>생성일</th>
+              <th>CORS 설정</th>
+              <th>와일드카드 오리진</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buckets.map(bucket => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (bucket.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (bucket.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (bucket.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${bucket.bucket_name || ''}</td>
+                  <td>${bucket.creation_date || ''}</td>
+                  <td>${bucket.has_cors ? '있음' : '없음'}</td>
+                  <td>${bucket.has_wildcard_origin ? '예' : '아니오'}</td>
+                  <td>${bucket.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${bucket.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 객체 잠금 결과 HTML 생성
+  createObjectLockResultHtml(data) {
+    const checkId = 's3-object-lock';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.buckets.forEach(bucket => {
+      const statusText = bucket.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(bucket);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.buckets.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${buckets.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createObjectLockTable(data.data.buckets)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createObjectLockTable(buckets)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>객체 잠금 설정 분석 (${data.data.total_buckets_count}개)</h4>
+        <ul class="nav nav-tabs" id="objectLockTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="objectLockTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 객체 잠금 테이블 생성
+  createObjectLockTable(buckets) {
+    if (!buckets || buckets.length === 0) return '<div class="alert alert-info">표시할 버킷이 없습니다.</div>';
+    
+    return `
+      <style>
+        .object-lock-table th:nth-child(1) { width: 20%; }
+        .object-lock-table th:nth-child(2) { width: 10%; }
+        .object-lock-table th:nth-child(3) { width: 10%; }
+        .object-lock-table th:nth-child(4) { width: 10%; }
+        .object-lock-table th:nth-child(5) { width: 10%; }
+        .object-lock-table th:nth-child(6) { width: 10%; }
+        .object-lock-table th:nth-child(7) { width: 15%; }
+        .object-lock-table th:nth-child(8) { width: 15%; }
+        .object-lock-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table object-lock-table">
+          <thead>
+            <tr>
+              <th>버킷 이름</th>
+              <th>생성일</th>
+              <th>객체 잠금</th>
+              <th>보존 모드</th>
+              <th>보존 기간</th>
+              <th>중요 데이터</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buckets.map(bucket => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (bucket.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (bucket.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (bucket.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${bucket.bucket_name || ''}</td>
+                  <td>${bucket.creation_date || ''}</td>
+                  <td>${bucket.object_lock_enabled ? '활성화됨' : '비활성화됨'}</td>
+                  <td>${bucket.retention_mode || 'N/A'}</td>
+                  <td>${bucket.retention_period || 'N/A'}</td>
+                  <td>${bucket.is_important_data ? '예' : '아니오'}</td>
+                  <td>${bucket.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${bucket.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // 복제 설정 결과 HTML 생성
+  createReplicationResultHtml(data) {
+    const checkId = 's3-replication';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.buckets.forEach(bucket => {
+      const statusText = bucket.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(bucket);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.buckets.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${buckets.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createReplicationTable(data.data.buckets)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createReplicationTable(buckets)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>복제 설정 분석 (${data.data.total_buckets_count}개)</h4>
+        <ul class="nav nav-tabs" id="replicationTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="replicationTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // 복제 설정 테이블 생성
+  createReplicationTable(buckets) {
+    if (!buckets || buckets.length === 0) return '<div class="alert alert-info">표시할 버킷이 없습니다.</div>';
+    
+    return `
+      <style>
+        .replication-table th:nth-child(1) { width: 20%; }
+        .replication-table th:nth-child(2) { width: 10%; }
+        .replication-table th:nth-child(3) { width: 10%; }
+        .replication-table th:nth-child(4) { width: 10%; }
+        .replication-table th:nth-child(5) { width: 15%; }
+        .replication-table th:nth-child(6) { width: 10%; }
+        .replication-table th:nth-child(7) { width: 15%; }
+        .replication-table th:nth-child(8) { width: 10%; }
+        .replication-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table replication-table">
+          <thead>
+            <tr>
+              <th>버킷 이름</th>
+              <th>생성일</th>
+              <th>복제</th>
+              <th>버전 관리</th>
+              <th>대상 버킷</th>
+              <th>프로덕션</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buckets.map(bucket => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (bucket.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (bucket.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (bucket.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${bucket.bucket_name || ''}</td>
+                  <td>${bucket.creation_date || ''}</td>
+                  <td>${bucket.has_replication ? '활성화됨' : '비활성화됨'}</td>
+                  <td>${bucket.versioning_enabled ? '활성화됨' : '비활성화됨'}</td>
+                  <td>${bucket.destination_buckets && bucket.destination_buckets.length > 0 ? bucket.destination_buckets.join(', ') : 'N/A'}</td>
+                  <td>${bucket.is_production ? '예' : '아니오'}</td>
+                  <td>${bucket.advice || ''}</td>
+                  <td>
+                    <span class="resource-status ${statusClass}">
+                      <i class="fas fa-${statusIcon}"></i>
+                      ${bucket.status_text || ''}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // Intelligent-Tiering 결과 HTML 생성
+  createIntelligentTieringResultHtml(data) {
+    const checkId = 's3-intelligent-tiering';
+    
+    // 상태별 그룹화
+    const statusGroups = {};
+    data.data.buckets.forEach(bucket => {
+      const statusText = bucket.status_text || '기타';
+      if (!statusGroups[statusText]) {
+        statusGroups[statusText] = [];
+      }
+      statusGroups[statusText].push(bucket);
+    });
+    
+    // 탭 HTML 생성
+    let tabsHtml = `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab-${checkId}" data-bs-toggle="tab" 
+          data-bs-target="#all-content-${checkId}" type="button" role="tab" 
+          aria-controls="all-content-${checkId}" aria-selected="true">
+          전체 (${data.data.buckets.length})
+        </button>
+      </li>
+    `;
+    
+    // 상태별 탭 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabsHtml += `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="${safeStatusText}-tab-${checkId}" data-bs-toggle="tab" 
+            data-bs-target="#${safeStatusText}-content-${checkId}" type="button" role="tab" 
+            aria-controls="${safeStatusText}-content-${checkId}" aria-selected="false">
+            ${statusText} (${buckets.length})
+          </button>
+        </li>
+      `;
+    });
+    
+    // 탭 콘텐츠 HTML 생성
+    let tabContentHtml = `
+      <div class="tab-pane fade show active" id="all-content-${checkId}" role="tabpanel" 
+        aria-labelledby="all-tab-${checkId}">
+        ${this.createIntelligentTieringTable(data.data.buckets)}
+      </div>
+    `;
+    
+    // 상태별 탭 콘텐츠 추가
+    Object.keys(statusGroups).forEach((statusText, index) => {
+      const buckets = statusGroups[statusText];
+      const safeStatusText = statusText.replace(/\s+/g, '-');
+      tabContentHtml += `
+        <div class="tab-pane fade" id="${safeStatusText}-content-${checkId}" role="tabpanel" 
+          aria-labelledby="${safeStatusText}-tab-${checkId}">
+          ${this.createIntelligentTieringTable(buckets)}
+        </div>
+      `;
+    });
+    
+    return `
+      <div class="check-result-data">
+        <h4>Intelligent-Tiering 설정 분석 (${data.data.total_buckets_count}개)</h4>
+        <ul class="nav nav-tabs" id="intelligentTieringTabs-${checkId}" role="tablist">
+          ${tabsHtml}
+        </ul>
+        <div class="tab-content" id="intelligentTieringTabContent-${checkId}">
+          ${tabContentHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // Intelligent-Tiering 테이블 생성
+  createIntelligentTieringTable(buckets) {
+    if (!buckets || buckets.length === 0) return '<div class="alert alert-info">표시할 버킷이 없습니다.</div>';
+    
+    return `
+      <style>
+        .intelligent-tiering-table th:nth-child(1) { width: 20%; }
+        .intelligent-tiering-table th:nth-child(2) { width: 10%; }
+        .intelligent-tiering-table th:nth-child(3) { width: 15%; }
+        .intelligent-tiering-table th:nth-child(4) { width: 15%; }
+        .intelligent-tiering-table th:nth-child(5) { width: 15%; }
+        .intelligent-tiering-table th:nth-child(6) { width: 15%; }
+        .intelligent-tiering-table th:nth-child(7) { width: 10%; }
+        .intelligent-tiering-table td { word-break: break-word; }
+      </style>
+      <div class="table-responsive">
+        <table class="awsui-table intelligent-tiering-table">
+          <thead>
+            <tr>
+              <th>버킷 이름</th>
+              <th>생성일</th>
+              <th>Intelligent-Tiering</th>
+              <th>아카이브 계층</th>
+              <th>수명 주기 규칙</th>
+              <th>권장 사항</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buckets.map(bucket => {
+              let statusClass = '';
+              let statusIcon = '';
+              
+              if (bucket.status === 'fail') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'pass') {
+                statusClass = 'success';
+                statusIcon = 'check-circle';
+              } else if (bucket.status === 'warning') {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+              } else if (bucket.status === 'unknown') {
+                statusClass = 'info';
+                statusIcon = 'info-circle';
+              } else if (bucket.status === 'error') {
+                statusClass = 'danger';
+                statusIcon = 'times-circle';
+              } else {
+                statusClass = 'secondary';
+                statusIcon = 'question-circle';
+              }
+              
+              return `
+                <tr>
+                  <td>${bucket.bucket_name || ''}</td>
+                  <td>${bucket.creation_date || ''}</td>
+                  <td>${bucket.has_intelligent_tiering ? '활성화됨' : '비활성화됨'}</td>
+                  <td>${bucket.has_archive_tiers ? '활성화됨' : '비활성화됨'}</td>
+                  <td>${bucket.has_lifecycle_rules ? '있음' : '없음'}</td>
                   <td>${bucket.advice || ''}</td>
                   <td>
                     <span class="resource-status ${statusClass}">

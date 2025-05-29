@@ -6,7 +6,10 @@ from app.services.service_advisor.iam.checks import (
     password_policy,
     mfa_check,
     inactive_users_check,
-    root_account_check
+    root_account_check,
+    policy_analyzer_check,
+    credential_report_check,
+    service_control_policy_check
 )
 
 class IAMAdvisor(BaseAdvisor):
@@ -65,4 +68,34 @@ class IAMAdvisor(BaseAdvisor):
             function=root_account_check.run,
             category='보안',
             severity='high'
+        )
+        
+        # 정책 분석 검사
+        self.register_check(
+            check_id='iam-policy-analyzer',
+            name='정책 분석',
+            description='IAM 정책의 보안 위험을 분석합니다. 관리자 액세스를 허용하거나 와일드카드 리소스 또는 작업을 사용하는 정책을 식별하고 최소 권한 원칙에 따라 개선 방안을 제시합니다.',
+            function=policy_analyzer_check.run,
+            category='보안',
+            severity='high'
+        )
+        
+        # 자격 증명 보고서 검사
+        self.register_check(
+            check_id='iam-credential-report',
+            name='자격 증명 보고서',
+            description='IAM 사용자의 자격 증명 보고서를 분석하여 보안 위험을 식별합니다. MFA 미설정, 오래된 액세스 키, 비활성 사용자 등을 종합적으로 분석하고 개선 방안을 제시합니다.',
+            function=credential_report_check.run,
+            category='보안',
+            severity='high'
+        )
+        
+        # 서비스 제어 정책 검사
+        self.register_check(
+            check_id='iam-service-control-policy',
+            name='서비스 제어 정책',
+            description='AWS Organizations의 서비스 제어 정책(SCP)을 분석합니다. 권장되는 SCP 구현 여부를 확인하고 보안 강화를 위한 개선 방안을 제시합니다.',
+            function=service_control_policy_check.run,
+            category='거버넌스',
+            severity='medium'
         )

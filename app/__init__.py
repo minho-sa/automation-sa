@@ -26,7 +26,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-from app.routes import main, auth, dashboard, recommendations, service_advisor
+from app.routes import main, auth, dashboard, service_advisor
 from app.models import user
 
 # 블루프린트 등록

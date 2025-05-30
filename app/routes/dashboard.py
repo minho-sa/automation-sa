@@ -110,43 +110,7 @@ def collect_data(region, user_id, selected_services=None, auth_type='access_key'
         collection_status['error'] = error_msg
         app.logger.error(f"[{collection_status['collection_id']}] 데이터 수집 오류: {error_msg}")
     finally:
-        # 데이터 수집 완료 후 추천사항 생성
-        try:
-            from app.services.recommendation import (
-                get_ec2_recommendations, get_s3_recommendations, get_rds_recommendations, 
-                get_lambda_recommendations, get_iam_recommendations
-            )
-            
-            all_recommendations = []
-            
-            # EC2 추천 사항
-            if 'ec2' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['ec2']:
-                all_recommendations.extend(get_ec2_recommendations(collection_status['all_services_data']['ec2']['instances'], collection_status['collection_id']))
-            
-            # Lambda 추천 사항
-            if 'lambda' in collection_status['all_services_data'] and 'functions' in collection_status['all_services_data']['lambda']:
-                all_recommendations.extend(get_lambda_recommendations(collection_status['all_services_data']['lambda']['functions'], collection_status['collection_id']))
-            
-            # S3 추천 사항
-            if 's3' in collection_status['all_services_data'] and 'buckets' in collection_status['all_services_data']['s3']:
-                all_recommendations.extend(get_s3_recommendations(collection_status['all_services_data']['s3']['buckets'], collection_status['collection_id']))
-            
-            # RDS 추천 사항
-            if 'rds' in collection_status['all_services_data'] and 'instances' in collection_status['all_services_data']['rds']:
-                all_recommendations.extend(get_rds_recommendations(collection_status['all_services_data']['rds']['instances']))
-            
-            # IAM 추천 사항
-            if 'iam' in collection_status['all_services_data'] and 'users' in collection_status['all_services_data']['iam']:
-                all_recommendations.extend(get_iam_recommendations(collection_status['all_services_data']['iam'], collection_status['collection_id']))
-            
-            # 생성된 추천사항 저장
-            collection_status['recommendations'] = all_recommendations
-            app.logger.info(f"[{collection_status['collection_id']}] 추천 사항 생성 완료 - 총 {len(all_recommendations)}개 추천사항")
-            
-        except Exception as rec_error:
-            app.logger.error(f"[{collection_status['collection_id']}] 추천 사항 생성 중 오류: {str(rec_error)}")
-            collection_status['recommendations'] = []
-            
+        # 데이터 수집 완료
         collection_status['is_collecting'] = False
         app.logger.info(f"[{collection_status['collection_id']}] 데이터 수집 완료 - 총 {len(collection_status['completed_services'])}개 서비스")
 
@@ -242,8 +206,7 @@ def start_collection():
         
         # 이미 수집 중인 경우 중복 요청 방지
         global collection_status
-        # 추천사항 초기화 (새로운 데이터 수집 시작 시)
-        collection_status['recommendations'] = []
+        # 데이터 수집 시작
         
         if collection_status['is_collecting']:
             app.logger.warning(f"이미 데이터 수집이 진행 중입니다. 사용자: {user_id}")

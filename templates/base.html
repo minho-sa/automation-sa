@@ -375,9 +375,7 @@
                     <li class="awsui-header-nav-item">
                         <a class="awsui-header-nav-link {% if request.path == url_for('consolidated_view') %}active{% endif %}" href="{{ url_for('consolidated_view') }}">통합 대시보드</a>
                     </li>
-                    <li class="awsui-header-nav-item">
-                        <a class="awsui-header-nav-link {% if request.path == url_for('recommendations_view') %}active{% endif %}" href="{{ url_for('recommendations_view') }}">추천 사항</a>
-                    </li>
+
                     <li class="awsui-header-nav-item">
                         <a class="awsui-header-nav-link {% if '/service-advisor' in request.path %}active{% endif %}" href="{{ url_for('service_advisor.service_advisor_view') }}">서비스 어드바이저</a>
                     </li>

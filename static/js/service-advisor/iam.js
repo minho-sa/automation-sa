@@ -206,7 +206,7 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
                 <tr>
                   <th>검사 항목</th>
                   <th>현재 값</th>
-                  <th>권장 값</th>
+                  <th>권장 사항</th>
                   <th>상태</th>
                 </tr>
               </thead>
@@ -225,26 +225,13 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
               </tbody>
             </table>
           </div>
-          <div class="mt-3">
-            <h5>권장 사항</h5>
-            <ul>
-              ${data.data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-            </ul>
-          </div>
         </div>
       `;
     }
-    
     return `
       <div class="check-result-data">
         <h4>암호 정책 분석</h4>
         ${this.createPasswordPolicyTable(data.data)}
-        <div class="mt-3">
-          <h5>권장 사항</h5>
-          <ul>
-            ${data.data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-          </ul>
-        </div>
       </div>
     `;
   }
@@ -352,7 +339,7 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
             <tr>
               <th>정책 설정</th>
               <th>현재 값</th>
-              <th>권장 값</th>
+              <th>권장 사항</th>
               <th>상태</th>
             </tr>
           </thead>
@@ -812,12 +799,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
         <div class="tab-content" id="rootAccountTabContent-${checkId}">
           ${tabContentHtml}
         </div>
-        <div class="mt-3">
-          <h5>권장 사항</h5>
-          <ul>
-            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-          </ul>
-        </div>
       </div>
     `;
   }
@@ -957,12 +938,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
         </ul>
         <div class="tab-content" id="policyAnalyzerTabContent-${checkId}">
           ${tabContentHtml}
-        </div>
-        <div class="mt-3">
-          <h5>권장 사항</h5>
-          <ul>
-            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-          </ul>
         </div>
       </div>
     `;
@@ -1114,12 +1089,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
         <div class="tab-content" id="credentialReportTabContent-${checkId}">
           ${tabContentHtml}
         </div>
-        <div class="mt-3">
-          <h5>권장 사항</h5>
-          <ul>
-            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-          </ul>
-        </div>
       </div>
     `;
   }
@@ -1223,12 +1192,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
             <i class="fas fa-exclamation-triangle"></i>
             <span>AWS Organizations가 활성화되어 있지 않습니다.</span>
           </div>
-          <div class="mt-3">
-            <h5>권장 사항</h5>
-            <ul>
-              ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-            </ul>
-          </div>
         </div>
       `;
     }
@@ -1241,12 +1204,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
           <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle"></i>
             <span>서비스 제어 정책(SCP)이 활성화되어 있지 않습니다.</span>
-          </div>
-          <div class="mt-3">
-            <h5>권장 사항</h5>
-            <ul>
-              ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-            </ul>
           </div>
         </div>
       `;
@@ -1316,12 +1273,6 @@ class ServiceAdvisorIAM extends ServiceAdvisorCommon {
         </ul>
         <div class="tab-content" id="scpTabContent-${checkId}">
           ${tabContentHtml}
-        </div>
-        <div class="mt-3">
-          <h5>권장 사항</h5>
-          <ul>
-            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-          </ul>
         </div>
       </div>
     `;

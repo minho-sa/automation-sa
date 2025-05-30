@@ -34,6 +34,9 @@
                 <button id="run-selected-checks" class="awsui-button awsui-button-primary ml-3">
                     <i class="fas fa-play"></i> 선택한 항목 검사하기
                 </button>
+                <button id="download-selected-checks-pdf" class="awsui-button awsui-button-secondary ml-3" style="display: none;">
+                    <i class="fas fa-file-pdf"></i> 선택한 항목 PDF 내려받기
+                </button>
             </div>
             
             <div class="check-items-container">
@@ -48,6 +51,9 @@
                         </div>
                         <div class="check-item-actions">
                             <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                            <button class="awsui-button awsui-button-secondary download-pdf-btn" data-check-id="{{ check.id }}" style="display: none;">
+                                <i class="fas fa-file-pdf"></i> PDF 내려받기
+                            </button>
                             <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
                                 <i class="fas fa-play"></i> 검사하기
                             </button>
@@ -76,7 +82,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/service-advisor/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/service-advisor/ec2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/pdf-export.js') }}"></script>
 <script src="{{ url_for('static', filename='js/service-advisor/main.js') }}"></script>
 {% endblock %}

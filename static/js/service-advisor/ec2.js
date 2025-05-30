@@ -60,6 +60,17 @@ class ServiceAdvisorEC2 extends ServiceAdvisorCommon {
       // 결과 HTML 생성
       const resultHtml = this.generateResultHtml(checkId);
       contentElement.innerHTML = resultHtml;
+      
+      // PDF 다운로드 버튼 표시
+      const downloadBtn = document.querySelector(`.download-pdf-btn[data-check-id="${checkId}"]`);
+      if (downloadBtn) {
+        downloadBtn.style.display = 'inline-block';
+      }
+      
+      // 검사 완료 이벤트 발생
+      document.dispatchEvent(new CustomEvent('checkCompleted', {
+        detail: { checkId: checkId }
+      }));
     })
     .catch(error => {
       // 로딩 숨기기

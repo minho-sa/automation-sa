@@ -347,3 +347,17 @@
 .collapsible-header.active i {
     transform: rotate(180deg);
 }
+
+/* PDF 다운로드 버튼 스타일 */
+.check-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+.check-item-actions .download-pdf-btn {
+  margin-left: 10px;
+}
+/* 선택한 항목 PDF 내려받기 버튼 스타일 */
+#download-selected-checks-pdf {
+  margin-left: 10px;
+}

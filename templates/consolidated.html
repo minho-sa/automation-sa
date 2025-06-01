@@ -55,24 +55,59 @@
         flex-wrap: wrap;
         gap: 8px;
     }
+    
+    /* 수집 데이터 관리 스타일 */
+    .collection-info {
+        background-color: #f2f4f6;
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    .collection-info .badge {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    #notification-area {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        width: 350px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- 알림 영역 -->
+<div id="notification-area"></div>
+
 <h1 class="mb-4">AWS 서비스 통합 대시보드</h1>
 <p class="lead">모든 AWS 서비스의 정보를 한 페이지에서 확인하세요.</p>
 
-<div class="mb-4">
+<div class="collection-info mb-3">
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <button class="awsui-button awsui-button-primary toggle-sections-btn" id="toggle-sections-btn">
-                <i class="fas fa-chevron-down"></i><span id="toggle-btn-text">모두 펼치기</span>
+                <i class="fas fa-chevron-down"></i><span id="toggle-btn-text">모두 접기</span>
             </button>
             {% if not is_collecting %}
             <button class="awsui-button awsui-button-success ms-2" id="select-services-btn">
                 <i class="fas fa-sync-alt"></i>데이터 수집
             </button>
             {% endif %}
+        </div>
+        <div>
+            {% if collection_id %}
+            <span class="badge bg-info me-2">수집 ID: {{ collection_id }}</span>
+            {% endif %}
+            {% if collection_timestamp %}
+            <span class="badge bg-secondary me-2">수집 시간: {{ collection_timestamp|replace('T', ' ')|truncate(19, True, '') }}</span>
+            {% endif %}
+            <a href="{{ url_for('reset_view') }}" class="btn btn-sm btn-outline-primary" id="view-collections-btn">
+                <i class="fas fa-history"></i> 다음 수집 데이터 보기
+            </a>
         </div>
     </div>
 </div>
@@ -148,6 +183,7 @@
 <!-- 데이터 수집 중에는 서비스 섹션을 표시하지 않음 -->
 
 {% elif show_collection_message %}
+{% if not user_collections %}
 <div class="awsui-alert awsui-alert-warning">
     <div class="awsui-alert-icon">
         <i class="fas fa-exclamation-triangle"></i>
@@ -167,6 +203,46 @@
     <h3 style="font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 600; color: #000716; margin-bottom: 8px;">데이터 수집 버튼을 클릭하세요</h3>
     <p style="font-family: 'Noto Sans KR', sans-serif; font-size: 14px; color: #5f6b7a; margin-bottom: 0;">AWS 서비스 데이터를 수집한 후 서비스 정보를 확인할 수 있습니다.</p>
 </div>
+{% endif %}
+
+{% if user_collections %}
+<div class="awsui-card mb-4">
+    <div class="awsui-card-header">
+        <h5><i class="fas fa-history me-2"></i>이전 수집 데이터</h5>
+    </div>
+    <div class="awsui-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>수집 시간</th>
+                        <th>수집 ID</th>
+                        <th>수집된 서비스</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collection in user_collections %}
+                    <tr>
+                        <td>{{ collection.timestamp|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td>{{ collection.collection_id }}</td>
+                        <td>{{ collection.selected_services|join(', ') }}</td>
+                        <td>
+                            <a href="/consolidated?collection_id={{ collection.collection_id }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> 보기
+                            </a>
+                            <button class="btn btn-sm btn-danger delete-collection-btn" data-collection-id="{{ collection.collection_id }}">
+                                <i class="fas fa-trash"></i> 삭제
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% elif all_services_data %}
 <!-- 데이터 수집이 완료된 경우 - 선택한 서비스만 표시 -->
@@ -808,4 +884,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
     
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/collection-management.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view-collections.js') }}"></script>
 {% endblock %}

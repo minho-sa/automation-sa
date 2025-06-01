@@ -2,261 +2,58 @@
 
 {% block title %}로그인 - AWS 콘솔 체크{% endblock %}
 
-{% block extra_css %}
-<style>
-    .awsui-login-container {
-        max-width: 600px;
-        margin: 40px auto;
-    }
-    
-    .awsui-login-card {
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15), 0 1px 3px 1px rgba(0, 28, 36, 0.1);
-        overflow: hidden;
-    }
-    
-    .awsui-login-header {
-        background-color: #0972d3;
-        padding: 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .awsui-login-header h2 {
-        color: #ffffff;
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 20px;
-        font-weight: 700;
-        margin: 0;
-    }
-    
-    .awsui-login-body {
-        padding: 24px;
-    }
-    
-    .awsui-login-footer {
-        background-color: #f8f8f8;
-        padding: 16px 24px;
-        border-top: 1px solid #eaeded;
-    }
-    
-    .awsui-login-footer p {
-        color: #5f6b7a;
-        font-size: 12px;
-        margin: 0;
-    }
-    
-    .awsui-form-field {
-        margin-bottom: 20px;
-    }
-    
-    .awsui-form-field label {
-        display: block;
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        color: #000716;
-        margin-bottom: 4px;
-    }
-    
-    .awsui-form-field input[type="text"],
-    .awsui-form-field input[type="password"] {
-        width: 100%;
-        padding: 8px 12px;
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 14px;
-        border: 2px solid #e9ebed;
-        border-radius: 4px;
-        background-color: #ffffff;
-        color: #000716;
-        transition: all 0.1s ease-out;
-    }
-    
-    .awsui-form-field input[type="text"]:focus,
-    .awsui-form-field input[type="password"]:focus {
-        border-color: #0972d3;
-        box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.3);
-        outline: none;
-    }
-    
-    .awsui-form-field input[type="text"]::placeholder,
-    .awsui-form-field input[type="password"]::placeholder {
-        color: #9ba7b6;
-    }
-    
-    .awsui-form-field small {
-        display: block;
-        font-size: 12px;
-        color: #5f6b7a;
-        margin-top: 4px;
-    }
-    
-    .awsui-radio-group {
-        margin-bottom: 20px;
-    }
-    
-    .awsui-radio-group-label {
-        display: block;
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        color: #000716;
-        margin-bottom: 8px;
-    }
-    
-    .awsui-radio-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-    }
-    
-    .awsui-radio-container input[type="radio"] {
-        margin-right: 8px;
-        width: 16px;
-        height: 16px;
-        accent-color: #0972d3;
-    }
-    
-    .awsui-radio-container label {
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 14px;
-        color: #000716;
-    }
-    
-    .awsui-button {
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 20px;
-        padding: 0 20px;
-        height: 36px;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        transition: all 0.1s ease-out;
-        width: 100%;
-    }
-    
-    .awsui-button-primary {
-        background-color: #0972d3;
-        color: #ffffff;
-    }
-    
-    .awsui-button-primary:hover {
-        background-color: #033160;
-        color: #ffffff;
-    }
-    
-    .awsui-divider {
-        height: 1px;
-        background-color: #e9ebed;
-        margin: 20px 0;
-    }
-    
-    .awsui-section-title {
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 16px;
-        font-weight: 700;
-        color: #000716;
-        margin: 0 0 16px 0;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="awsui-login-container">
-    <div class="awsui-login-card">
-        <div class="awsui-login-header">
-            <h2>AWS 콘솔 체크 로그인</h2>
-        </div>
-        <div class="awsui-login-body">
-            <form method="POST" action="{{ url_for('login') }}">
-                <div class="awsui-form-field">
-                    <label for="username">사용자 이름</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-                <div class="awsui-form-field">
-                    <label for="password">비밀번호</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <div class="awsui-divider"></div>
-                
-                <h3 class="awsui-section-title">AWS 자격 증명</h3>
-                
-                <div class="awsui-radio-group">
-                    <span class="awsui-radio-group-label">인증 방식 선택</span>
-                    <div class="awsui-radio-container">
-                        <input type="radio" name="auth_method" id="auth_access_key" value="access_key" checked>
-                        <label for="auth_access_key">액세스 키 사용</label>
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="awsui-card">
+            <div class="awsui-card-header">
+                <h5><i class="fas fa-sign-in-alt me-2"></i>로그인</h5>
+            </div>
+            <div class="awsui-card-body">
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">사용자 ID</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
                     </div>
-                    <div class="awsui-radio-container">
-                        <input type="radio" name="auth_method" id="auth_role_arn" value="role_arn">
-                        <label for="auth_role_arn">역할 ARN 사용 (STS Assume Role)</label>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
                     </div>
-                </div>
-                
-                <div id="access-key-fields">
-                    <div class="awsui-form-field">
-                        <label for="aws_access_key">AWS 액세스 키 ID</label>
-                        <input type="text" id="aws_access_key" name="aws_access_key">
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">로그인 상태 유지</label>
                     </div>
-                    <div class="awsui-form-field">
-                        <label for="aws_secret_key">AWS 시크릿 액세스 키</label>
-                        <input type="password" id="aws_secret_key" name="aws_secret_key">
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="awsui-button awsui-button-primary">로그인</button>
                     </div>
-                </div>
-                
-                <div id="role-arn-fields" style="display: none;">
-                    <div class="awsui-form-field">
-                        <label for="role_arn">역할 ARN</label>
-                        <input type="text" id="role_arn" name="role_arn" placeholder="arn:aws:iam::123456789012:role/RoleName">
-                        <small>예: arn:aws:iam::123456789012:role/RoleName</small>
-                    </div>
-                </div>
-                
-                <button type="submit" class="awsui-button awsui-button-primary">로그인</button>
-            </form>
-        </div>
-        <div class="awsui-login-footer">
-            <p>* AWS 자격 증명은 안전하게 처리됩니다. 세션에만 저장되며 데이터베이스에 저장되지 않습니다.</p>
+                </form>
+            </div>
+            <div class="awsui-card-body" style="border-top: 1px solid #eaeded; background-color: #f8f8f8;">
+                <p class="mb-0 text-center">계정이 없으신가요? <a href="{{ url_for('register') }}">회원가입</a></p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const authAccessKey = document.getElementById('auth_access_key');
-    const authRoleArn = document.getElementById('auth_role_arn');
-    const accessKeyFields = document.getElementById('access-key-fields');
-    const roleArnFields = document.getElementById('role-arn-fields');
-    
-    // 인증 방식 변경 시 해당 필드 표시/숨김
-    function toggleAuthFields() {
-        if (authAccessKey.checked) {
-            accessKeyFields.style.display = 'block';
-            roleArnFields.style.display = 'none';
-            document.getElementById('aws_access_key').setAttribute('required', '');
-            document.getElementById('aws_secret_key').setAttribute('required', '');
-            document.getElementById('role_arn').removeAttribute('required');
-        } else {
-            accessKeyFields.style.display = 'none';
-            roleArnFields.style.display = 'block';
-            document.getElementById('aws_access_key').removeAttribute('required');
-            document.getElementById('aws_secret_key').removeAttribute('required');
-            document.getElementById('role_arn').setAttribute('required', '');
+    // 로그인 폼 제출 시 기본적인 유효성 검사
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        
+        if (!username || !password) {
+            event.preventDefault();
+            alert('사용자 ID와 비밀번호를 모두 입력해주세요.');
         }
-    }
+    });
     
-    // 초기 상태 설정
-    toggleAuthFields();
-    
-    // 이벤트 리스너 등록
-    authAccessKey.addEventListener('change', toggleAuthFields);
-    authRoleArn.addEventListener('change', toggleAuthFields);
+    // 자동 포커스
+    document.getElementById('username').focus();
 });
 </script>
 {% endblock %}

@@ -362,7 +362,7 @@
     <header class="awsui-header-container">
         <div class="awsui-header">
             <div class="awsui-header-title">
-                <a class="awsui-header-logo" href="{{ url_for('consolidated_view') if current_user.is_authenticated else url_for('login') }}">
+                <a class="awsui-header-logo" href="{{ url_for('reset_view') if current_user.is_authenticated else url_for('login') }}">
                     <i class="fas fa-cloud"></i>AWS 콘솔 체크
                 </a>
                 <button class="awsui-header-toggle" id="mobileMenuToggle">
@@ -376,9 +376,11 @@
                         <a class="awsui-header-nav-link {% if request.path == url_for('consolidated_view') %}active{% endif %}" href="{{ url_for('consolidated_view') }}">통합 대시보드</a>
                     </li>
 
+                    <!-- 서비스 어드바이저 메뉴 임시 비활성화
                     <li class="awsui-header-nav-item">
-                        <a class="awsui-header-nav-link {% if '/service-advisor' in request.path %}active{% endif %}" href="{{ url_for('service_advisor.service_advisor_view') }}">서비스 어드바이저</a>
+                        <a class="awsui-header-nav-link {% if '/service-advisor' in request.path %}active{% endif %}" href="#">서비스 어드바이저</a>
                     </li>
+                    -->
                     {% endif %}
                 </ul>
                 <div class="awsui-header-utilities">

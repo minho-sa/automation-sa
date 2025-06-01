@@ -1,35 +1,33 @@
 from flask import Flask
 from flask_login import LoginManager
 import logging
-from logging.handlers import RotatingFileHandler
 import os
-import config
 
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Flask 앱 생성
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
-app.config.from_object('config')
-app.secret_key = config.SECRET_KEY
 
-# 로그 설정
-if not os.path.exists('logs'):
-    os.mkdir('logs')
-file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-))
-file_handler.setLevel(logging.INFO)
-app.logger.addHandler(file_handler)
-app.logger.setLevel(logging.INFO)
-app.logger.info('애플리케이션 시작')
+# 설정 로드
+app.config.from_object('config.Config')
 
-# 로그인 매니저 설정
+# 비밀키 설정
+app.secret_key = app.config.get('SECRET_KEY', 'default-secret-key')
+
+# Flask-Login 설정
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message = '이 페이지에 접근하려면 로그인이 필요합니다.'
+login_manager.login_message_category = 'info'
 
-from app.routes import main, auth, dashboard, service_advisor
-from app.models import user
+# 로그 메시지
+app.logger.info('애플리케이션 시작')
 
-# 블루프린트 등록
-app.register_blueprint(service_advisor.service_advisor_bp)
-
-# user_loader는 user.py에 정의되어 있음
+# 라우트 임포트 (순환 임포트 방지를 위해 여기서 임포트)
+from app.routes import auth, dashboard

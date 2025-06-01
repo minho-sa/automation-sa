@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}서비스 정보 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resource/service-view.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>AWS 서비스 정보</h1>
+    <a href="{{ url_for('resource_collections_view') }}" class="awsui-button awsui-button-normal">
+        <i class="fas fa-arrow-left me-2"></i>수집 데이터 목록으로 돌아가기
+    </a>
+</div>
+
+<div class="collection-info mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <button class="awsui-button awsui-button-primary toggle-sections-btn" id="toggle-sections-btn">
+                <i class="fas fa-chevron-down"></i><span id="toggle-btn-text">모두 접기</span>
+            </button>
+        </div>
+        <div>
+            {% if collection_id %}
+            <span class="badge bg-info me-2">수집 ID: {{ collection_id }}</span>
+            {% endif %}
+            {% if collection_timestamp %}
+            <span class="badge bg-secondary me-2">수집 시간: {{ collection_timestamp|replace('T', ' ')|truncate(19, True, '') }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if all_services_data %}
+<!-- 데이터 수집이 완료된 경우 - 선택한 서비스만 표시 -->
+{% if 'ec2' in selected_services %}
+<div class="service-section" id="ec2-section">
+    <div class="service-section-header" data-bs-target="#ec2-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-server"></i>
+            EC2 인스턴스
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="ec2-content">
+        {% if all_services_data.ec2 and all_services_data.ec2.instances %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="ec2-filter" placeholder="인스턴스 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="ec2-table">
+                <thead>
+                    <tr>
+                        <th data-sort="id">인스턴스 ID</th>
+                        <th data-sort="type">유형</th>
+                        <th data-sort="state">상태</th>
+                        <th data-sort="az">가용 영역</th>
+                        <th data-sort="cpu">CPU 사용률</th>
+                        <th data-sort="network">네트워크</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instance in all_services_data.ec2.instances %}
+                    <tr>
+                        <td data-column="id">{{ instance.id }}</td>
+                        <td data-column="type">{{ instance.type }}</td>
+                        <td data-column="state">
+                            <span class="status-badge {% if instance.state == 'running' %}status-running{% elif instance.state == 'stopped' %}status-stopped{% else %}status-pending{% endif %}">
+                                {{ instance.state }}
+                            </span>
+                        </td>
+                        <td data-column="az">{{ instance.az }}</td>
+                        <td data-column="cpu">{{ instance.cpu_utilization|default('N/A') }}</td>
+                        <td data-column="network">
+                            {% if instance.network_in is defined and instance.network_out is defined %}
+                            In: {{ "%.2f"|format(instance.network_in|float) }} MB / Out: {{ "%.2f"|format(instance.network_out|float) }} MB
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-server"></i>
+            <h3>EC2 인스턴스 데이터가 없습니다</h3>
+            <p>이 계정에서 EC2 인스턴스를 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if 's3' in selected_services %}
+<div class="service-section" id="s3-section">
+    <div class="service-section-header" data-bs-target="#s3-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-database"></i>
+            S3 버킷
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="s3-content">
+        {% if all_services_data.s3 and all_services_data.s3.buckets %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="s3-filter" placeholder="버킷 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="s3-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">버킷 이름</th>
+                        <th data-sort="region">리전</th>
+                        <th data-sort="creation_date">생성 날짜</th>
+                        <th data-sort="versioning">버전 관리</th>
+                        <th data-sort="public">공개 액세스</th>
+                        <th data-sort="encryption">암호화</th>
+                        <th data-sort="size">크기</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bucket in all_services_data.s3.buckets %}
+                    <tr>
+                        <td data-column="name">{{ bucket.name }}</td>
+                        <td data-column="region">{{ bucket.region }}</td>
+                        <td data-column="creation_date">{{ bucket.creation_date|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td data-column="versioning">
+                            {% if bucket.versioning_enabled %}
+                            <span class="status-badge status-running">활성화</span>
+                            {% else %}
+                            <span class="status-badge status-stopped">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="public">
+                            {% if bucket.public_access %}
+                            <span class="status-badge status-stopped">공개</span>
+                            {% else %}
+                            <span class="status-badge status-running">비공개</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="encryption">
+                            {% if bucket.encryption_enabled %}
+                            <span class="status-badge status-running">활성화</span>
+                            {% else %}
+                            <span class="status-badge status-stopped">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="size">
+                            {% if bucket.size_bytes is defined %}
+                            {{ (bucket.size_bytes / 1024 / 1024)|round(2) }} MB
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-database"></i>
+            <h3>S3 버킷 데이터가 없습니다</h3>
+            <p>이 계정에서 S3 버킷을 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 다른 서비스 섹션도 비슷한 방식으로 추가 -->
+
+{% else %}
+<!-- 데이터가 없는 경우 -->
+<div class="awsui-alert awsui-alert-warning">
+    <div class="awsui-alert-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="awsui-alert-content">
+        <div class="awsui-alert-message">
+            서비스 데이터를 찾을 수 없습니다. 다른 수집 데이터를 선택하거나 새로운 데이터를 수집하세요.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 바이트 단위 변환 (B -> KB, MB, GB, TB)
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 모든 섹션 토글 기능 설정
+    const toggleBtn = document.getElementById('toggle-sections-btn');
+    if (toggleBtn) {
+        const toggleBtnText = document.getElementById('toggle-btn-text');
+        
+        // 초기 상태 확인 - 모든 섹션이 펼쳐져 있는지 확인
+        const allSections = document.querySelectorAll('.service-section-header[data-bs-target]');
+        let allExpanded = true;
+        allSections.forEach(section => {
+            const targetId = section.getAttribute('data-bs-target');
+            const target = document.querySelector(targetId);
+            if (target && !target.classList.contains('show')) {
+                allExpanded = false;
+            }
+        });
+        
+        // 초기 상태 설정
+        let isExpanded = allExpanded;
+        if (isExpanded) {
+            toggleBtnText.textContent = '모두 접기';
+            toggleBtn.querySelector('i').className = 'fas fa-chevron-up';
+        }
+        
+        toggleBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            
+            if (isExpanded) {
+                // 모두 접기
+                allSections.forEach(section => {
+                    const targetId = section.getAttribute('data-bs-target');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        target.classList.remove('show');
+                        section.setAttribute('aria-expanded', 'false');
+                        const toggleIcon = section.querySelector('.toggle-icon i');
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                    }
+                });
+                
+                // 버튼 상태 변경
+                icon.className = 'fas fa-chevron-down';
+                toggleBtnText.textContent = '모두 펼치기';
+                isExpanded = false;
+            } else {
+                // 모두 펼치기
+                allSections.forEach(section => {
+                    const targetId = section.getAttribute('data-bs-target');
+                    const target = document.querySelector(targetId);
+                    if (target && !target.classList.contains('show')) {
+                        target.classList.add('show');
+                        section.setAttribute('aria-expanded', 'true');
+                        const toggleIcon = section.querySelector('.toggle-icon i');
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(180deg)';
+                    }
+                });
+                
+                // 버튼 상태 변경
+                icon.className = 'fas fa-chevron-up';
+                toggleBtnText.textContent = '모두 접기';
+                isExpanded = true;
+            }
+        });
+    }
+    
+    // 개별 섹션 토글 기능 설정
+    const sectionHeaders = document.querySelectorAll('.service-section-header');
+    sectionHeaders.forEach(header => {
+        const targetId = header.getAttribute('data-bs-target');
+        const target = document.querySelector(targetId);
+        const toggleIcon = header.querySelector('.toggle-icon i');
+        
+        if (target) {
+            // 초기 상태 설정
+            const isExpanded = target.classList.contains('show');
+            header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            
+            if (toggleIcon) {
+                toggleIcon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+            
+            // 클릭 이벤트 설정
+            header.addEventListener('click', () => {
+                const isCurrentlyExpanded = target.classList.contains('show');
+                
+                if (isCurrentlyExpanded) {
+                    target.classList.remove('show');
+                    header.setAttribute('aria-expanded', 'false');
+                    if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                } else {
+                    target.classList.add('show');
+                    header.setAttribute('aria-expanded', 'true');
+                    if (toggleIcon) toggleIcon.style.transform = 'rotate(180deg)';
+                }
+            });
+        }
+    });
+    
+    // 테이블 필터링 기능 설정
+    if (document.getElementById('ec2-filter')) {
+        document.getElementById('ec2-filter').addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#ec2-table tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+    
+    if (document.getElementById('s3-filter')) {
+        document.getElementById('s3-filter').addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#s3-table tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

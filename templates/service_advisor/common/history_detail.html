@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}검사 기록 상세 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>검사 기록 상세</h1>
+        <p>{{ service_name }} 서비스의 {{ check_id }} 검사 결과입니다.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">검사 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>서비스:</strong> {{ service_name }}
+                </div>
+                <div class="mb-3">
+                    <strong>검사 항목:</strong> {{ check_id }}
+                </div>
+                <div class="mb-3">
+                    <strong>실행 시간:</strong> {{ timestamp }}
+                </div>
+                <div class="mb-3">
+                    <strong>상태:</strong>
+                    {% if result.status == 'ok' %}
+                        <span class="badge bg-success">정상</span>
+                    {% elif result.status == 'warning' %}
+                        <span class="badge bg-warning text-dark">경고</span>
+                    {% elif result.status == 'error' %}
+                        <span class="badge bg-danger">오류</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ result.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">작업</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('service_advisor.service_advisor_history') }}" class="btn btn-outline-primary mb-2 w-100">
+                    <i class="fas fa-arrow-left"></i> 기록 목록으로
+                </a>
+                <button id="deleteHistoryBtn" class="btn btn-outline-danger mb-2 w-100" data-key="{{ key }}">
+                    <i class="fas fa-trash"></i> 이 기록 삭제
+                </button>
+                <a href="{{ url_for('service_advisor.service_advisor_detail', service_name=service_name) }}" class="btn btn-outline-success mb-2 w-100">
+                    <i class="fas fa-sync-alt"></i> 다시 검사하기
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="awsui-container">
+            <h2 class="mb-4">검사 결과</h2>
+            
+            <div class="awsui-alert awsui-alert-{% if result.status == 'ok' %}success{% elif result.status == 'warning' %}warning{% elif result.status == 'error' %}error{% else %}info{% endif %}">
+                <div class="awsui-alert-icon">
+                    {% if result.status == 'ok' %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif result.status == 'warning' %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                    {% elif result.status == 'error' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="awsui-alert-content">
+                    <div class="awsui-alert-header">
+                        <h3>검사 결과</h3>
+                    </div>
+                    <div class="awsui-alert-message">
+                        {{ result.message }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if result.recommendations %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">권장 사항</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            {% for recommendation in result.recommendations %}
+                                <li>{{ recommendation }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if result.data %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">상세 데이터</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre class="bg-light p-3 rounded"><code>{{ result.data | tojson(indent=2) }}</code></pre>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">검사 기록 삭제</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>이 검사 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">삭제</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteBtn = document.getElementById('deleteHistoryBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        
+        let keyToDelete = null;
+        
+        deleteBtn.addEventListener('click', function() {
+            keyToDelete = this.getAttribute('data-key');
+            deleteModal.show();
+        });
+        
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (keyToDelete) {
+                fetch(`/api/service-advisor/history/delete/${keyToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = "{{ url_for('service_advisor.service_advisor_history') }}";
+                    } else {
+                        alert('삭제 중 오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                })
+                .finally(() => {
+                    deleteModal.hide();
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

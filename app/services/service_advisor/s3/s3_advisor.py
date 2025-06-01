@@ -1,6 +1,7 @@
 import boto3
-from typing import Dict, List, Any
-from app.services.service_advisor.base_advisor import BaseAdvisor
+from typing import Dict, List, Any, Optional
+from app.services.service_advisor.common.base_advisor import BaseAdvisor
+from app.services.service_advisor.common.aws_client import AWSClient
 from app.services.service_advisor.s3.checks import (
     public_access,
     encryption,
@@ -17,6 +18,16 @@ class S3Advisor(BaseAdvisor):
     """
     S3 서비스에 대한 어드바이저 클래스입니다.
     """
+    
+    def __init__(self, session: Optional[boto3.Session] = None):
+        """
+        S3 어드바이저 초기화
+        
+        Args:
+            session: AWS 세션 객체 (선택 사항)
+        """
+        super().__init__(session)
+        self.aws_client = AWSClient(session)
     
     def _register_checks(self) -> None:
         """S3 서비스에 대한 검사 항목을 등록합니다."""

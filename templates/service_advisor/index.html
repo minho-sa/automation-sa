@@ -3,11 +3,12 @@
 {% block title %}서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor/common.css') }}">
 {% endblock %}
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/service-advisor/index.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/common/auth.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -19,9 +20,17 @@
 </div>
 
 <div class="row mt-4">
+    <div class="col-md-4">
+        {% include 'service_advisor/common/auth_status.html' %}
+    </div>
     <div class="col-12">
         <div class="awsui-container">
-            <h2 class="mb-4">서비스 선택</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">서비스 선택</h2>
+                <a href="{{ url_for('service_advisor.service_advisor_history') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-history"></i> 검사 기록 보기
+                </a>
+            </div>
             <div class="row" id="serviceCards">
                 <div class="col-md-4 mb-4">
                     <div class="service-card" data-service-id="ec2">
@@ -33,7 +42,7 @@
                             <p>Amazon Elastic Compute Cloud</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='ec2') }}" class="awsui-button awsui-button-normal">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='ec2') }}" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -49,7 +58,7 @@
                             <p>AWS Lambda</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='lambda') }}" class="awsui-button awsui-button-normal">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='lambda') }}" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -65,7 +74,7 @@
                             <p>AWS Identity and Access Management</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='iam') }}" class="awsui-button awsui-button-normal">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='iam') }}" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -81,7 +90,7 @@
                             <p>Amazon Relational Database Service</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='rds') }}" class="awsui-button awsui-button-normal">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='rds') }}" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -97,7 +106,7 @@
                             <p>Amazon Simple Storage Service</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='s3') }}" class="awsui-button awsui-button-normal">
+                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='s3') }}" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>

@@ -1,0 +1,237 @@
+/**
+ * 서비스 정보 보기를 위한 CSS 스타일
+ */
+
+/* 서비스 섹션 스타일 */
+.service-section {
+    margin-bottom: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.service-section-header {
+    background-color: #f2f4f6;
+    padding: 15px;
+    border-bottom: 1px solid #e9ebed;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.service-section-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #16191f;
+    display: flex;
+    align-items: center;
+}
+
+.service-section-header h3 i {
+    margin-right: 10px;
+    color: #0972d3;
+}
+
+.service-section-body {
+    padding: 20px;
+    background-color: #ffffff;
+}
+
+/* 토글 아이콘 스타일 */
+.toggle-icon {
+    color: #5f6b7a;
+    transition: transform 0.3s;
+}
+
+.toggle-icon i {
+    transition: transform 0.3s;
+}
+
+/* 리소스 카드 스타일 */
+.resource-card {
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.resource-card-header {
+    background-color: #f9f9f9;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ebed;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.resource-card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #16191f;
+}
+
+.resource-card-body {
+    padding: 15px;
+    background-color: #ffffff;
+}
+
+/* 리소스 속성 스타일 */
+.resource-property {
+    margin-bottom: 10px;
+}
+
+.property-label {
+    font-weight: 500;
+    color: #5f6b7a;
+    margin-bottom: 3px;
+}
+
+.property-value {
+    color: #16191f;
+}
+
+/* 태그 스타일 */
+.resource-tag {
+    display: inline-block;
+    background-color: #f2f4f6;
+    color: #16191f;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.tag-key {
+    font-weight: 500;
+}
+
+/* 테이블 스타일 */
+.resource-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.resource-table th {
+    background-color: #f2f4f6;
+    color: #16191f;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.resource-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e9ebed;
+    color: #16191f;
+}
+
+.resource-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* 상태 배지 스타일 */
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-running {
+    background-color: #d1fadf;
+    color: #1d8102;
+}
+
+.status-stopped {
+    background-color: #fbe6e6;
+    color: #d91515;
+}
+
+.status-pending {
+    background-color: #fff8e6;
+    color: #d09118;
+}
+
+/* 차트 컨테이너 스타일 */
+.chart-container {
+    height: 200px;
+    margin-bottom: 20px;
+}
+
+/* 필터 영역 스타일 */
+.filter-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e9ebed;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #0972d3;
+    box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.2);
+}
+
+/* 컬렉션 정보 스타일 */
+.collection-info {
+    background-color: #f2f4f6;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collection-info .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* 토글 버튼 스타일 */
+.toggle-sections-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 빈 상태 메시지 스타일 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #5f6b7a;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 15px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #16191f;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #5f6b7a;
+    max-width: 400px;
+    margin: 0 auto;
+}

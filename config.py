@@ -38,3 +38,12 @@ class Config:
     REMEMBER_COOKIE_SECURE = True  # HTTPS에서만 쿠키 전송
     REMEMBER_COOKIE_HTTPONLY = True  # JavaScript에서 쿠키 접근 방지
     REMEMBER_COOKIE_SAMESITE = 'Lax'  # CSRF 방지
+    
+    # API 설정
+    API_RATE_LIMIT = 100  # 분당 최대 요청 수
+    API_RATE_LIMIT_WINDOW = 60  # 초 단위 윈도우
+    
+    # JWT 설정 (API 인증용)
+    JWT_SECRET_KEY = SECRET_KEY
+    JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1시간
+    JWT_REFRESH_TOKEN_EXPIRES = 2592000  # 30일

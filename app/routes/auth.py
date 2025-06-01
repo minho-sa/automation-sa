@@ -1,11 +1,14 @@
-from flask import render_template, redirect, url_for, flash, request, session
+from flask import render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 import logging
+import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 from app import app, login_manager
 from app.services.user_storage import UserStorage
 from app.models.user import User
+from app.services.service_advisor.aws_client import AWSClient
 import logging
 import re
 
@@ -142,3 +145,71 @@ def logout():
     session.pop('auth_params', None)
     flash('로그아웃되었습니다.')
     return redirect(url_for('login'))
+
+@app.route('/api/validate-credentials', methods=['GET'])
+@login_required
+def validate_credentials():
+    """현재 사용자의 AWS 자격증명 유효성을 검증합니다."""
+    try:
+        # 세션에서 자격증명 정보 확인
+        if 'auth_type' not in session or 'auth_params' not in session:
+            return jsonify({
+                'valid': False,
+                'message': 'AWS 자격증명이 없습니다. 다시 로그인해주세요.'
+            }), 401
+        
+        # Role ARN 가져오기
+        role_arn = current_user.get_role_arn()
+        if not role_arn:
+            return jsonify({
+                'valid': False,
+                'message': 'AWS Role ARN이 설정되지 않았습니다.'
+            }), 401
+        
+        # STS 클라이언트 생성
+        sts_client = boto3.client('sts')
+        
+        # 역할 수임 시도
+        response = sts_client.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName='CredentialValidation',
+            DurationSeconds=900  # 15분
+        )
+        
+        # 자격증명 정보 반환
+        identity = {
+            'account_id': response['AssumedRoleUser']['Arn'].split(':')[4],
+            'role_name': response['AssumedRoleUser']['Arn'].split('/')[-1],
+            'expiration': response['Credentials']['Expiration'].isoformat()
+        }
+        
+        return jsonify({
+            'valid': True,
+            'identity': identity,
+            'message': '자격증명이 유효합니다.'
+        })
+        
+    except ClientError as e:
+        error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+        error_message = e.response.get('Error', {}).get('Message', str(e))
+        
+        logger.error(f"자격증명 검증 중 오류 발생: {error_code} - {error_message}")
+        
+        if error_code in ['AccessDenied', 'InvalidClientTokenId', 'ExpiredToken']:
+            return jsonify({
+                'valid': False,
+                'error_code': error_code,
+                'message': f'자격증명이 유효하지 않습니다: {error_message}'
+            }), 401
+        else:
+            return jsonify({
+                'valid': False,
+                'error_code': error_code,
+                'message': f'자격증명 검증 중 오류가 발생했습니다: {error_message}'
+            }), 500
+    except Exception as e:
+        logger.error(f"자격증명 검증 중 예상치 못한 오류 발생: {str(e)}")
+        return jsonify({
+            'valid': False,
+            'message': f'자격증명 검증 중 오류가 발생했습니다: {str(e)}'
+        }), 500

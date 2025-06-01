@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ service_name | upper }} 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor/common.css') }}">
+{% block service_css %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/service-advisor/common/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-advisor/common/common.js') }}"></script>
+{% block service_js %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>{{ service_name | upper }} 서비스 어드바이저</h1>
+        <p>{{ service_name | upper }} 서비스에 대한 검사 항목을 확인하고 실행할 수 있습니다.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        {% include 'service_advisor/common/auth_status.html' %}
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">바로가기</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('service_advisor.service_advisor_view') }}" class="btn btn-outline-primary mb-2 w-100">
+                    <i class="fas fa-arrow-left"></i> 서비스 어드바이저 메인
+                </a>
+                <a href="{{ url_for('service_advisor.service_advisor_history', service_name=service_name) }}" class="btn btn-outline-secondary mb-2 w-100">
+                    <i class="fas fa-history"></i> {{ service_name | upper }} 검사 기록
+                </a>
+            </div>
+        </div>
+        
+        {% block service_sidebar %}{% endblock %}
+    </div>
+    
+    <div class="col-md-8">
+        <div class="awsui-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">검사 항목</h2>
+                <div>
+                    <button id="runAllChecks" class="btn btn-primary service-advisor-button">
+                        <i class="fas fa-play"></i> 모든 검사 실행
+                    </button>
+                </div>
+            </div>
+            
+            <div id="checksContainer">
+                {% for check in checks %}
+                <div class="check-card mb-4" data-check-id="{{ check.id }}">
+                    <div class="check-card-header">
+                        <div class="check-card-title">{{ check.name }}</div>
+                        <div>
+                            <button class="btn btn-sm btn-primary run-check service-advisor-button" data-check-id="{{ check.id }}">
+                                <i class="fas fa-play"></i> 실행
+                            </button>
+                        </div>
+                    </div>
+                    <div class="check-card-description">{{ check.description }}</div>
+                    <div class="check-card-footer">
+                        <div class="check-card-meta">
+                            <div class="check-card-meta-item">
+                                <span class="category-badge">{{ check.category }}</span>
+                            </div>
+                            <div class="check-card-meta-item">
+                                <span class="severity-badge severity-{{ check.severity }}">
+                                    {% if check.severity == 'high' %}
+                                        높음
+                                    {% elif check.severity == 'medium' %}
+                                        중간
+                                    {% else %}
+                                        낮음
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="check-card-meta-item">
+                                <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 검사 결과 영역 -->
+                    <div class="check-result" id="result-{{ check.id }}" style="display: none;">
+                        <div class="check-result-header">
+                            <div class="check-result-title">검사 결과</div>
+                            <div class="check-result-status" id="status-{{ check.id }}"></div>
+                        </div>
+                        <div class="check-result-content">
+                            <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block service_content %}{% endblock %}
+{% endblock %}

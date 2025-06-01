@@ -1,0 +1,40 @@
+/* IAM 서비스 어드바이저 스타일 */
+
+/* 사용자 테이블 스타일 */
+.user-table th:nth-child(1) { width: 20%; }
+.user-table th:nth-child(2) { width: 15%; }
+.user-table th:nth-child(3) { width: 15%; }
+.user-table th:nth-child(4) { width: 15%; }
+.user-table th:nth-child(5) { width: 15%; }
+.user-table td { word-break: break-word; }
+
+/* 정책 테이블 스타일 */
+.policy-table th:nth-child(1) { width: 25%; }
+.policy-table th:nth-child(2) { width: 15%; }
+.policy-table th:nth-child(3) { width: 15%; }
+.policy-table th:nth-child(4) { width: 15%; }
+.policy-table td { word-break: break-word; }
+
+/* 탭 내용 스타일 */
+.tab-content {
+  padding: 15px 0;
+}
+
+/* 사용자 상태 배지 */
+.user-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.user-status.secure {
+  background-color: #e6f4ea;
+  color: #137333;
+}
+
+.user-status.insecure {
+  background-color: #fce8e6;
+  color: #c5221f;
+}

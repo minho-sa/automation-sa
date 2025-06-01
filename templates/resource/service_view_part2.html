@@ -1,0 +1,450 @@
+<!-- S3 서비스 섹션 -->
+{% if 's3' in selected_services and all_services_data.s3 %}
+<div class="service-section" id="s3-section">
+    <div class="service-section-header" data-bs-target="#s3-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-database"></i>
+            S3 버킷
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="s3-content">
+        <!-- S3 요약 정보 -->
+        {% if all_services_data.s3.summary %}
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-title">총 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.total_buckets }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">공개 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.public_buckets }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">암호화 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.encrypted_buckets }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">버전 관리 활성화</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.versioning_enabled }}</div>
+            </div>
+        </div>
+        
+        <!-- 스토리지 클래스별 분포 -->
+        {% if all_services_data.s3.summary.storage_class_summary %}
+        <div class="chart-container">
+            <div class="chart-title">스토리지 클래스별 분포</div>
+            <div class="table-responsive">
+                <table class="resource-table">
+                    <thead>
+                        <tr>
+                            <th>스토리지 클래스</th>
+                            <th>객체 수</th>
+                            <th>크기</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class, data in all_services_data.s3.summary.storage_class_summary.items() %}
+                        <tr>
+                            <td><strong>{{ class }}</strong></td>
+                            <td>{{ data.count }}</td>
+                            <td>{{ (data.size_bytes / 1024 / 1024)|round(2) }} MB</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 리전별 버킷 분포 -->
+        {% if all_services_data.s3.summary.region_distribution %}
+        <div class="chart-container">
+            <div class="chart-title">리전별 버킷 분포</div>
+            <div class="table-responsive">
+                <table class="resource-table">
+                    <thead>
+                        <tr>
+                            <th>리전</th>
+                            <th>총 버킷</th>
+                            <th>공개</th>
+                            <th>비공개</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for region, data in all_services_data.s3.summary.region_distribution.items() %}
+                        <tr>
+                            <td><strong>{{ region }}</strong></td>
+                            <td>{{ data.count }}</td>
+                            <td>{{ data.public }}</td>
+                            <td>{{ data.private }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        
+        <!-- S3 버킷 목록 -->
+        {% if all_services_data.s3.buckets %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="s3-filter" data-table="s3-table" placeholder="버킷 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="s3-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">버킷 이름</th>
+                        <th data-sort="region">리전</th>
+                        <th data-sort="creation_date">생성 날짜</th>
+                        <th data-sort="versioning">버전 관리</th>
+                        <th data-sort="public">공개 액세스</th>
+                        <th data-sort="encryption">암호화</th>
+                        <th data-sort="size">크기</th>
+                        <th>상세 정보</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bucket in all_services_data.s3.buckets %}
+                    <tr>
+                        <td data-column="name">{{ bucket.name }}</td>
+                        <td data-column="region">{{ bucket.region }}</td>
+                        <td data-column="creation_date">{{ bucket.creation_date|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td data-column="versioning">
+                            {% if bucket.versioning_enabled %}
+                            <span class="status-badge status-running">활성화</span>
+                            {% else %}
+                            <span class="status-badge status-stopped">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="public">
+                            {% if bucket.public_access %}
+                            <span class="status-badge status-stopped">공개</span>
+                            {% else %}
+                            <span class="status-badge status-running">비공개</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="encryption">
+                            {% if bucket.encryption_enabled %}
+                            <span class="status-badge status-running">활성화</span>
+                            {% else %}
+                            <span class="status-badge status-stopped">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="size">
+                            {% if bucket.size_bytes is defined %}
+                            {{ (bucket.size_bytes / 1024 / 1024)|round(2) }} MB
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary detail-toggle" data-target="bucket-detail-{{ loop.index }}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="bucket-detail-{{ loop.index }}" style="display: none;">
+                        <td colspan="8">
+                            <div class="detail-panel">
+                                <!-- 버킷 상세 정보 탭 -->
+                                <div class="resource-tabs">
+                                    <div class="resource-tab active" data-tab="bucket-info-{{ loop.index }}">기본 정보</div>
+                                    <div class="resource-tab" data-tab="bucket-policy-{{ loop.index }}">정책</div>
+                                    <div class="resource-tab" data-tab="bucket-lifecycle-{{ loop.index }}">수명 주기</div>
+                                    <div class="resource-tab" data-tab="bucket-storage-{{ loop.index }}">스토리지</div>
+                                    <div class="resource-tab" data-tab="bucket-tags-{{ loop.index }}">태그</div>
+                                </div>
+                                
+                                <!-- 기본 정보 탭 -->
+                                <div class="resource-tab-content active" id="bucket-info-{{ loop.index }}">
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">버킷 이름</div>
+                                        <div class="detail-panel-value">{{ bucket.name }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">리전</div>
+                                        <div class="detail-panel-value">{{ bucket.region }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">생성 날짜</div>
+                                        <div class="detail-panel-value">{{ bucket.creation_date|replace('T', ' ')|truncate(19, True, '') }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">버전 관리</div>
+                                        <div class="detail-panel-value">{{ '활성화' if bucket.versioning_enabled else '비활성화' }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">공개 액세스</div>
+                                        <div class="detail-panel-value">{{ '공개' if bucket.public_access else '비공개' }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">암호화</div>
+                                        <div class="detail-panel-value">{{ '활성화' if bucket.encryption_enabled else '비활성화' }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">객체 수</div>
+                                        <div class="detail-panel-value">{{ bucket.object_count|default('N/A') }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">크기</div>
+                                        <div class="detail-panel-value">
+                                            {% if bucket.size_bytes is defined %}
+                                            {{ (bucket.size_bytes / 1024 / 1024)|round(2) }} MB
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 웹사이트 설정 -->
+                                    <div class="detail-panel-title mt-3">웹사이트 설정</div>
+                                    {% if bucket.website_enabled %}
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">웹사이트 활성화</div>
+                                        <div class="detail-panel-value">예</div>
+                                    </div>
+                                    {% if bucket.website_config %}
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">인덱스 문서</div>
+                                        <div class="detail-panel-value">{{ bucket.website_config.IndexDocument.Suffix|default('N/A') }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">오류 문서</div>
+                                        <div class="detail-panel-value">{{ bucket.website_config.ErrorDocument.Key|default('N/A') }}</div>
+                                    </div>
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">웹사이트 활성화</div>
+                                        <div class="detail-panel-value">아니오</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- 로깅 설정 -->
+                                    <div class="detail-panel-title mt-3">로깅 설정</div>
+                                    {% if bucket.logging_enabled %}
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">로깅 활성화</div>
+                                        <div class="detail-panel-value">예</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">대상 버킷</div>
+                                        <div class="detail-panel-value">{{ bucket.logging_target_bucket }}</div>
+                                    </div>
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">대상 접두사</div>
+                                        <div class="detail-panel-value">{{ bucket.logging_target_prefix }}</div>
+                                    </div>
+                                    {% else %}
+                                    <div class="detail-panel-row">
+                                        <div class="detail-panel-label">로깅 활성화</div>
+                                        <div class="detail-panel-value">아니오</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 정책 탭 -->
+                                <div class="resource-tab-content" id="bucket-policy-{{ loop.index }}">
+                                    {% if bucket.policy %}
+                                    <div class="detail-panel-title">버킷 정책</div>
+                                    <pre class="detail-panel-content">{{ bucket.policy|tojson(indent=2) }}</pre>
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <p>버킷 정책이 없습니다.</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if bucket.cors_rules %}
+                                    <div class="detail-panel-title mt-3">CORS 설정</div>
+                                    <pre class="detail-panel-content">{{ bucket.cors_rules|tojson(indent=2) }}</pre>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 수명 주기 탭 -->
+                                <div class="resource-tab-content" id="bucket-lifecycle-{{ loop.index }}">
+                                    {% if bucket.lifecycle_rules %}
+                                    <div class="detail-panel-title">수명 주기 규칙</div>
+                                    {% for rule in bucket.lifecycle_rules %}
+                                    <div class="security-rule">
+                                        <div class="security-rule-header">
+                                            <div class="security-rule-title">{{ rule.id }}</div>
+                                            <div class="security-rule-ports">{{ rule.status }}</div>
+                                        </div>
+                                        
+                                        {% if rule.prefix %}
+                                        <div class="detail-panel-row">
+                                            <div class="detail-panel-label">접두사</div>
+                                            <div class="detail-panel-value">{{ rule.prefix }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rule.filter %}
+                                        <div class="detail-panel-row">
+                                            <div class="detail-panel-label">필터</div>
+                                            <div class="detail-panel-value">{{ rule.filter|tojson }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rule.expiration %}
+                                        <div class="detail-panel-title mt-2">만료 설정</div>
+                                        <pre class="detail-panel-content">{{ rule.expiration|tojson(indent=2) }}</pre>
+                                        {% endif %}
+                                        
+                                        {% if rule.transitions %}
+                                        <div class="detail-panel-title mt-2">전환 설정</div>
+                                        <pre class="detail-panel-content">{{ rule.transitions|tojson(indent=2) }}</pre>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <p>수명 주기 규칙이 없습니다.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 스토리지 탭 -->
+                                <div class="resource-tab-content" id="bucket-storage-{{ loop.index }}">
+                                    {% if bucket.storage_class_distribution %}
+                                    <div class="detail-panel-title">스토리지 클래스별 분포</div>
+                                    <div class="table-responsive">
+                                        <table class="resource-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>스토리지 클래스</th>
+                                                    <th>객체 수</th>
+                                                    <th>크기</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for class, data in bucket.storage_class_distribution.items() %}
+                                                <tr>
+                                                    <td>{{ class }}</td>
+                                                    <td>{{ data.count }}</td>
+                                                    <td>{{ (data.size_bytes / 1024 / 1024)|round(2) }} MB</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <p>스토리지 클래스 분포 정보가 없습니다.</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if bucket.access_points %}
+                                    <div class="detail-panel-title mt-3">액세스 포인트</div>
+                                    <div class="table-responsive">
+                                        <table class="resource-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>이름</th>
+                                                    <th>네트워크 원본</th>
+                                                    <th>ARN</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for ap in bucket.access_points %}
+                                                <tr>
+                                                    <td>{{ ap.name }}</td>
+                                                    <td>{{ ap.network_origin }}</td>
+                                                    <td>{{ ap.access_point_arn }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 태그 탭 -->
+                                <div class="resource-tab-content" id="bucket-tags-{{ loop.index }}">
+                                    {% if bucket.tags %}
+                                    <div class="detail-panel-title">태그</div>
+                                    <div>
+                                        {% for tag in bucket.tags %}
+                                        <div class="resource-tag">
+                                            <span class="tag-key">{{ tag.Key }}:</span>
+                                            <span class="tag-value">{{ tag.Value }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <p>태그 정보가 없습니다.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-database"></i>
+            <h3>S3 버킷 데이터가 없습니다</h3>
+            <p>이 계정에서 S3 버킷을 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 다른 서비스 섹션도 비슷한 방식으로 추가 -->
+
+{% else %}
+<!-- 데이터가 없는 경우 -->
+<div class="awsui-alert awsui-alert-warning">
+    <div class="awsui-alert-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="awsui-alert-content">
+        <div class="awsui-alert-message">
+            서비스 데이터를 찾을 수 없습니다. 다른 수집 데이터를 선택하거나 새로운 데이터를 수집하세요.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/resource/service-view.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ServiceView 모듈 초기화
+    ServiceView.init();
+    
+    // 데이터 내보내기 버튼 설정
+    document.getElementById('export-json').addEventListener('click', function() {
+        const data = {{ all_services_data|tojson }};
+        ServiceView.exportJSON(data, 'aws-services-data');
+    });
+    
+    document.getElementById('export-csv').addEventListener('click', function() {
+        // CSV 내보내기는 현재 표시된 테이블만 내보내기
+        const activeTable = document.querySelector('.service-section-body.show .resource-table');
+        if (activeTable) {
+            const tableId = activeTable.id;
+            let data = [];
+            
+            if (tableId === 'ec2-table') {
+                data = {{ all_services_data.ec2.instances|default([])|tojson }};
+            } else if (tableId === 's3-table') {
+                data = {{ all_services_data.s3.buckets|default([])|tojson }};
+            }
+            
+            ServiceView.exportCSV(data, 'aws-' + tableId.replace('-table', ''));
+        }
+    });
+});
+</script>
+{% endblock %}

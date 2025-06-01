@@ -3,6 +3,7 @@ from flask_login import login_required, current_user, login_required
 from app import app
 from app.services.aws_services import aws_services
 from datetime import datetime
+import json
 from app.services.resource.ec2 import get_ec2_data
 from app.services.resource.s3 import get_s3_data
 from app.services.resource.rds import get_rds_data
@@ -212,7 +213,6 @@ def consolidated_view():
         return render_template('consolidated.html', 
                               services=aws_services, 
                               all_services_data=empty_services_data, 
-                              resource_recommendations={},
                               is_collecting=status['is_collecting'],
                               current_service=status['current_service'],
                               completed_services=status['completed_services'],
@@ -249,7 +249,6 @@ def consolidated_view():
                     return render_template('consolidated.html',
                                           services=aws_services,
                                           all_services_data=collection_data['services_data'],
-                                          resource_recommendations={},
                                           is_collecting=False,
                                           completed_services=list(collection_data['services_data'].keys()),
                                           total_services=len(collection_data['metadata'].get('selected_services', [])),
@@ -306,7 +305,6 @@ def consolidated_view():
     return render_template('consolidated.html',
                           services=aws_services,
                           all_services_data=filtered_services_data,  # 선택한 서비스 데이터만 전달
-                          resource_recommendations={},
                           is_collecting=False,
                           completed_services=status['completed_services'],
                           total_services=status['total_services'],
@@ -427,6 +425,7 @@ def get_collection_status():
         'progress': progress,
         'selected_services': status.get('selected_services', [])  # 선택된 서비스 목록 추가
     })
+
 @app.route('/collections')
 @login_required
 def list_collections():
@@ -473,66 +472,13 @@ def delete_collection(collection_id):
             'status': 'error',
             'message': f'수집 데이터 삭제 중 오류가 발생했습니다: {str(e)}'
         }), 500
-@app.route('/debug_collection/<collection_id>')
-@login_required
-def debug_collection(collection_id):
-    """수집 데이터 디버깅 정보 표시"""
-    user_id = current_user.get_id()
-    
-    try:
-        s3_storage = S3Storage()
-        
-        # 메타데이터 조회
-        metadata_key = f"users/{user_id}/dashboard_data/collections/{collection_id}/metadata.json"
-        metadata_exists = False
-        metadata = None
-        
-        try:
-            metadata_obj = s3_storage.s3_client.get_object(Bucket=s3_storage.bucket_name, Key=metadata_key)
-            metadata = json.loads(metadata_obj['Body'].read().decode('utf-8'))
-            metadata_exists = True
-        except Exception as e:
-            app.logger.error(f"메타데이터 조회 실패: {str(e)}")
-        
-        # 서비스 데이터 디렉토리 조회
-        services_prefix = f"users/{user_id}/dashboard_data/collections/{collection_id}/services/"
-        services_files = []
-        
-        try:
-            response = s3_storage.s3_client.list_objects_v2(
-                Bucket=s3_storage.bucket_name,
-                Prefix=services_prefix
-            )
-            
-            if 'Contents' in response:
-                services_files = [item['Key'] for item in response['Contents']]
-        except Exception as e:
-            app.logger.error(f"서비스 디렉토리 조회 실패: {str(e)}")
-        
-        # 디버그 정보 반환
-        debug_info = {
-            'collection_id': collection_id,
-            'user_id': user_id,
-            'bucket_name': s3_storage.bucket_name,
-            'metadata_key': metadata_key,
-            'metadata_exists': metadata_exists,
-            'metadata': metadata,
-            'services_prefix': services_prefix,
-            'services_files': services_files
-        }
-        
-        return jsonify(debug_info)
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'디버그 정보 조회 중 오류 발생: {str(e)}'
-        }), 500
 
 def get_session_id():
     """현재 세션의 고유 ID를 생성하거나 가져옵니다."""
     if 'dashboard_session_id' not in session:
         session['dashboard_session_id'] = str(uuid.uuid4())
     return session['dashboard_session_id']
+
 @app.route('/reset_view')
 @login_required
 def reset_view():
@@ -548,12 +494,14 @@ def reset_view():
             collection_statuses[session_id]['collection_id'] = None
     
     return redirect(url_for('consolidated_view'))
+
 @app.route('/')
 def index():
     """메인 페이지 - 로그인 페이지로 리디렉션"""
     if current_user.is_authenticated:
         return redirect(url_for('consolidated_view'))
     return redirect(url_for('login'))
+
 def get_user_collections(user_id):
     """사용자의 수집 데이터 목록을 안전하게 가져옵니다."""
     try:

@@ -1,0 +1,85 @@
+/* Cloudscape Button 스타일 */
+.awsui-button {
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 20px;
+    padding: 0 16px;
+    height: 32px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.1s ease-out;
+}
+
+.awsui-button:focus {
+    outline: 2px solid #0972d3;
+    outline-offset: 2px;
+}
+
+.awsui-button-primary {
+    background-color: #0972d3;
+    color: #ffffff;
+}
+
+.awsui-button-primary:hover {
+    background-color: #033160;
+    color: #ffffff;
+}
+
+.awsui-button-normal {
+    background-color: #ffffff;
+    color: #0972d3;
+    border: 2px solid #0972d3;
+}
+
+.awsui-button-normal:hover {
+    background-color: #f2f8fd;
+}
+
+.awsui-button-success {
+    background-color: #037f0c;
+    color: #ffffff;
+}
+
+.awsui-button-success:hover {
+    background-color: #024706;
+    color: #ffffff;
+}
+
+.awsui-button i {
+    margin-right: 6px;
+}
+
+/* Cloudscape Toggle Button 스타일 */
+.instance-detail-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 400;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 2px solid #0972d3;
+    background-color: #ffffff;
+    color: #0972d3;
+    cursor: pointer;
+    transition: all 0.1s ease-out;
+}
+
+.instance-detail-btn:hover {
+    background-color: #f2f8fd;
+}
+
+.instance-detail-btn:focus {
+    outline: 2px solid #0972d3;
+    outline-offset: 2px;
+}
+
+.instance-detail-btn.selected {
+    background-color: #0972d3;
+    color: #ffffff;
+}

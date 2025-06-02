@@ -1,0 +1,264 @@
+/**
+ * 서비스 어드바이저 공통 스타일
+ */
+
+/* 페이지 헤더 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eaeded;
+}
+
+.page-header-title h1 {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.page-header-title p {
+    margin-bottom: 0;
+    font-size: 14px;
+}
+
+.page-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 서비스 내비게이션 */
+.service-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.service-nav-item {
+    border-bottom: 1px solid #eaeded;
+}
+
+.service-nav-item:last-child {
+    border-bottom: none;
+}
+
+.service-nav-item a {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: #16191f;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.service-nav-item a:hover {
+    background-color: #f2f8fd;
+}
+
+.service-nav-item.active a {
+    background-color: #f1faff;
+    color: #0972d3;
+    font-weight: 500;
+    border-left: 4px solid #0972d3;
+}
+
+.service-nav-item i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+/* 검사 기록 내비게이션 */
+.history-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-nav-item {
+    border-bottom: 1px solid #eaeded;
+}
+
+.history-nav-item:last-child {
+    border-bottom: none;
+}
+
+.history-nav-item a {
+    display: block;
+    padding: 10px 16px;
+    color: #16191f;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.history-nav-item a:hover {
+    background-color: #f2f8fd;
+}
+
+.history-service {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.history-date {
+    font-size: 12px;
+    color: #5f6b7a;
+}
+
+.history-nav-item.empty {
+    color: #5f6b7a;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* 권장 사항 카드 */
+.recommendation-card {
+    margin-bottom: 16px;
+}
+
+.recommendation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #f2f3f3;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border: 1px solid #e9ebed;
+    border-bottom: none;
+}
+
+.recommendation-title {
+    font-weight: 500;
+    font-size: 16px;
+    margin: 0;
+}
+
+.recommendation-body {
+    padding: 16px;
+    border: 1px solid #e9ebed;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.recommendation-description {
+    margin-bottom: 16px;
+}
+
+.recommendation-resources {
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.recommendation-resources-title {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.resource-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.resource-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eaeded;
+}
+
+.resource-item:last-child {
+    border-bottom: none;
+}
+
+.resource-name {
+    font-weight: 500;
+}
+
+.resource-details {
+    font-size: 13px;
+    color: #5f6b7a;
+}
+
+/* 심각도 배지 */
+.severity-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.severity-high {
+    background-color: #fff8f8;
+    color: #d91515;
+    border: 1px solid #fad9d9;
+}
+
+.severity-medium {
+    background-color: #fffdf7;
+    color: #d09118;
+    border: 1px solid #faebd7;
+}
+
+.severity-low {
+    background-color: #f2fcf3;
+    color: #037f0c;
+    border: 1px solid #d7f0db;
+}
+
+/* 요약 메트릭 */
+.summary-metrics {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-metric {
+    flex: 1;
+    padding: 16px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+}
+
+.summary-metric-title {
+    font-size: 14px;
+    color: #5f6b7a;
+    margin-bottom: 8px;
+}
+
+.summary-metric-value {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+.summary-metric-high {
+    border-left: 4px solid #d91515;
+}
+
+.summary-metric-medium {
+    border-left: 4px solid #d09118;
+}
+
+.summary-metric-low {
+    border-left: 4px solid #037f0c;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .page-header-actions {
+        margin-top: 16px;
+    }
+    
+    .summary-metrics {
+        flex-direction: column;
+    }
+}

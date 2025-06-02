@@ -53,33 +53,33 @@ def register():
         # 입력값 검증
         if not username or not password or not confirm_password or not role_arn:
             flash('모든 필드를 입력해주세요.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # 사용자 ID 형식 검증 (영문, 숫자, 언더스코어만 허용)
         if not re.match(r'^[a-zA-Z0-9_]+$', username):
             flash('사용자 ID는 영문, 숫자, 언더스코어(_)만 사용할 수 있습니다.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # 비밀번호 길이 검증
         if len(password) < 8:
             flash('비밀번호는 최소 8자 이상이어야 합니다.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # 비밀번호 복잡성 검증
         if not (re.search(r'[A-Z]', password) and re.search(r'[a-z]', password) and 
                 re.search(r'[0-9]', password) and re.search(r'[^A-Za-z0-9]', password)):
             flash('비밀번호는 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # 비밀번호 확인 일치 검증
         if password != confirm_password:
             flash('비밀번호와 비밀번호 확인이 일치하지 않습니다.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # Role ARN 형식 검증
         if not re.match(r'^arn:aws:iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]+$', role_arn):
             flash('올바른 AWS Role ARN 형식이 아닙니다.')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
         
         # 사용자 등록
         user_storage = UserStorage()
@@ -90,9 +90,9 @@ def register():
             return redirect(url_for('login'))
         else:
             flash(message, 'error')
-            return render_template('register.html')
+            return render_template('pages/auth/register.html')
     
-    return render_template('register.html')
+    return render_template('pages/auth/register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -109,7 +109,7 @@ def login():
         # 입력값 검증
         if not username or not password:
             flash('사용자 ID와 비밀번호를 모두 입력해주세요.')
-            return render_template('login.html')
+            return render_template('pages/auth/login.html')
         
         # 사용자 인증
         user_storage = UserStorage()
@@ -132,9 +132,9 @@ def login():
             return redirect(next_page)
         else:
             flash(result)
-            return render_template('login.html')
+            return render_template('pages/auth/login.html')
     
-    return render_template('login.html')
+    return render_template('pages/auth/login.html')
 
 @app.route('/logout')
 @login_required

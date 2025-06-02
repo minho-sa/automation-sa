@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}회원가입 - AWS 콘솔 체크{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="awsui-card">
+            <div class="awsui-card-header">
+                <h5><i class="fas fa-user-plus me-2"></i>회원가입</h5>
+            </div>
+            <div class="awsui-card-body">
+                <form method="POST" action="{{ url_for('register') }}" id="register-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">사용자 ID</label>
+                        <input type="text" class="form-control" id="username" name="username" required 
+                               pattern="[a-zA-Z0-9_]+" title="영문, 숫자, 언더스코어(_)만 사용할 수 있습니다.">
+                        <div class="form-text">영문, 숫자, 언더스코어(_)만 사용할 수 있습니다.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="password" name="password" required 
+                               minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$"
+                               title="비밀번호는 최소 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.">
+                        <div class="form-text">비밀번호는 최소 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">비밀번호 확인</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="role_arn" class="form-label">AWS Role ARN</label>
+                        <input type="text" class="form-control" id="role_arn" name="role_arn" required
+                               pattern="^arn:aws:iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]+$"
+                               title="올바른 AWS Role ARN 형식을 입력하세요. (예: arn:aws:iam::123456789012:role/MyRole)">
+                        <div class="form-text">AWS 자격증명에 사용할 Role ARN을 입력하세요. (예: arn:aws:iam::123456789012:role/MyRole)</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="awsui-button awsui-button-primary">회원가입</button>
+                    </div>
+                </form>
+            </div>
+            <div class="awsui-card-body" style="border-top: 1px solid #eaeded; background-color: #f8f8f8;">
+                <p class="mb-0 text-center">이미 계정이 있으신가요? <a href="{{ url_for('login') }}">로그인</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/pages/auth.js') }}"></script>
+{% endblock %}

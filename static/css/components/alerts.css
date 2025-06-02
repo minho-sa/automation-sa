@@ -1,0 +1,106 @@
+/* Cloudscape Alert 스타일 */
+.awsui-alert {
+    display: flex;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    margin-bottom: 20px;
+}
+
+.awsui-alert-info {
+    background-color: #f1faff;
+    border: 2px solid #0972d3;
+}
+
+.awsui-alert-error {
+    background-color: #fff8f8;
+    border: 2px solid #d91515;
+}
+
+.awsui-alert-warning {
+    background-color: #fffdf7;
+    border: 2px solid #d09118;
+}
+
+.awsui-alert-success {
+    background-color: #f2fcf3;
+    border: 2px solid #037f0c;
+}
+
+.awsui-alert-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+}
+
+.awsui-alert-info .awsui-alert-icon {
+    color: #0972d3;
+}
+
+.awsui-alert-error .awsui-alert-icon {
+    color: #d91515;
+}
+
+.awsui-alert-warning .awsui-alert-icon {
+    color: #d09118;
+}
+
+.awsui-alert-success .awsui-alert-icon {
+    color: #037f0c;
+}
+
+.awsui-alert-content {
+    flex: 1;
+}
+
+.awsui-alert-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #000716;
+}
+
+.awsui-alert-message {
+    color: #000716;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+/* 알림 컨테이너 */
+.alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1060;
+    max-width: 400px;
+}
+
+.alert-container .awsui-alert {
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+/* 알림 닫기 버튼 */
+.awsui-alert-close {
+    background: transparent;
+    border: none;
+    color: #5f6b7a;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.awsui-alert-close:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}

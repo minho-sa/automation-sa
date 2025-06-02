@@ -1,0 +1,58 @@
+/* 메트릭 컨테이너 스타일 */
+.awsui-metric-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    padding: 16px;
+    height: 100%;
+}
+
+.awsui-metric-title {
+    font-size: 14px;
+    color: #5f6b7a;
+    margin-bottom: 8px;
+}
+
+.awsui-metric-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: #000716;
+    display: flex;
+    align-items: baseline;
+}
+
+.metric-unit {
+    font-size: 16px;
+    margin-left: 4px;
+    color: #5f6b7a;
+    font-weight: normal;
+}
+
+/* 메트릭 색상 변형 */
+.awsui-metric-primary {
+    border-left: 4px solid #0972d3;
+}
+
+.awsui-metric-success {
+    border-left: 4px solid #037f0c;
+}
+
+.awsui-metric-warning {
+    border-left: 4px solid #d09118;
+}
+
+.awsui-metric-danger {
+    border-left: 4px solid #d91515;
+}
+
+/* 리소스 사용량 바 */
+.resource-usage-bar {
+    height: 20px;
+    margin-bottom: 0.5rem;
+}
+
+.resource-usage-label {
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+}

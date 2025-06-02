@@ -1,0 +1,56 @@
+/* Cloudscape 카드 스타일 */
+.awsui-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15), 0 1px 3px 1px rgba(0, 28, 36, 0.1);
+    margin-bottom: 20px;
+    border: none;
+    overflow: hidden;
+}
+
+.awsui-card-header {
+    background-color: #ffffff;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ebed;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.awsui-card-header h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000716;
+}
+
+.awsui-card-header i {
+    color: #5f6b7a;
+    margin-right: 8px;
+}
+
+.awsui-card-body {
+    padding: 20px;
+}
+
+.awsui-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* 토글 아이콘 애니메이션 */
+.toggle-icon {
+    transition: transform 0.2s ease-in-out;
+}
+
+.awsui-card-header[aria-expanded="false"] .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.awsui-card-header[aria-expanded="true"] .toggle-icon {
+    transform: rotate(180deg);
+}

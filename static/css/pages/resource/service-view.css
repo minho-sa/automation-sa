@@ -1,0 +1,458 @@
+/**
+ * 서비스 뷰 페이지 스타일
+ */
+
+/* 서비스 섹션 스타일 */
+.service-section {
+    margin-bottom: 24px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    overflow: hidden;
+}
+
+.service-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #f2f3f3;
+    border-bottom: 1px solid #e9ebed;
+    cursor: pointer;
+}
+
+.service-section-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #000716;
+    display: flex;
+    align-items: center;
+}
+
+.service-section-header h3 i {
+    margin-right: 10px;
+    color: #5f6b7a;
+}
+
+.service-section-body {
+    padding: 20px;
+}
+
+.toggle-icon i {
+    transition: transform 0.3s ease;
+}
+
+.service-section-header[aria-expanded="true"] .toggle-icon i {
+    transform: rotate(180deg);
+}
+
+/* 요약 카드 스타일 */
+.summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid #0972d3;
+}
+
+.summary-card-title {
+    font-size: 14px;
+    color: #5f6b7a;
+    margin-bottom: 8px;
+}
+
+.summary-card-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: #000716;
+}
+
+/* 차트 컨테이너 스타일 */
+.chart-container {
+    margin-bottom: 24px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e9ebed;
+    overflow: hidden;
+}
+
+.chart-title {
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #000716;
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #e9ebed;
+}
+
+/* 필터 컨테이너 스타일 */
+.filter-container {
+    margin-bottom: 16px;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-input:focus {
+    border-color: #0972d3;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.2);
+}
+
+/* 리소스 테이블 스타일 */
+.resource-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.resource-table thead {
+    background-color: #f2f3f3;
+}
+
+.resource-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.resource-table th[data-sort]:hover {
+    background-color: #e9ecef;
+}
+
+.resource-table th.sort-asc::after {
+    content: " ▲";
+    font-size: 12px;
+    color: #0972d3;
+}
+
+.resource-table th.sort-desc::after {
+    content: " ▼";
+    font-size: 12px;
+    color: #0972d3;
+}
+
+.resource-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #000716;
+    border-bottom: 1px solid #e9ebed;
+    vertical-align: middle;
+}
+
+.resource-table tbody tr:hover {
+    background-color: #f2f8fd;
+}
+
+/* 상태 배지 스타일 */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-running {
+    background-color: #f2fcf3;
+    color: #037f0c;
+    border: 1px solid #d7f0db;
+}
+
+.status-stopped {
+    background-color: #fff8f8;
+    color: #d91515;
+    border: 1px solid #fad9d9;
+}
+
+.status-pending {
+    background-color: #fffdf7;
+    color: #d09118;
+    border: 1px solid #faebd7;
+}
+
+/* 메트릭 게이지 스타일 */
+.metric-gauge {
+    height: 6px;
+    background-color: #e9ebed;
+    border-radius: 3px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.metric-gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.metric-gauge-fill.low {
+    background-color: #037f0c;
+}
+
+.metric-gauge-fill.medium {
+    background-color: #d09118;
+}
+
+.metric-gauge-fill.high {
+    background-color: #d91515;
+}
+
+/* 상세 패널 스타일 */
+.detail-panel {
+    padding: 16px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.detail-panel-row {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.detail-panel-label {
+    width: 150px;
+    font-weight: 500;
+    color: #5f6b7a;
+}
+
+.detail-panel-value {
+    flex: 1;
+    color: #000716;
+}
+
+.detail-panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000716;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.detail-panel-content {
+    background-color: #ffffff;
+    border: 1px solid #e9ebed;
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+/* 리소스 탭 스타일 */
+.resource-tabs {
+    display: flex;
+    border-bottom: 1px solid #e9ebed;
+    margin-bottom: 16px;
+}
+
+.resource-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #5f6b7a;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.resource-tab:hover {
+    color: #0972d3;
+}
+
+.resource-tab.active {
+    color: #0972d3;
+    border-bottom-color: #0972d3;
+}
+
+.resource-tab-content {
+    display: none;
+}
+
+.resource-tab-content.active {
+    display: block;
+}
+
+/* 보안 규칙 스타일 */
+.security-rule {
+    background-color: #ffffff;
+    border: 1px solid #e9ebed;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.security-rule-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: #f2f3f3;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.security-rule-title {
+    font-weight: 500;
+    color: #000716;
+}
+
+.security-rule-ports {
+    color: #5f6b7a;
+    font-size: 13px;
+}
+
+.security-rule-ip {
+    display: inline-block;
+    background-color: #f1faff;
+    border: 1px solid #d1e4f5;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+/* 볼륨 정보 스타일 */
+.volume-info {
+    background-color: #ffffff;
+    border: 1px solid #e9ebed;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    padding: 12px;
+}
+
+.volume-info-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.volume-info-title {
+    font-weight: 500;
+    color: #000716;
+}
+
+.volume-info-size {
+    color: #5f6b7a;
+    font-size: 13px;
+}
+
+/* 리소스 태그 스타일 */
+.resource-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1faff;
+    border: 1px solid #d1e4f5;
+    border-radius: 12px;
+    padding: 4px 8px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.tag-key {
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.tag-value {
+    color: #5f6b7a;
+}
+
+/* 빈 상태 스타일 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #5f6b7a;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #d1d5db;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #000716;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+/* 내보내기 버튼 스타일 */
+.export-button {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 14px;
+    color: #000716;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.export-button:hover {
+    background-color: #f2f3f3;
+    border-color: #5f6b7a;
+}
+
+.export-button i {
+    margin-right: 6px;
+}
+
+/* 컬렉션 정보 스타일 */
+.collection-info {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+    .summary-cards {
+        flex-direction: column;
+    }
+    
+    .detail-panel-row {
+        flex-direction: column;
+    }
+    
+    .detail-panel-label {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    
+    .resource-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .resource-tab {
+        flex-grow: 1;
+        text-align: center;
+    }
+}

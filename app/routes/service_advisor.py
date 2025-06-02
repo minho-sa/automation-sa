@@ -93,6 +93,51 @@ def run_service_check(service_name):
         current_app.logger.error(f"사용자 {current_user.username}의 검사 실행 중 오류 발생: {str(e)}")
         return jsonify({'error': f'검사 실행 중 오류가 발생했습니다: {str(e)}'}), 500
 
+@service_advisor_bp.route('/api/service-advisor/<service_name>/scan', methods=['POST'])
+@service_advisor_access_required
+def ec2_scan(service_name):
+    """서비스 전체 스캔을 실행합니다."""
+    current_app.logger.info(f"사용자 {current_user.username}이 {service_name} 서비스 전체 스캔을 실행합니다.")
+    
+    advisor_factory = ServiceAdvisorFactory()
+    advisor = advisor_factory.get_advisor(service_name)
+    
+    if not advisor:
+        return jsonify({'error': f'서비스 {service_name}에 대한 어드바이저를 찾을 수 없습니다.'}), 404
+    
+    try:
+        # AWS 자격증명 정보 설정
+        role_arn = current_user.get_role_arn()
+        
+        # 모든 검사 실행
+        checks = advisor.get_available_checks()
+        results = {}
+        
+        for check in checks:
+            check_id = check.get('id')
+            result = advisor.run_check(check_id, role_arn=role_arn)
+            results[check_id] = result
+            
+            # 검사 결과 저장
+            history_storage = AdvisorHistoryStorage()
+            history_storage.save_check_result(
+                username=current_user.username,
+                service_name=service_name,
+                check_id=check_id,
+                result=result
+            )
+        
+        current_app.logger.info(f"사용자 {current_user.username}의 {service_name} 서비스 전체 스캔 완료")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{service_name} 서비스 스캔이 완료되었습니다.',
+            'redirect_url': url_for('service_advisor.service_advisor_detail', service_name=service_name)
+        })
+    except Exception as e:
+        current_app.logger.error(f"사용자 {current_user.username}의 {service_name} 스캔 중 오류 발생: {str(e)}")
+        return jsonify({'error': f'스캔 중 오류가 발생했습니다: {str(e)}'}), 500
+
 @service_advisor_bp.route('/api/service-advisor/services')
 @service_advisor_access_required
 def get_available_services():

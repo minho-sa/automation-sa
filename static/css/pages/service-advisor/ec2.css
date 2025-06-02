@@ -1,0 +1,195 @@
+/**
+ * EC2 서비스 어드바이저 스타일
+ */
+
+/* EC2 인스턴스 카드 */
+.ec2-instance-card {
+    margin-bottom: 16px;
+    border: 1px solid #e9ebed;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ec2-instance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #f2f3f3;
+    cursor: pointer;
+}
+
+.ec2-instance-id {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.ec2-instance-type {
+    font-size: 13px;
+    color: #5f6b7a;
+    margin-left: 8px;
+}
+
+.ec2-instance-body {
+    padding: 16px;
+}
+
+/* EC2 인스턴스 메트릭 */
+.ec2-metrics {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.ec2-metric {
+    flex: 1;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.ec2-metric-title {
+    font-size: 12px;
+    color: #5f6b7a;
+    margin-bottom: 4px;
+}
+
+.ec2-metric-value {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+/* EC2 인스턴스 태그 */
+.ec2-tags {
+    margin-top: 16px;
+}
+
+.ec2-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1faff;
+    border: 1px solid #d1e4f5;
+    border-radius: 12px;
+    padding: 4px 8px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.ec2-tag-key {
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.ec2-tag-value {
+    color: #5f6b7a;
+}
+
+/* EC2 권장 사항 */
+.ec2-recommendation {
+    background-color: #f1faff;
+    border: 1px solid #d1e4f5;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 16px;
+}
+
+.ec2-recommendation-title {
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.ec2-recommendation-title i {
+    color: #0972d3;
+    margin-right: 8px;
+}
+
+.ec2-recommendation-description {
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.ec2-recommendation-action {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* EC2 사용량 차트 */
+.ec2-usage-chart {
+    height: 200px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.ec2-usage-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.ec2-usage-legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+}
+
+.ec2-usage-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+}
+
+/* 인스턴스 타입 추천 */
+.instance-type-recommendation {
+    margin-top: 16px;
+    border: 1px solid #e9ebed;
+    border-radius: 4px;
+}
+
+.instance-type-recommendation-header {
+    padding: 12px;
+    background-color: #f2f3f3;
+    font-weight: 500;
+    border-bottom: 1px solid #e9ebed;
+}
+
+.instance-type-comparison {
+    display: flex;
+    padding: 12px;
+}
+
+.instance-type-current,
+.instance-type-recommended {
+    flex: 1;
+    padding: 12px;
+}
+
+.instance-type-current {
+    border-right: 1px solid #e9ebed;
+}
+
+.instance-type-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.instance-type-specs {
+    font-size: 13px;
+}
+
+.instance-type-specs div {
+    margin-bottom: 4px;
+}
+
+.instance-type-savings {
+    background-color: #f2fcf3;
+    border-top: 1px solid #e9ebed;
+    padding: 12px;
+    font-weight: 500;
+    color: #037f0c;
+    text-align: center;
+}

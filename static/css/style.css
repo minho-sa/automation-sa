@@ -1,315 +1,124 @@
-/* Main CSS file for AWS Console Check application */
+/**
+ * 기본 스타일 정의
+ */
 
-/* Modal and toggle styling */
+/* 모달 z-index 조정 */
+.modal {
+    z-index: 1050 !important;
+}
+.modal-backdrop {
+    z-index: 1040 !important;
+}
 .modal-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) !important;
-    margin: 0;
-    z-index: 1050;
+    z-index: 1050 !important;
 }
 
-/* 데이터 수집 모달 크기 조정 - AWS Cloudscape 스타일 */
-#selectServicesModal .modal-dialog {
-    max-width: 800px !important;
-    width: 80% !important;
-}
-
-.modal-content {
-    transform: none !important;
-    z-index: 1051;
-    border: none !important;
-    border-radius: 8px !important;
-    box-shadow: 0 1px 5px 0 rgba(0, 28, 36, 0.15), 0 3px 6px 0 rgba(0, 28, 36, 0.1) !important;
-}
-
-/* AWS Cloudscape 스타일 모달 헤더 */
-.modal-header {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid #e9ebed !important;
-    padding: 16px 20px !important;
-}
-
-/* AWS Cloudscape 스타일 모달 제목 */
-.modal-title {
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    color: #000716 !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-}
-
-/* AWS Cloudscape 스타일 모달 본문 */
-.modal-body {
-    padding: 20px !important;
-}
-
-/* AWS Cloudscape 스타일 모달 푸터 */
-.modal-footer {
-    background-color: #f8f8f8 !important;
-    border-top: 1px solid #e9ebed !important;
-    padding: 16px 20px !important;
-}
-
-.modal-open {
-    overflow: hidden;
-    pointer-events: auto;
-}
-
-/* New collapse-details styling */
-.collapse-details {
-    display: none;
-    margin-top: 1rem;
-}
-
-.collapse-details.show {
-    display: block;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.details-container {
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    margin: 1rem 0;
-}
-
-.details-content {
-    padding: 0;
-}
-
-.details-header {
-    background-color: #f0f0f0;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.details-title {
-    margin: 0;
-    font-size: 1.25rem;
-    color: #212529;
-}
-
-.details-body {
-    padding: 1.5rem;
-}
-
-.details-body h6 {
-    color: #495057;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.details-body h6:first-child {
-    margin-top: 0;
-}
-
-.details-footer {
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-top: 1px solid #dee2e6;
-    text-align: right;
-}
-
-/* General styling */
+/* 기본 타이포그래피 */
 body {
-    font-family: 'Noto Sans KR', sans-serif;
-    background-color: #f8f9fa;
+    font-family: 'Noto Sans KR', 'Helvetica Neue', Roboto, Arial, sans-serif;
+    color: #16191f;
+    background-color: #fafafa;
+    line-height: 1.5;
 }
 
-/* 진행 막대 크기 조정 - AWS Cloudscape 스타일 */
-.progress {
-    height: 16px !important;
-    border-radius: 8px !important;
-    background-color: #eaeded !important;
-    overflow: hidden !important;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: #000716;
+    margin-bottom: 0.5rem;
 }
 
-.progress-bar {
-    background-color: #0972d3 !important;
-    border-radius: 8px !important;
+a {
+    color: #0972d3;
+    text-decoration: none;
 }
 
-/* 텍스트 크기 조정 - AWS Cloudscape 스타일 */
-.aws-text {
-    font-size: 14px !important;
-    color: #16191f !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
+a:hover {
+    color: #033160;
+    text-decoration: underline;
 }
 
-/* 알림 메시지 패딩 조정 - AWS Cloudscape 스타일 */
-.awsui-alert {
-    padding: 16px !important;
-    border-radius: 8px !important;
-    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15) !important;
+/* 공통 레이아웃 */
+.container {
+    max-width: 1400px;
+    padding: 0 20px;
 }
 
-.navbar-brand {
-    font-weight: bold;
+.page-section {
+    margin-bottom: 24px;
 }
 
-.card {
-    margin-bottom: 1.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border-radius: 0.5rem;
-    overflow: hidden;
+/* 유틸리티 클래스 */
+.text-primary {
+    color: #0972d3 !important;
 }
 
-.card-header {
-    font-weight: bold;
-    padding: 1rem;
+.text-success {
+    color: #037f0c !important;
 }
 
-.footer {
-    margin-top: 3rem;
+.text-warning {
+    color: #d09118 !important;
 }
 
-/* Dashboard styling */
-.service-card {
-    transition: transform 0.2s;
+.text-danger {
+    color: #d91515 !important;
 }
 
-.service-card:hover {
-    transform: translateY(-5px);
+.text-muted {
+    color: #5f6b7a !important;
 }
 
-.service-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+.bg-light {
+    background-color: #f2f3f3 !important;
 }
 
-/* Login page styling */
-.login-container {
-    max-width: 400px;
-    margin: 2rem auto;
+.bg-primary-light {
+    background-color: #f1faff !important;
 }
 
-/* Table styling */
-.table-responsive {
-    overflow-x: auto;
+.bg-success-light {
+    background-color: #f2fcf3 !important;
 }
 
-.table th {
-    background-color: #f8f9fa;
+.bg-warning-light {
+    background-color: #fffdf7 !important;
 }
 
-/* Badge styling */
-.badge {
-    font-weight: normal;
-    padding: 0.4em 0.6em;
+.bg-danger-light {
+    background-color: #fff8f8 !important;
 }
 
-/* 데이터 수집 진행 중 모달 스타일 */
-#modal-completed-services-list .badge,
-#completed-services-list .badge {
-    font-size: 12px !important;
-    padding: 4px 8px !important;
-    margin-right: 6px !important;
-    margin-bottom: 6px !important;
-    display: inline-block !important;
-    border-radius: 12px !important;
-    font-weight: 500 !important;
-}
-
-#modal-completed-services-list,
-#completed-services-list {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    margin-top: 16px !important;
-}
-
-/* Form styling */
-.form-control:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* Button styling */
-.btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-.btn-primary:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
-}
-
-.btn-outline-primary {
-    color: #007bff;
-    border-color: #007bff;
-}
-
-.btn-outline-primary:hover {
-    background-color: #007bff;
-    color: #fff;
-}
-
-.btn-outline-dark {
-    color: #343a40;
-    border-color: #343a40;
-}
-
-.btn-outline-dark:hover {
-    background-color: #343a40;
-    color: #fff;
-}
-
-/* Alert styling */
-.alert {
-    margin-bottom: 1.5rem;
-    border-radius: 0.5rem;
-}
-
-/* Breadcrumb styling */
-.breadcrumb {
-    background-color: transparent;
-    padding-left: 0;
-    margin-bottom: 1.5rem;
-}
-
-/* Accordion styling */
-.accordion-button:not(.collapsed) {
-    background-color: #e7f1ff;
-    color: #0c63e4;
-}
-
-/* List group styling */
-.list-group-item {
-    border-left: none;
-    border-right: none;
-}
-
-/* Responsive adjustments */
+/* 반응형 유틸리티 */
 @media (max-width: 768px) {
-    .card-title {
-        font-size: 1.25rem;
+    .d-sm-none {
+        display: none !important;
     }
     
-    .service-icon {
-        font-size: 1.5rem;
+    .d-sm-block {
+        display: block !important;
     }
     
-    .details-container {
-        margin: 0.5rem 0;
+    .text-sm-center {
+        text-align: center !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+    .d-md-none {
+        display: none !important;
     }
     
-    .details-header {
-        padding: 0.75rem;
+    .d-md-block {
+        display: block !important;
+    }
+}
+
+@media (min-width: 993px) {
+    .d-lg-none {
+        display: none !important;
     }
     
-    .details-body {
-        padding: 1rem;
+    .d-lg-block {
+        display: block !important;
     }
 }

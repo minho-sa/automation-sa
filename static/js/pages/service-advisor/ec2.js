@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 최신 검사 결과 로드
     loadLatestCheckResults();
+    
+    // 검사 항목 호버 효과
+    initCheckItemHover();
 });
 
 /**
@@ -48,8 +51,10 @@ function initCheckItems() {
             const resultArea = item.querySelector('.check-item-result');
             if (resultArea.style.display === 'none') {
                 resultArea.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
             } else {
                 resultArea.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-eye"></i> 결과 보기';
             }
         });
         
@@ -57,6 +62,23 @@ function initCheckItems() {
         
         // 결과 버튼 참조 저장
         item.viewResultBtn = viewResultBtn;
+    });
+}
+
+/**
+ * 검사 항목 호버 효과 초기화
+ */
+function initCheckItemHover() {
+    const checkItems = document.querySelectorAll('.check-item');
+    
+    checkItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.classList.add('check-item-hover');
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.classList.remove('check-item-hover');
+        });
     });
 }
 
@@ -99,9 +121,10 @@ function initRunCheckButtons() {
                     // 마지막 검사 시간 업데이트
                     updateLastCheckDate(checkId, new Date().toISOString());
                     
-                    // 결과 보기 버튼 표시
+                    // 결과 보기 버튼 표시 및 텍스트 변경
                     if (checkItem.viewResultBtn) {
-                        checkItem.viewResultBtn.style.display = 'inline-block';
+                        checkItem.viewResultBtn.style.display = 'inline-flex';
+                        checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
                     }
                 })
                 .catch(error => {
@@ -134,7 +157,38 @@ function initSelectAllChecks() {
             checkboxes.forEach(checkbox => {
                 checkbox.checked = isChecked;
             });
+            
+            // 선택된 항목 수 업데이트
+            updateSelectedCount();
         });
+    }
+    
+    // 개별 체크박스 변경 이벤트
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectedCount();
+        });
+    });
+    
+    // 초기 선택 항목 수 업데이트
+    updateSelectedCount();
+}
+
+/**
+ * 선택된 항목 수 업데이트
+ */
+function updateSelectedCount() {
+    const selectedCheckboxes = document.querySelectorAll('.check-select:checked');
+    const runSelectedButton = document.getElementById('run-selected-checks');
+    
+    if (runSelectedButton) {
+        if (selectedCheckboxes.length > 0) {
+            runSelectedButton.innerHTML = `<i class="fas fa-play"></i> 선택한 항목 검사하기 (${selectedCheckboxes.length})`;
+            runSelectedButton.disabled = false;
+        } else {
+            runSelectedButton.innerHTML = '<i class="fas fa-play"></i> 선택한 항목 검사하기';
+            runSelectedButton.disabled = true;
+        }
     }
 }
 
@@ -180,6 +234,12 @@ function initRunSelectedChecks() {
                         // 마지막 검사 시간 업데이트
                         updateLastCheckDate(checkId, new Date().toISOString());
                         
+                        // 결과 보기 버튼 표시 및 텍스트 변경
+                        if (checkItem.viewResultBtn) {
+                            checkItem.viewResultBtn.style.display = 'inline-flex';
+                            checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
+                        }
+                        
                         return result;
                     })
                     .catch(error => {
@@ -205,6 +265,9 @@ function initRunSelectedChecks() {
                     this.innerHTML = originalText;
                 });
         });
+        
+        // 초기 상태 설정
+        runSelectedButton.disabled = true;
     }
 }
 
@@ -235,7 +298,7 @@ function loadLatestCheckResults() {
                     
                     // 결과 보기 버튼 표시
                     if (item.viewResultBtn) {
-                        item.viewResultBtn.style.display = 'inline-block';
+                        item.viewResultBtn.style.display = 'inline-flex';
                     }
                 } else {
                     // 검사 결과가 없는 경우 기본 메시지 표시
@@ -299,32 +362,37 @@ function displayCheckResult(checkId, result) {
     // 상태에 따른 스타일 설정
     let statusClass = '';
     let statusText = '';
+    let statusIcon = '';
     
     if (result.status === 'ok') {
         statusClass = 'success';
         statusText = '정상';
+        statusIcon = '<i class="fas fa-check-circle"></i>';
     } else if (result.status === 'warning') {
         statusClass = 'warning';
         statusText = '경고';
+        statusIcon = '<i class="fas fa-exclamation-triangle"></i>';
     } else if (result.status === 'error') {
         statusClass = 'danger';
         statusText = '오류';
+        statusIcon = '<i class="fas fa-times-circle"></i>';
     } else {
         statusClass = 'secondary';
         statusText = '알 수 없음';
+        statusIcon = '<i class="fas fa-question-circle"></i>';
     }
     
     // 결과 헤더
     resultHtml += `
         <div class="alert alert-${statusClass} mb-3">
-            <strong>${statusText}:</strong> ${result.message || ''}
+            ${statusIcon} <strong>${statusText}:</strong> ${result.message || ''}
         </div>
     `;
     
     // 권장 사항
     if (result.recommendations && result.recommendations.length > 0) {
         resultHtml += '<div class="check-recommendations mb-3">';
-        resultHtml += '<h4>권장 조치</h4>';
+        resultHtml += '<h4><i class="fas fa-lightbulb"></i> 권장 조치</h4>';
         resultHtml += '<ul>';
         
         result.recommendations.forEach(recommendation => {
@@ -348,39 +416,46 @@ function displayCheckResult(checkId, result) {
         
         if (resources.length > 0) {
             resultHtml += '<div class="check-resources">';
-            resultHtml += '<h4>리소스 상세 정보</h4>';
-            resultHtml += '<div class="table-responsive">';
+            resultHtml += '<h4><i class="fas fa-server"></i> 리소스 상세 정보</h4>';
+            
+            // 리소스 수 표시
+            resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
+            
+            resultHtml += '<div class="table-responsive aws-table">';
             resultHtml += '<table class="table table-sm">';
             resultHtml += '<thead>';
             resultHtml += '<tr>';
-            resultHtml += '<th>상태</th>';
-            resultHtml += '<th>리소스 ID</th>';
-            resultHtml += '<th>리소스 이름</th>';
-            resultHtml += '<th>상태 텍스트</th>';
-            resultHtml += '<th>세부 정보</th>';
+            resultHtml += '<th width="5%"></th>';
+            resultHtml += '<th width="20%">리소스 ID</th>';
+            resultHtml += '<th width="25%">리소스 이름</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
             resultHtml += '</tr>';
             resultHtml += '</thead>';
             resultHtml += '<tbody>';
             
             resources.forEach(resource => {
                 let resourceStatusClass = '';
+                let resourceStatusIcon = '';
                 
                 if (resource.status === 'pass') {
                     resourceStatusClass = 'success';
+                    resourceStatusIcon = '<i class="fas fa-check-circle text-success"></i>';
                 } else if (resource.status === 'fail') {
                     resourceStatusClass = 'danger';
+                    resourceStatusIcon = '<i class="fas fa-times-circle text-danger"></i>';
                 } else if (resource.status === 'warning') {
                     resourceStatusClass = 'warning';
+                    resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
                 } else {
                     resourceStatusClass = 'secondary';
+                    resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
                 }
                 
                 resultHtml += `<tr class="table-${resourceStatusClass}">`;
-                resultHtml += `<td>${resource.status_text || getStatusText(resource.status)}</td>`;
-                resultHtml += `<td>${resource.id}</td>`;
+                resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
+                resultHtml += `<td><code>${resource.id}</code></td>`;
                 resultHtml += `<td>${resource.instance_name || resource.sg_name || resource.id}</td>`;
-                resultHtml += `<td>${resource.status_text || ''}</td>`;
-                resultHtml += `<td>${resource.advice || ''}</td>`;
+                resultHtml += `<td class="resource-advice">${resource.advice || ''}</td>`;
                 resultHtml += '</tr>';
             });
             
@@ -394,9 +469,6 @@ function displayCheckResult(checkId, result) {
     // 결과 내용 설정
     resultContent.innerHTML = resultHtml;
     resultContent.style.display = 'block';
-    
-    // 결과 영역을 계속 표시 (닫지 않음)
-    // 결과 보기 버튼은 여전히 표시
 }
 
 /**

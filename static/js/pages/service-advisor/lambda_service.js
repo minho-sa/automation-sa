@@ -1,9 +1,9 @@
 /**
- * EC2 서비스 어드바이저 기능
+ * Lambda 서비스 어드바이저 기능
  */
 
-// EC2 어드바이저 네임스페이스
-AWSConsoleCheck.pages.serviceAdvisor.ec2 = {};
+// Lambda 어드바이저 네임스페이스
+AWSConsoleCheck.pages.serviceAdvisor.lambda = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     // 검사 항목 초기화
@@ -218,7 +218,7 @@ function loadLatestCheckResults() {
         const checkId = item.getAttribute('data-check-id');
         
         // 최신 검사 결과 API 호출
-        fetch(`/service_advisor/api/service-advisor/history/ec2/${checkId}`)
+        fetch(`/service_advisor/api/service-advisor/history/lambda_service/${checkId}`)
             .then(response => response.json())
             .then(data => {
                 const lastCheckDateElement = document.getElementById(`last-check-date-${checkId}`);
@@ -261,7 +261,7 @@ function loadLatestCheckResults() {
  */
 function runCheck(checkId) {
     // 올바른 API 경로 사용
-    const url = `/service_advisor/api/service-advisor/ec2/run-check`;
+    const url = `/service_advisor/api/service-advisor/lambda_service/run-check`;
     
     return fetch(url, {
         method: 'POST',
@@ -340,10 +340,8 @@ function displayCheckResult(checkId, result) {
         let resources = [];
         
         // 검사 유형에 따라 리소스 데이터 추출
-        if (checkId === 'ec2-security-group') {
-            resources = result.data.security_groups || [];
-        } else if (checkId === 'ec2-instance-type') {
-            resources = result.data.instances || [];
+        if (result.data.functions) {
+            resources = result.data.functions;
         }
         
         if (resources.length > 0) {
@@ -354,8 +352,8 @@ function displayCheckResult(checkId, result) {
             resultHtml += '<thead>';
             resultHtml += '<tr>';
             resultHtml += '<th>상태</th>';
-            resultHtml += '<th>리소스 ID</th>';
-            resultHtml += '<th>리소스 이름</th>';
+            resultHtml += '<th>함수 이름</th>';
+            resultHtml += '<th>런타임</th>';
             resultHtml += '<th>상태 텍스트</th>';
             resultHtml += '<th>세부 정보</th>';
             resultHtml += '</tr>';
@@ -377,8 +375,8 @@ function displayCheckResult(checkId, result) {
                 
                 resultHtml += `<tr class="table-${resourceStatusClass}">`;
                 resultHtml += `<td>${resource.status_text || getStatusText(resource.status)}</td>`;
-                resultHtml += `<td>${resource.id}</td>`;
-                resultHtml += `<td>${resource.instance_name || resource.sg_name || resource.id}</td>`;
+                resultHtml += `<td>${resource.function_name || resource.id}</td>`;
+                resultHtml += `<td>${resource.runtime || '-'}</td>`;
                 resultHtml += `<td>${resource.status_text || ''}</td>`;
                 resultHtml += `<td>${resource.advice || ''}</td>`;
                 resultHtml += '</tr>';
@@ -394,9 +392,6 @@ function displayCheckResult(checkId, result) {
     // 결과 내용 설정
     resultContent.innerHTML = resultHtml;
     resultContent.style.display = 'block';
-    
-    // 결과 영역을 계속 표시 (닫지 않음)
-    // 결과 보기 버튼은 여전히 표시
 }
 
 /**

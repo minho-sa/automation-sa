@@ -1,37 +1,65 @@
 {% extends "service_advisor/common/base.html" %}
 
-{% block service_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/service-advisor/s3.css') }}">
+{% block title %}S3 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+
+{% block advisor_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/service-advisor/s3.css') }}">
 {% endblock %}
 
-{% block service_js %}
-<script src="{{ url_for('static', filename='js/service-advisor/s3/s3.js') }}"></script>
-{% endblock %}
+{% block advisor_title %}S3 서비스 어드바이저{% endblock %}
+{% block advisor_description %}S3 버킷 최적화 및 보안 검사{% endblock %}
 
-{% block service_sidebar %}
-<div class="card mb-4">
-  <div class="card-header bg-light">
-    <h5 class="mb-0">S3 검사 항목</h5>
-  </div>
-  <div class="card-body">
-    <ul class="list-group">
-      {% for check in checks %}
-      <li class="list-group-item">
-        <div class="d-flex justify-content-between align-items-center">
-          <span>{{ check.name }}</span>
-          <span class="severity-badge severity-{{ check.severity }}">
-            {% if check.severity == 'high' %}
-              높음
-            {% elif check.severity == 'medium' %}
-              중간
-            {% else %}
-              낮음
-            {% endif %}
-          </span>
+{% block advisor_content %}
+<div class="trusted-advisor-container">
+    <div class="check-actions mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="select-all-checks">
+            <label class="form-check-label" for="select-all-checks">
+                전체 선택
+            </label>
         </div>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
+        <button id="run-selected-checks" class="awsui-button awsui-button-primary ml-3">
+            <i class="fas fa-play"></i> 선택한 항목 검사하기
+        </button>
+    </div>
+    
+    <div class="check-items-container">
+        {% for check in checks %}
+        <div class="check-item" data-check-id="{{ check.id }}">
+            <div class="check-item-header">
+                <div class="check-item-title">
+                    <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
+                    <h3>{{ check.name }}</h3>
+                    <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
+                    <span class="check-item-severity {{ check.severity }}">{{ check.severity }}</span>
+                </div>
+                <div class="check-item-actions">
+                    <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                    <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
+                        <i class="fas fa-play"></i> 검사하기
+                    </button>
+                </div>
+            </div>
+            <div class="check-item-description">
+                {{ check.description }}
+            </div>
+            <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
+                <div class="check-result-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>검사 중입니다...</span>
+                </div>
+                <div class="check-result-content" style="display: none;">
+                    <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+{% endblock %}
+
+{% block advisor_js %}
+<script src="{{ url_for('static', filename='js/pages/service-advisor/s3.js') }}"></script>
 {% endblock %}

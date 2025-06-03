@@ -59,33 +59,6 @@
                 </ul>
             </div>
         </div>
-        
-        <div class="awsui-card">
-            <div class="awsui-card-header">
-                <h5><i class="fas fa-history"></i> 검사 기록</h5>
-            </div>
-            <div class="awsui-card-body p-0">
-                <ul class="history-nav">
-                    {% for history in recent_histories %}
-                    <li class="history-nav-item">
-                        <a href="{{ url_for('service_advisor.history_detail_view', history_id=history.id) }}">
-                            <div class="history-service">{{ history.service_type }}</div>
-                            <div class="history-date">{{ history.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="history-nav-item empty">
-                        <div class="text-muted p-3">검사 기록이 없습니다.</div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <div class="text-center p-2">
-                    <a href="{{ url_for('service_advisor.service_advisor_history') }}" class="awsui-button awsui-button-normal btn-sm">
-                        모든 기록 보기
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
     
     <div class="col-md-9">

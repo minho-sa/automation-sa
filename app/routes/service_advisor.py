@@ -88,6 +88,9 @@ def run_service_check(service_name):
             result=result
         )
         
+        # 현재 시간 추가
+        result['timestamp'] = datetime.now().isoformat()
+        
         return jsonify(result)
     except Exception as e:
         current_app.logger.error(f"사용자 {current_user.username}의 검사 실행 중 오류 발생: {str(e)}")

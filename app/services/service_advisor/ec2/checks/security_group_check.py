@@ -4,15 +4,18 @@ EC2 보안 그룹 설정 검사
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.common.check_result import (
+from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR,
-    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL
+    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL,
+    create_resource_result
 )
 from app.services.service_advisor.ec2.checks.base_ec2_check import BaseEC2Check
-from app.services.service_advisor.ec2.models.security_group_result import SecurityGroupResult, RiskyRule
 
 class SecurityGroupCheck(BaseEC2Check):
     """EC2 보안 그룹 설정 검사 클래스"""
+    
+    def __init__(self):
+        self.check_id = 'ec2-security-group'
     
     def collect_data(self) -> Dict[str, Any]:
         """
@@ -97,31 +100,28 @@ class SecurityGroupCheck(BaseEC2Check):
                 
                 advice_items = []
                 if has_ssh:
-                    advice_items.append("SSH 접속은 특정 IP 주소로 제한하거나 VPN/배스천 호스트를 통해 접근하도록 설정하세요")
+                    advice_items.append("이 보안 그룹은 SSH 포트(22)가 모든 IP에 개방되어 있어 무차별 대입 공격에 취약합니다.")
                 if has_rdp:
-                    advice_items.append("RDP 접속은 특정 IP 주소로 제한하고 가능하면 VPN을 통해 접근하도록 설정하세요")
+                    advice_items.append("이 보안 그룹은 RDP 포트(3389)가 모든 IP에 개방되어 있어 보안 위험이 높습니다.")
                 if has_db:
-                    advice_items.append("데이터베이스 포트는 인터넷에 직접 노출하지 말고 내부 네트워크에서만 접근 가능하도록 설정하세요")
+                    advice_items.append("이 보안 그룹은 데이터베이스 포트가 인터넷에 직접 노출되어 있어 데이터 유출 위험이 있습니다.")
                 if has_all:
-                    advice_items.append("모든 포트를 개방하는 규칙은 제거하고 필요한 포트만 선택적으로 개방하세요")
+                    advice_items.append("이 보안 그룹은 모든 포트(0-65535)가 개방되어 있어 심각한 보안 위험이 있습니다.")
                 
-                advice = ". ".join(advice_items)
+                advice = " ".join(advice_items)
             else:
-                advice = "적절하게 구성되어 있습니다"
+                advice = "이 보안 그룹은 모든 인바운드 규칙이 적절하게 구성되어 있습니다."
             
             # 보안 그룹 결과 생성
-            sg_result = SecurityGroupResult.create(
-                sg_id=sg_id,
+            sg_result = create_resource_result(
+                resource_id=sg_id,
+                resource_name=sg_name,
                 status=status,
-                advice=advice,
                 status_text=status_text,
-                sg_name=sg_name,
-                vpc_id=vpc_id,
-                description=description,
-                risky_rules=risky_rules
+                advice=advice
             )
             
-            sg_analysis.append(sg_result.to_dict())
+            sg_analysis.append(sg_result)
         
         # 결과 분류
         passed_groups = [sg for sg in sg_analysis if sg['status'] == RESOURCE_STATUS_PASS]
@@ -131,7 +131,7 @@ class SecurityGroupCheck(BaseEC2Check):
         risky_groups_count = len(failed_groups)
         
         return {
-            'security_groups': sg_analysis,
+            'resources': sg_analysis,
             'passed_groups': passed_groups,
             'failed_groups': failed_groups,
             'problem_count': risky_groups_count,
@@ -148,36 +148,16 @@ class SecurityGroupCheck(BaseEC2Check):
         Returns:
             List[str]: 권장사항 목록
         """
-        recommendations = []
-        failed_groups = analysis_result['failed_groups']
-        risky_groups_count = analysis_result['problem_count']
+        # 리소스 검사 결과와 상관없이 일관된 권장사항 제공
+        recommendations = [
+            'SSH(22) 접속은 특정 IP 주소로 제한하거나 VPN/배스천 호스트를 통해 접근하도록 설정하세요.',
+            'RDP(3389) 접속은 특정 IP 주소로 제한하고 가능하면 VPN을 통해 접근하도록 설정하세요.',
+            '데이터베이스 포트는 인터넷에 직접 노출하지 말고 내부 네트워크에서만 접근 가능하도록 설정하세요.',
+            '모든 포트를 개방하는 규칙은 제거하고 필요한 포트만 선택적으로 개방하세요.',
+            '보안 그룹 규칙을 정기적으로 검토하고 불필요한 규칙은 제거하세요.'
+        ]
         
-        if risky_groups_count > 0:
-            # SSH 관련 권장사항
-            ssh_groups = [sg for sg in failed_groups if any(r['port_range'] == '22' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 22 and int(r['port_range'].split('-')[1]) >= 22) for r in sg['risky_rules'])]
-            if ssh_groups:
-                sg_names = ", ".join([sg["sg_name"] for sg in ssh_groups])
-                recommendations.append(f'SSH 접속은 특정 IP 주소로 제한하거나 VPN/배스천 호스트를 통해 접근하도록 설정하세요. (영향받는 보안 그룹: {sg_names})')
-            
-            # RDP 관련 권장사항
-            rdp_groups = [sg for sg in failed_groups if any(r['port_range'] == '3389' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 3389 and int(r['port_range'].split('-')[1]) >= 3389) for r in sg['risky_rules'])]
-            if rdp_groups:
-                sg_names = ", ".join([sg["sg_name"] for sg in rdp_groups])
-                recommendations.append(f'RDP 접속은 특정 IP 주소로 제한하고 가능하면 VPN을 통해 접근하도록 설정하세요. (영향받는 보안 그룹: {sg_names})')
-            
-            # 데이터베이스 포트 관련 권장사항
-            db_groups = [sg for sg in failed_groups if any(r['port_range'] in ['3306', '5432'] or (r['port_range'].find('-') > 0 and ((int(r['port_range'].split('-')[0]) <= 3306 and int(r['port_range'].split('-')[1]) >= 3306) or (int(r['port_range'].split('-')[0]) <= 5432 and int(r['port_range'].split('-')[1]) >= 5432))) for r in sg['risky_rules'])]
-            if db_groups:
-                sg_names = ", ".join([sg["sg_name"] for sg in db_groups])
-                recommendations.append(f'데이터베이스 포트는 인터넷에 직접 노출하지 말고 내부 네트워크에서만 접근 가능하도록 설정하세요. (영향받는 보안 그룹: {sg_names})')
-            
-            # 모든 포트 개방 관련 권장사항
-            all_port_groups = [sg for sg in failed_groups if any(r['protocol'] == '-1' for r in sg['risky_rules'])]
-            if all_port_groups:
-                sg_names = ", ".join([sg["sg_name"] for sg in all_port_groups])
-                recommendations.append(f'모든 포트를 개방하는 규칙은 제거하고 필요한 포트만 선택적으로 개방하세요. (영향받는 보안 그룹: {sg_names})')
-        else:
-            recommendations.append('모든 보안 그룹이 적절하게 구성되어 있습니다.')
+        return recommendations
         
         return recommendations
     
@@ -197,7 +177,7 @@ class SecurityGroupCheck(BaseEC2Check):
         if risky_groups_count > 0:
             return f'{total_groups_count}개의 보안 그룹 중 {risky_groups_count}개에서 잠재적인 보안 위험이 발견되었습니다.'
         else:
-            return '모든 보안 그룹이 적절하게 구성되어 있습니다.'
+            return f'모든 보안 그룹({total_groups_count}개)이 적절하게 구성되어 있습니다.'
 
 def run() -> Dict[str, Any]:
     """

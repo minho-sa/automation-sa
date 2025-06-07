@@ -3,8 +3,8 @@ EC2 검사 항목의 기본 클래스
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
-from app.services.service_advisor.common.check_result import (
-    create_check_result, create_error_result,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_error_result,
     STATUS_OK, STATUS_WARNING, STATUS_ERROR
 )
 
@@ -87,12 +87,18 @@ class BaseEC2Check(ABC):
             else:
                 status = STATUS_OK
             
-            # 결과 생성
-            return create_check_result(
+            # 리소스 목록 가져오기
+            resources = analysis_result.get('resources', [])
+            
+            # 통일된 결과 생성
+            result = create_unified_check_result(
                 status=status,
                 message=message,
-                data=analysis_result,
-                recommendations=recommendations
+                resources=resources,
+                recommendations=recommendations,
+                check_id=getattr(self, 'check_id', '')
             )
+            
+            return result
         except Exception as e:
             return create_error_result(f'검사 실행 중 오류가 발생했습니다: {str(e)}')

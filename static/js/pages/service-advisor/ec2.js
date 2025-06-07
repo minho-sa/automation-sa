@@ -404,66 +404,57 @@ function displayCheckResult(checkId, result) {
     }
     
     // 리소스 목록
-    if (result.data) {
-        let resources = [];
+    if (result.resources && result.resources.length > 0) {
+        const resources = result.resources;
         
-        // 검사 유형에 따라 리소스 데이터 추출
-        if (checkId === 'ec2-security-group') {
-            resources = result.data.security_groups || [];
-        } else if (checkId === 'ec2-instance-type') {
-            resources = result.data.instances || [];
-        }
+        resultHtml += '<div class="check-resources">';
+        resultHtml += '<h4><i class="fas fa-server"></i> 리소스 상세 정보</h4>';
         
-        if (resources.length > 0) {
-            resultHtml += '<div class="check-resources">';
-            resultHtml += '<h4><i class="fas fa-server"></i> 리소스 상세 정보</h4>';
+        // 리소스 수 표시
+        resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
+        
+        resultHtml += '<div class="table-responsive aws-table">';
+        resultHtml += '<table class="table table-sm">';
+        resultHtml += '<thead>';
+        resultHtml += '<tr>';
+        resultHtml += '<th width="5%"></th>';
+        resultHtml += '<th width="20%">리소스 ID</th>';
+        resultHtml += '<th width="25%">리소스 이름</th>';
+        resultHtml += '<th width="50%">세부 정보</th>';
+        resultHtml += '</tr>';
+        resultHtml += '</thead>';
+        resultHtml += '<tbody>';
+        
+        resources.forEach(resource => {
+            let resourceStatusClass = '';
+            let resourceStatusIcon = '';
             
-            // 리소스 수 표시
-            resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
+            if (resource.status === 'pass') {
+                resourceStatusClass = 'success';
+                resourceStatusIcon = '<i class="fas fa-check-circle text-success"></i>';
+            } else if (resource.status === 'fail') {
+                resourceStatusClass = 'danger';
+                resourceStatusIcon = '<i class="fas fa-times-circle text-danger"></i>';
+            } else if (resource.status === 'warning') {
+                resourceStatusClass = 'warning';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
+            } else {
+                resourceStatusClass = 'secondary';
+                resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
+            }
             
-            resultHtml += '<div class="table-responsive aws-table">';
-            resultHtml += '<table class="table table-sm">';
-            resultHtml += '<thead>';
-            resultHtml += '<tr>';
-            resultHtml += '<th width="5%"></th>';
-            resultHtml += '<th width="20%">리소스 ID</th>';
-            resultHtml += '<th width="25%">리소스 이름</th>';
-            resultHtml += '<th width="50%">세부 정보</th>';
+            resultHtml += `<tr class="table-${resourceStatusClass}">`;
+            resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
+            resultHtml += `<td><code>${resource.id}</code></td>`;
+            resultHtml += `<td>${resource.name || resource.id}</td>`;
+            resultHtml += `<td class="resource-advice">${resource.advice || ''}</td>`;
             resultHtml += '</tr>';
-            resultHtml += '</thead>';
-            resultHtml += '<tbody>';
-            
-            resources.forEach(resource => {
-                let resourceStatusClass = '';
-                let resourceStatusIcon = '';
-                
-                if (resource.status === 'pass') {
-                    resourceStatusClass = 'success';
-                    resourceStatusIcon = '<i class="fas fa-check-circle text-success"></i>';
-                } else if (resource.status === 'fail') {
-                    resourceStatusClass = 'danger';
-                    resourceStatusIcon = '<i class="fas fa-times-circle text-danger"></i>';
-                } else if (resource.status === 'warning') {
-                    resourceStatusClass = 'warning';
-                    resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
-                } else {
-                    resourceStatusClass = 'secondary';
-                    resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
-                }
-                
-                resultHtml += `<tr class="table-${resourceStatusClass}">`;
-                resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
-                resultHtml += `<td><code>${resource.id}</code></td>`;
-                resultHtml += `<td>${resource.instance_name || resource.sg_name || resource.id}</td>`;
-                resultHtml += `<td class="resource-advice">${resource.advice || ''}</td>`;
-                resultHtml += '</tr>';
-            });
-            
-            resultHtml += '</tbody>';
-            resultHtml += '</table>';
-            resultHtml += '</div>';
-            resultHtml += '</div>';
-        }
+        });
+        
+        resultHtml += '</tbody>';
+        resultHtml += '</table>';
+        resultHtml += '</div>';
+        resultHtml += '</div>';
     }
     
     // 결과 내용 설정

@@ -1,21 +1,27 @@
+"""
+EC2 인스턴스 타입 최적화 검사
+"""
 import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
-    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
+from app.services.service_advisor.common.check_result import (
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_UNKNOWN
 )
+from app.services.service_advisor.ec2.checks.base_ec2_check import BaseEC2Check
+from app.services.service_advisor.ec2.models.instance_result import InstanceResult
 
-def run() -> Dict[str, Any]:
-    """
-    EC2 인스턴스 타입이 워크로드에 적합한지 검사하고 비용 최적화 방안을 제안합니다.
+class InstanceTypeCheck(BaseEC2Check):
+    """EC2 인스턴스 타입 최적화 검사 클래스"""
     
-    Returns:
-        Dict[str, Any]: 검사 결과
-    """
-    try:
+    def collect_data(self) -> Dict[str, Any]:
+        """
+        EC2 인스턴스 및 CloudWatch 메트릭 데이터를 수집합니다.
+        
+        Returns:
+            Dict[str, Any]: 수집된 데이터
+        """
         ec2 = create_boto3_client('ec2')
         cloudwatch = create_boto3_client('cloudwatch')
         
@@ -24,12 +30,34 @@ def run() -> Dict[str, Any]:
             Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
         )
         
-        # 인스턴스 분석 결과
-        instance_analysis = []
-        
         # 현재 시간 설정
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(days=14)  # 2주 데이터 분석
+        
+        return {
+            'instances': instances,
+            'cloudwatch': cloudwatch,
+            'start_time': start_time,
+            'end_time': end_time
+        }
+    
+    def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        수집된 데이터를 분석하여 인스턴스 최적화 결과를 생성합니다.
+        
+        Args:
+            collected_data: 수집된 데이터
+            
+        Returns:
+            Dict[str, Any]: 분석 결과
+        """
+        instances = collected_data['instances']
+        cloudwatch = collected_data['cloudwatch']
+        start_time = collected_data['start_time']
+        end_time = collected_data['end_time']
+        
+        # 인스턴스 분석 결과
+        instance_analysis = []
         
         for reservation in instances.get('Reservations', []):
             for instance in reservation.get('Instances', []):
@@ -78,9 +106,9 @@ def run() -> Dict[str, Any]:
                             status_text = '최적화됨'
                             advice = f'현재 인스턴스 타입은 워크로드에 적합합니다. CPU 사용률(평균: {round(avg_cpu, 2)}%, 최대: {round(max_cpu, 2)}%)이 적절한 범위 내에 있습니다.'
                         
-                        # 표준화된 리소스 결과 생성
-                        instance_result = create_resource_result(
-                            resource_id=instance_id,
+                        # 인스턴스 결과 생성
+                        instance_result = InstanceResult.create(
+                            instance_id=instance_id,
                             status=status,
                             advice=advice,
                             status_text=status_text,
@@ -90,14 +118,14 @@ def run() -> Dict[str, Any]:
                             max_cpu=round(max_cpu, 2)
                         )
                         
-                        instance_analysis.append(instance_result)
+                        instance_analysis.append(instance_result.to_dict())
                     else:
-                        # 표준화된 리소스 결과 생성 (데이터 없음)
+                        # 데이터 없음 결과 생성
                         status_text = '데이터 부족'
                         advice = '충분한 CloudWatch 메트릭 데이터가 없습니다. 최소 14일 이상의 데이터가 수집된 후 다시 검사하세요.'
                         
-                        instance_result = create_resource_result(
-                            resource_id=instance_id,
+                        instance_result = InstanceResult.create(
+                            instance_id=instance_id,
                             status=RESOURCE_STATUS_UNKNOWN,
                             advice=advice,
                             status_text=status_text,
@@ -107,15 +135,15 @@ def run() -> Dict[str, Any]:
                             max_cpu='N/A'
                         )
                         
-                        instance_analysis.append(instance_result)
+                        instance_analysis.append(instance_result.to_dict())
                         
                 except Exception as e:
-                    # 표준화된 리소스 결과 생성 (오류)
+                    # 오류 결과 생성
                     status_text = '오류'
                     advice = f'CloudWatch 메트릭 액세스 권한을 확인하고 다시 시도하세요.'
                     
-                    instance_result = create_resource_result(
-                        resource_id=instance_id,
+                    instance_result = InstanceResult.create(
+                        instance_id=instance_id,
                         status='error',
                         advice=advice,
                         status_text=status_text,
@@ -125,7 +153,7 @@ def run() -> Dict[str, Any]:
                         max_cpu='Error'
                     )
                     
-                    instance_analysis.append(instance_result)
+                    instance_analysis.append(instance_result.to_dict())
         
         # 결과 분류
         passed_instances = [i for i in instance_analysis if i['status'] == RESOURCE_STATUS_PASS]
@@ -135,49 +163,69 @@ def run() -> Dict[str, Any]:
         # 최적화 필요 인스턴스 카운트
         optimization_needed_count = len(failed_instances)
         
-        # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 낮은 CPU 사용률 인스턴스 찾기
-        low_cpu_instances = [i for i in instance_analysis if i.get('avg_cpu') != 'N/A' and i.get('avg_cpu') != 'Error' and i.get('avg_cpu') < 10]
-        if low_cpu_instances:
-            recommendations.append(f'사용률이 낮은 {len(low_cpu_instances)}개 인스턴스는 더 작은 인스턴스 타입으로 변경하여 비용을 절감하세요. (영향받는 인스턴스: {", ".join([i["instance_name"] + " (" + i["id"] + ")" for i in low_cpu_instances])})')
-            
-        # 높은 CPU 사용률 인스턴스 찾기
-        high_cpu_instances = [i for i in instance_analysis if i.get('avg_cpu') != 'N/A' and i.get('avg_cpu') != 'Error' and i.get('avg_cpu') > 80]
-        if high_cpu_instances:
-            recommendations.append(f'사용률이 높은 {len(high_cpu_instances)}개 인스턴스는 더 큰 인스턴스 타입으로 변경하여 성능을 개선하세요. (영향받는 인스턴스: {", ".join([i["instance_name"] + " (" + i["id"] + ")" for i in high_cpu_instances])})')
-        
-        if len(instance_analysis) > 0:
-            recommendations.append('예약 인스턴스 또는 Savings Plans를 고려하여 비용을 절감하세요.')
-        
-        # 데이터 준비
-        data = {
+        return {
             'instances': instance_analysis,
             'passed_instances': passed_instances,
             'failed_instances': failed_instances,
             'unknown_instances': unknown_instances,
-            'optimization_needed_count': optimization_needed_count,
-            'total_instances_count': len(instance_analysis)
+            'problem_count': optimization_needed_count,
+            'total_count': len(instance_analysis)
         }
-        
-        # 전체 상태 결정 및 결과 생성
-        if optimization_needed_count > 0:
-            message = f'{len(instance_analysis)}개 인스턴스 중 {optimization_needed_count}개가 최적화가 필요합니다.'
-            return create_check_result(
-                status=STATUS_WARNING,
-                message=message,
-                data=data,
-                recommendations=recommendations
-            )
-        else:
-            message = f'모든 인스턴스({len(passed_instances)}개)가 적절한 크기로 구성되어 있습니다.'
-            return create_check_result(
-                status=STATUS_OK,
-                message=message,
-                data=data,
-                recommendations=recommendations
-            )
     
-    except Exception as e:
-        return create_error_result(f'인스턴스 타입 검사 중 오류가 발생했습니다: {str(e)}')
+    def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
+        """
+        분석 결과를 바탕으로 권장사항을 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            List[str]: 권장사항 목록
+        """
+        recommendations = []
+        instances = analysis_result['instances']
+        
+        # 낮은 CPU 사용률 인스턴스 찾기
+        low_cpu_instances = [i for i in instances if i.get('avg_cpu') != 'N/A' and i.get('avg_cpu') != 'Error' and i.get('avg_cpu') < 10]
+        if low_cpu_instances:
+            instance_names = ", ".join([f"{i['instance_name']} ({i['id']})" for i in low_cpu_instances])
+            recommendations.append(f'사용률이 낮은 {len(low_cpu_instances)}개 인스턴스는 더 작은 인스턴스 타입으로 변경하여 비용을 절감하세요. (영향받는 인스턴스: {instance_names})')
+            
+        # 높은 CPU 사용률 인스턴스 찾기
+        high_cpu_instances = [i for i in instances if i.get('avg_cpu') != 'N/A' and i.get('avg_cpu') != 'Error' and i.get('avg_cpu') > 80]
+        if high_cpu_instances:
+            instance_names = ", ".join([f"{i['instance_name']} ({i['id']})" for i in high_cpu_instances])
+            recommendations.append(f'사용률이 높은 {len(high_cpu_instances)}개 인스턴스는 더 큰 인스턴스 타입으로 변경하여 성능을 개선하세요. (영향받는 인스턴스: {instance_names})')
+        
+        if len(instances) > 0:
+            recommendations.append('예약 인스턴스 또는 Savings Plans를 고려하여 비용을 절감하세요.')
+        
+        return recommendations
+    
+    def create_message(self, analysis_result: Dict[str, Any]) -> str:
+        """
+        분석 결과를 바탕으로 메시지를 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            str: 결과 메시지
+        """
+        optimization_needed_count = analysis_result['problem_count']
+        total_instances_count = analysis_result['total_count']
+        
+        if optimization_needed_count > 0:
+            return f'{total_instances_count}개 인스턴스 중 {optimization_needed_count}개가 최적화가 필요합니다.'
+        else:
+            return f'모든 인스턴스({total_instances_count}개)가 적절한 크기로 구성되어 있습니다.'
+
+def run() -> Dict[str, Any]:
+    """
+    인스턴스 타입 최적화 검사를 실행합니다.
+    
+    Returns:
+        Dict[str, Any]: 검사 결과
+    """
+    check = InstanceTypeCheck()
+    return check.run()

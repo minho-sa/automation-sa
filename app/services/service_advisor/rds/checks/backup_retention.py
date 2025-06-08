@@ -1,13 +1,13 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_resource_result, create_error_result,
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     RDS 인스턴스의 백업 보존 기간을 검사하고 개선 방안을 제안합니다.
     
@@ -85,39 +85,29 @@ def run() -> Dict[str, Any]:
         recommendations.append(f'프로덕션 데이터베이스의 경우 최소 {recommended_retention}일의 백업 보존 기간을 설정하세요.')
         recommendations.append('중요한 데이터베이스의 경우 스냅샷을 정기적으로 생성하여 장기 보존하는 것이 좋습니다.')
         
-        # 데이터 준비
-        data = {
-            'instances': instance_analysis,
-            'passed_instances': passed_instances,
-            'warning_instances': warning_instances,
-            'failed_instances': failed_instances,
-            'improvement_needed_count': improvement_needed_count,
-            'total_instances_count': len(instance_analysis)
-        }
-        
         # 전체 상태 결정 및 결과 생성
         if len(failed_instances) > 0:
             message = f'{len(instance_analysis)}개 인스턴스 중 {len(failed_instances)}개에 자동 백업이 비활성화되어 있습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=instance_analysis,
                 recommendations=recommendations
             )
         elif len(warning_instances) > 0:
             message = f'{len(instance_analysis)}개 인스턴스 중 {len(warning_instances)}개의 백업 보존 기간이 권장 기간보다 짧습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=instance_analysis,
                 recommendations=recommendations
             )
         else:
             message = f'모든 인스턴스({len(passed_instances)}개)의 백업 보존 기간이 적절하게 설정되어 있습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_OK,
                 message=message,
-                data=data,
+                resources=instance_analysis,
                 recommendations=recommendations
             )
     

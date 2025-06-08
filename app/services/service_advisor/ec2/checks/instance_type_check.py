@@ -206,10 +206,13 @@ class InstanceTypeCheck(BaseEC2Check):
         else:
             return f'모든 인스턴스({total_instances_count}개)가 적절한 크기로 구성되어 있습니다.'
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     인스턴스 타입 최적화 검사를 실행합니다.
     
+    Args:
+        role_arn: AWS 역할 ARN (선택 사항)
+        
     Returns:
         Dict[str, Any]: 검사 결과
     """

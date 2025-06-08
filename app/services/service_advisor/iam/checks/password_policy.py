@@ -7,7 +7,7 @@ from app.services.service_advisor.check_result import (
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     IAM 계정 암호 정책을 검사하고 보안 강화 방안을 제안합니다.
     

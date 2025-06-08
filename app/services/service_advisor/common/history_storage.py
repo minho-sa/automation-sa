@@ -103,13 +103,16 @@ class AdvisorHistoryStorage:
                 "result": result
             }
             
+            # 한글 인코딩 문제 해결을 위해 ensure_ascii=False 설정
+            json_data = json.dumps(result_with_meta, ensure_ascii=False)
+            
             # 최신 결과 저장 (검사 항목별로 최신 결과만 유지)
             latest_key = self._get_history_key(username, service_name, check_id)
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=latest_key,
-                Body=json.dumps(result_with_meta),
-                ContentType='application/json'
+                Body=json_data.encode('utf-8'),  # UTF-8로 명시적 인코딩
+                ContentType='application/json; charset=utf-8'  # 문자셋 명시
             )
             
             # 아카이브에도 저장 (모든 검사 결과 보관)
@@ -117,8 +120,8 @@ class AdvisorHistoryStorage:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=archive_key,
-                Body=json.dumps(result_with_meta),
-                ContentType='application/json'
+                Body=json_data.encode('utf-8'),  # UTF-8로 명시적 인코딩
+                ContentType='application/json; charset=utf-8'  # 문자셋 명시
             )
             
             logger.info(f"검사 결과 저장 완료: {latest_key} (아카이브: {archive_key})")
@@ -303,7 +306,10 @@ class AdvisorHistoryStorage:
                 Key=key
             )
             
-            data = json.loads(response['Body'].read().decode('utf-8'))
+            # UTF-8로 명시적 디코딩하여 한글 처리
+            content = response['Body'].read().decode('utf-8')
+            data = json.loads(content)
+            
             return data
             
         except ClientError as e:

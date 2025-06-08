@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, jsonify, current_app, session, abort, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, current_app, session, abort, redirect, url_for, send_file
 from flask_login import login_required, current_user
 import boto3
 import json
+import io
 from datetime import datetime
 from app.services.service_advisor.advisor_factory import ServiceAdvisorFactory
 from app.services.service_advisor.common.history_storage import AdvisorHistoryStorage
@@ -20,6 +21,10 @@ def service_advisor_access_required(f):
         if not current_user.is_authenticated:
             return current_app.login_manager.unauthorized()
         
+        # 개발 환경에서는 자격증명 검사를 건너뜁니다
+        if current_app.config.get('ENV') == 'development':
+            return f(*args, **kwargs)
+        
         # AWS 자격증명 확인
         if 'auth_type' not in session or 'auth_params' not in session:
             current_app.logger.warning(f"사용자 {current_user.username}의 AWS 자격증명이 없습니다.")
@@ -34,14 +39,14 @@ def service_advisor_access_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@service_advisor_bp.route('/service-advisor')
+@service_advisor_bp.route('')
 @service_advisor_access_required
 def service_advisor_view():
     """서비스 어드바이저 메인 페이지를 렌더링합니다."""
     current_app.logger.info(f"사용자 {current_user.username}이 서비스 어드바이저에 접근했습니다.")
     return render_template('service_advisor/index.html')
 
-@service_advisor_bp.route('/service-advisor/<service_name>')
+@service_advisor_bp.route('/<service_name>')
 @service_advisor_access_required
 def service_advisor_detail(service_name):
     """특정 서비스에 대한 어드바이저 페이지를 렌더링합니다."""
@@ -51,12 +56,19 @@ def service_advisor_detail(service_name):
     advisor = advisor_factory.get_advisor(service_name)
     
     if not advisor:
-        return render_template('service_advisor/not_found.html', service_name=service_name)
+        return render_template('service_advisor/common/not_found.html', service_name=service_name, base_url='/advisor')
     
     checks = advisor.get_available_checks()
-    return render_template(f'service_advisor/{service_name}/{service_name}.html', checks=checks, service_name=service_name)
+    try:
+        # 서비스별 템플릿이 있는지 확인
+        template_path = f'service_advisor/{service_name}/{service_name}.html'
+        return render_template(template_path, checks=checks, service_name=service_name, base_url='/advisor')
+    except Exception as e:
+        # 템플릿이 없으면 공통 템플릿 사용
+        current_app.logger.warning(f"서비스 템플릿을 찾을 수 없음: {service_name}, 공통 템플릿 사용")
+        return render_template('service_advisor/service_template.html', checks=checks, service_name=service_name, base_url='/advisor')
 
-@service_advisor_bp.route('/api/service-advisor/<service_name>/run-check', methods=['POST'])
+@service_advisor_bp.route('/<service_name>/run-check', methods=['POST'])
 @service_advisor_access_required
 def run_service_check(service_name):
     """특정 서비스의 검사를 실행합니다."""
@@ -79,7 +91,7 @@ def run_service_check(service_name):
         # 검사 실행 로그 기록
         current_app.logger.info(f"사용자 {current_user.username}의 {service_name} 서비스 {check_id} 검사 완료")
         
-        # S3에 검사 결과 저장
+        # S3에 검사 결과 저장 (한글 인코딩 문제 해결)
         history_storage = AdvisorHistoryStorage()
         history_storage.save_check_result(
             username=current_user.username,
@@ -96,7 +108,7 @@ def run_service_check(service_name):
         current_app.logger.error(f"사용자 {current_user.username}의 검사 실행 중 오류 발생: {str(e)}")
         return jsonify({'error': f'검사 실행 중 오류가 발생했습니다: {str(e)}'}), 500
 
-@service_advisor_bp.route('/api/service-advisor/<service_name>/scan', methods=['POST'])
+@service_advisor_bp.route('/<service_name>/scan', methods=['POST'])
 @service_advisor_access_required
 def ec2_scan(service_name):
     """서비스 전체 스캔을 실행합니다."""
@@ -135,13 +147,13 @@ def ec2_scan(service_name):
         return jsonify({
             'success': True,
             'message': f'{service_name} 서비스 스캔이 완료되었습니다.',
-            'redirect_url': url_for('service_advisor.service_advisor_detail', service_name=service_name)
+            'redirect_url': f'/advisor/{service_name}'
         })
     except Exception as e:
         current_app.logger.error(f"사용자 {current_user.username}의 {service_name} 스캔 중 오류 발생: {str(e)}")
         return jsonify({'error': f'스캔 중 오류가 발생했습니다: {str(e)}'}), 500
 
-@service_advisor_bp.route('/api/service-advisor/services')
+@service_advisor_bp.route('/services')
 @service_advisor_access_required
 def get_available_services():
     """사용 가능한 서비스 목록을 반환합니다."""
@@ -150,7 +162,7 @@ def get_available_services():
     services = advisor_factory.get_available_services()
     return jsonify(services)
 
-@service_advisor_bp.route('/service-advisor/history')
+@service_advisor_bp.route('/history')
 @service_advisor_access_required
 def service_advisor_history():
     """서비스 어드바이저 검사 기록을 표시합니다."""
@@ -170,10 +182,11 @@ def service_advisor_history():
     return render_template(
         'service_advisor/common/history.html',
         history_list=history_list,
-        service_name=service_name
+        service_name=service_name,
+        base_url='/advisor'
     )
 
-@service_advisor_bp.route('/service-advisor/history/<path:key>')
+@service_advisor_bp.route('/history/<path:key>')
 @service_advisor_access_required
 def service_advisor_history_detail(key):
     """서비스 어드바이저 검사 기록 상세 정보를 표시합니다."""
@@ -202,10 +215,11 @@ def service_advisor_history_detail(key):
         check_id=check_id,
         timestamp=timestamp,
         result=check_result,
-        key=key
+        key=key,
+        base_url='/advisor'
     )
 
-@service_advisor_bp.route('/api/service-advisor/history/delete/<path:key>', methods=['DELETE'])
+@service_advisor_bp.route('/history/delete/<path:key>', methods=['DELETE'])
 @service_advisor_access_required
 def delete_history(key):
     """서비스 어드바이저 검사 기록을 삭제합니다."""
@@ -220,7 +234,7 @@ def delete_history(key):
     else:
         return jsonify({'success': False, 'message': '검사 기록 삭제 중 오류가 발생했습니다.'}), 500
 
-@service_advisor_bp.route('/api/service-advisor/history/<service_name>/<check_id>', methods=['GET'])
+@service_advisor_bp.route('/history/<service_name>/<check_id>', methods=['GET'])
 @service_advisor_access_required
 def get_check_history(service_name, check_id):
     """특정 서비스와 검사 ID에 대한 최신 검사 기록을 반환합니다."""
@@ -247,3 +261,67 @@ def get_check_history(service_name, check_id):
         'success': False,
         'message': '검사 기록을 찾을 수 없습니다.'
     })
+
+@service_advisor_bp.route('/export-pdf/<service_name>/<check_id>', methods=['GET'])
+@service_advisor_access_required
+def export_pdf(service_name, check_id):
+    """특정 서비스와 검사 ID에 대한 검사 결과를 PDF로 내보냅니다."""
+    current_app.logger.info(f"사용자 {current_user.username}이 {service_name} 서비스의 {check_id} 검사 결과를 PDF로 내보냅니다.")
+    
+    # 최신 검사 결과 조회
+    history_storage = AdvisorHistoryStorage()
+    result = history_storage.get_latest_check_result(
+        username=current_user.username,
+        service_name=service_name,
+        check_id=check_id
+    )
+    
+    if not result or 'result' not in result or 'metadata' not in result:
+        current_app.logger.warning(f"PDF 내보내기 실패: 검사 기록을 찾을 수 없음: {service_name}/{check_id}")
+        return jsonify({
+            'success': False,
+            'message': '검사 기록을 찾을 수 없습니다.'
+        }), 404
+    
+    try:
+        # 한글 지원 PDF 생성 유틸리티 사용
+        from app.utils.pdf_generator import generate_check_result_pdf
+        
+        # 검사 결과 데이터
+        check_result = result.get('result', {})
+        metadata = result.get('metadata', {})
+        timestamp = metadata.get('timestamp', datetime.now().isoformat())
+        
+        # 검사 정보 가져오기
+        advisor_factory = ServiceAdvisorFactory()
+        advisor = advisor_factory.get_advisor(service_name)
+        checks = advisor.get_available_checks()
+        check_info = next((check for check in checks if check.get('id') == check_id), {})
+        
+        # PDF 생성 유틸리티 사용
+        buffer = generate_check_result_pdf(
+            check_result=check_result,
+            service_name=service_name,
+            check_id=check_id,
+            check_info=check_info,
+            username=current_user.username,
+            timestamp=timestamp
+        )
+        
+        filename = f"aws-advisor-{service_name}-{check_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    
+    except Exception as e:
+        current_app.logger.error(f"PDF 내보내기 중 오류 발생: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'PDF 생성 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
+# PDF 생성 유틸리티로 이동

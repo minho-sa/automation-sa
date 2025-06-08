@@ -2,13 +2,13 @@ import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_resource_result, create_error_result,
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     Lambda 함수의 메모리 크기가 워크로드에 적합한지 검사하고 비용 최적화 방안을 제안합니다.
     
@@ -145,31 +145,21 @@ def run() -> Dict[str, Any]:
         if high_memory_functions:
             recommendations.append(f'사용률이 높은 {len(high_memory_functions)}개 함수는 메모리 크기를 늘려 성능을 개선하세요. (영향받는 함수: {", ".join([f["function_name"] for f in high_memory_functions])})')
         
-        # 데이터 준비
-        data = {
-            'functions': function_analysis,
-            'passed_functions': passed_functions,
-            'failed_functions': failed_functions,
-            'unknown_functions': unknown_functions,
-            'optimization_needed_count': optimization_needed_count,
-            'total_functions_count': len(function_analysis)
-        }
-        
         # 전체 상태 결정 및 결과 생성
         if optimization_needed_count > 0:
             message = f'{len(function_analysis)}개 함수 중 {optimization_needed_count}개가 최적화가 필요합니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=function_analysis,
                 recommendations=recommendations
             )
         else:
             message = f'모든 함수({len(passed_functions)}개)가 적절한 메모리 크기로 구성되어 있습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_OK,
                 message=message,
-                data=data,
+                resources=function_analysis,
                 recommendations=recommendations
             )
     

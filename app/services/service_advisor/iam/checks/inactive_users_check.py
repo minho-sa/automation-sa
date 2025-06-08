@@ -9,7 +9,7 @@ from app.services.service_advisor.check_result import (
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     IAM 사용자의 활동 상태를 검사하고 비활성 사용자에 대한 개선 방안을 제안합니다.
     

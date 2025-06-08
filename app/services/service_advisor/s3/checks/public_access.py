@@ -2,13 +2,13 @@ import boto3
 import botocore
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_resource_result, create_error_result,
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     S3 버킷의 퍼블릭 액세스 설정을 검사하고 보안 개선 방안을 제안합니다.
     
@@ -101,7 +101,9 @@ def run() -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
-                creation_date=bucket['CreationDate'].strftime('%Y-%m-%d')
+                creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
+                public_acl=public_acl if 'public_acl' in locals() else 'N/A',
+                all_blocked=all_blocked if 'all_blocked' in locals() else 'N/A'
             )
             
             bucket_analysis.append(bucket_result)
@@ -138,18 +140,18 @@ def run() -> Dict[str, Any]:
         # 전체 상태 결정 및 결과 생성
         if len(failed_buckets) > 0:
             message = f'{len(bucket_analysis)}개 버킷 중 {len(failed_buckets)}개에 퍼블릭 액세스 차단 설정이 필요합니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=bucket_analysis,
                 recommendations=recommendations
             )
         else:
             message = f'모든 버킷({len(passed_buckets)}개)이 퍼블릭 액세스로부터 적절하게 보호되고 있습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_OK,
                 message=message,
-                data=data,
+                resources=bucket_analysis,
                 recommendations=recommendations
             )
     

@@ -2,22 +2,25 @@ import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
-    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
+from app.services.service_advisor.common.unified_result import (
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+    RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_UNKNOWN,
+    create_unified_check_result, create_resource_result, create_error_result
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
-    Lambda 함수의 프로비저닝된 동시성 설정을 검사하고 최적화 방안을 제안합니다.
+    Lambda 함수의 프로비저닝된 동시성 설정을 검사합니다.
     
+    Args:
+        role_arn: AWS 역할 ARN (선택 사항)
+        
     Returns:
         Dict[str, Any]: 검사 결과
     """
     try:
-        lambda_client = create_boto3_client('lambda')
-        cloudwatch = create_boto3_client('cloudwatch')
+        lambda_client = create_boto3_client('lambda', role_arn=role_arn)
+        cloudwatch = create_boto3_client('cloudwatch', role_arn=role_arn)
         
         # Lambda 함수 정보 수집
         functions = lambda_client.list_functions()
@@ -34,16 +37,16 @@ def run() -> Dict[str, Any]:
             
             # 프로비저닝된 동시성 설정 확인
             try:
-                provisioned_config = lambda_client.get_function_concurrency(
+                provisioned_concurrency_configs = lambda_client.list_provisioned_concurrency_configs(
                     FunctionName=function_name
                 )
-                provisioned_concurrency = provisioned_config.get('ReservedConcurrentExecutions')
+                has_provisioned_concurrency = len(provisioned_concurrency_configs.get('ProvisionedConcurrencyConfigs', [])) > 0
             except Exception:
-                provisioned_concurrency = None
+                has_provisioned_concurrency = False
             
-            # 호출 지표 데이터 가져오기
+            # 호출 지표 가져오기
             try:
-                invocation_response = cloudwatch.get_metric_statistics(
+                invocations_response = cloudwatch.get_metric_statistics(
                     Namespace='AWS/Lambda',
                     MetricName='Invocations',
                     Dimensions=[{'Name': 'FunctionName', 'Value': function_name}],
@@ -53,52 +56,52 @@ def run() -> Dict[str, Any]:
                     Statistics=['Sum']
                 )
                 
-                concurrent_response = cloudwatch.get_metric_statistics(
+                # 콜드 스타트 지표 가져오기
+                cold_start_response = cloudwatch.get_metric_statistics(
                     Namespace='AWS/Lambda',
-                    MetricName='ConcurrentExecutions',
+                    MetricName='Duration',
                     Dimensions=[{'Name': 'FunctionName', 'Value': function_name}],
                     StartTime=start_time,
                     EndTime=end_time,
                     Period=3600,  # 1시간 간격
-                    Statistics=['Maximum']
+                    Statistics=['Average', 'Maximum']
                 )
                 
-                invocation_datapoints = invocation_response.get('Datapoints', [])
-                concurrent_datapoints = concurrent_response.get('Datapoints', [])
+                invocations_datapoints = invocations_response.get('Datapoints', [])
+                cold_start_datapoints = cold_start_response.get('Datapoints', [])
                 
-                if invocation_datapoints and concurrent_datapoints:
+                if invocations_datapoints:
                     # 시간당 평균 호출 수 계산
-                    total_invocations = sum(point['Sum'] for point in invocation_datapoints)
-                    hours = len(invocation_datapoints)
-                    avg_invocations_per_hour = total_invocations / hours if hours > 0 else 0
+                    total_invocations = sum(point['Sum'] for point in invocations_datapoints)
+                    avg_hourly_invocations = total_invocations / len(invocations_datapoints)
                     
-                    # 최대 동시 실행 수
-                    max_concurrent = max(point['Maximum'] for point in concurrent_datapoints) if concurrent_datapoints else 0
-                    
-                    # 프로비저닝된 동시성 최적화 분석
+                    # 프로비저닝된 동시성 분석
                     status = RESOURCE_STATUS_PASS  # 기본값은 통과
                     advice = None
                     status_text = None
                     
-                    # 호출 빈도가 높고 프로비저닝된 동시성이 없는 경우
-                    if avg_invocations_per_hour > 100 and max_concurrent > 10 and not provisioned_concurrency:
+                    if avg_hourly_invocations > 10 and not has_provisioned_concurrency:
                         status = RESOURCE_STATUS_FAIL
                         status_text = '최적화 필요'
-                        advice = f'호출 빈도가 높지만(시간당 평균: {round(avg_invocations_per_hour, 2)}, 최대 동시 실행: {round(max_concurrent, 2)}) 프로비저닝된 동시성이 설정되어 있지 않습니다. 콜드 스타트 지연 시간을 줄이기 위해 프로비저닝된 동시성을 설정하세요.'
+                        advice = f'이 함수는 시간당 평균 {round(avg_hourly_invocations, 2)}회 호출되지만 프로비저닝된 동시성이 설정되어 있지 않습니다. 콜드 스타트 지연 시간을 줄이기 위해 프로비저닝된 동시성 설정을 고려하세요.'
+                    elif avg_hourly_invocations < 5 and has_provisioned_concurrency:
+                        status = RESOURCE_STATUS_FAIL
+                        status_text = '최적화 필요'
+                        advice = f'이 함수는 시간당 평균 {round(avg_hourly_invocations, 2)}회만 호출되지만 프로비저닝된 동시성이 설정되어 있습니다. 비용 절감을 위해 프로비저닝된 동시성 설정을 제거하는 것을 고려하세요.'
                     else:
                         status_text = '최적화됨'
-                        advice = f'현재 함수의 호출 패턴(시간당 평균: {round(avg_invocations_per_hour, 2)}, 최대 동시 실행: {round(max_concurrent, 2)})에 따르면 프로비저닝된 동시성 설정이 필요하지 않거나 이미 적절하게 구성되어 있습니다.'
+                        if has_provisioned_concurrency:
+                            advice = f'이 함수는 시간당 평균 {round(avg_hourly_invocations, 2)}회 호출되며 프로비저닝된 동시성이 적절하게 설정되어 있습니다.'
+                        else:
+                            advice = f'이 함수는 시간당 평균 {round(avg_hourly_invocations, 2)}회 호출되며 프로비저닝된 동시성이 필요하지 않습니다.'
                     
                     # 표준화된 리소스 결과 생성
                     function_result = create_resource_result(
                         resource_id=function_name,
+                        resource_name=function_name,
                         status=status,
-                        advice=advice,
                         status_text=status_text,
-                        function_name=function_name,
-                        provisioned_concurrency=provisioned_concurrency,
-                        avg_invocations_per_hour=round(avg_invocations_per_hour, 2),
-                        max_concurrent_executions=round(max_concurrent, 2)
+                        advice=advice
                     )
                     
                     function_analysis.append(function_result)
@@ -109,13 +112,10 @@ def run() -> Dict[str, Any]:
                     
                     function_result = create_resource_result(
                         resource_id=function_name,
+                        resource_name=function_name,
                         status=RESOURCE_STATUS_UNKNOWN,
-                        advice=advice,
                         status_text=status_text,
-                        function_name=function_name,
-                        provisioned_concurrency=provisioned_concurrency,
-                        avg_invocations_per_hour='N/A',
-                        max_concurrent_executions='N/A'
+                        advice=advice
                     )
                     
                     function_analysis.append(function_result)
@@ -127,13 +127,10 @@ def run() -> Dict[str, Any]:
                 
                 function_result = create_resource_result(
                     resource_id=function_name,
-                    status='error',
-                    advice=advice,
+                    resource_name=function_name,
+                    status=RESOURCE_STATUS_UNKNOWN,
                     status_text=status_text,
-                    function_name=function_name,
-                    provisioned_concurrency=provisioned_concurrency,
-                    avg_invocations_per_hour='Error',
-                    max_concurrent_executions='Error'
+                    advice=advice
                 )
                 
                 function_analysis.append(function_result)
@@ -141,45 +138,33 @@ def run() -> Dict[str, Any]:
         # 결과 분류
         passed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_PASS]
         failed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_FAIL]
-        unknown_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_UNKNOWN or f['status'] == 'error']
         
         # 최적화 필요 함수 카운트
         optimization_needed_count = len(failed_functions)
         
-        # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 프로비저닝된 동시성 설정이 필요한 함수 찾기
-        if failed_functions:
-            recommendations.append(f'호출 빈도가 높은 {len(failed_functions)}개 함수에 프로비저닝된 동시성을 설정하여 콜드 스타트 지연 시간을 줄이세요. (영향받는 함수: {", ".join([f["function_name"] for f in failed_functions])})')
-        
-        # 데이터 준비
-        data = {
-            'functions': function_analysis,
-            'passed_functions': passed_functions,
-            'failed_functions': failed_functions,
-            'unknown_functions': unknown_functions,
-            'optimization_needed_count': optimization_needed_count,
-            'total_functions_count': len(function_analysis)
-        }
+        # 권장사항 생성
+        recommendations = [
+            '호출 빈도가 높은 함수에 프로비저닝된 동시성을 설정하여 콜드 스타트 지연 시간을 줄이세요.',
+            '호출 빈도가 낮은 함수에는 프로비저닝된 동시성을 설정하지 마세요.',
+            '프로비저닝된 동시성은 추가 비용이 발생하므로 비용과 성능 사이의 균형을 고려하세요.',
+            '정기적으로 함수의 호출 패턴을 분석하여 프로비저닝된 동시성 설정을 최적화하세요.'
+        ]
         
         # 전체 상태 결정 및 결과 생성
         if optimization_needed_count > 0:
-            message = f'{len(function_analysis)}개 함수 중 {optimization_needed_count}개가 프로비저닝된 동시성 설정이 필요합니다.'
-            return create_check_result(
-                status=STATUS_WARNING,
-                message=message,
-                data=data,
-                recommendations=recommendations
-            )
+            message = f'{len(function_analysis)}개 함수 중 {optimization_needed_count}개가 프로비저닝된 동시성 설정 최적화가 필요합니다.'
+            status = STATUS_WARNING
         else:
-            message = f'모든 함수({len(passed_functions)}개)가 적절한 프로비저닝된 동시성 설정을 가지고 있거나 필요하지 않습니다.'
-            return create_check_result(
-                status=STATUS_OK,
-                message=message,
-                data=data,
-                recommendations=recommendations
-            )
+            message = f'모든 함수({len(passed_functions)}개)가 적절한 프로비저닝된 동시성 설정으로 구성되어 있습니다.'
+            status = STATUS_OK
+        
+        return create_unified_check_result(
+            status=status,
+            message=message,
+            resources=function_analysis,
+            recommendations=recommendations,
+            check_id='lambda-provisioned-concurrency'
+        )
     
     except Exception as e:
         return create_error_result(f'Lambda 프로비저닝된 동시성 검사 중 오류가 발생했습니다: {str(e)}')

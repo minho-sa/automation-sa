@@ -1,13 +1,13 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_resource_result, create_error_result,
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     IAM 사용자의 MFA(다중 인증) 설정 상태를 검사하고 개선 방안을 제안합니다.
     
@@ -135,40 +135,29 @@ def run() -> Dict[str, Any]:
         recommendations.append('모든 IAM 사용자, 특히 관리자 권한이 있는 사용자에게 MFA를 설정하세요.')
         recommendations.append('가상 MFA 디바이스, U2F 보안 키 또는 하드웨어 MFA 디바이스를 사용할 수 있습니다.')
         
-        # 데이터 준비
-        data = {
-            'users': user_analysis,
-            'passed_users': passed_users,
-            'warning_users': warning_users,
-            'failed_users': failed_users,
-            'error_users': error_users,
-            'mfa_needed_count': mfa_needed_count,
-            'total_users_count': len(user_analysis)
-        }
-        
         # 전체 상태 결정 및 결과 생성
         if len(failed_users) > 0:
             message = f'{len(user_analysis)}명의 사용자 중 {len(failed_users)}명의 관리자 권한을 가진 사용자에게 MFA가 설정되어 있지 않습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=user_analysis,
                 recommendations=recommendations
             )
         elif len(warning_users) > 0:
             message = f'{len(user_analysis)}명의 사용자 중 {len(warning_users)}명의 콘솔 액세스 권한이 있는 사용자에게 MFA가 설정되어 있지 않습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=user_analysis,
                 recommendations=recommendations
             )
         else:
             message = f'모든 사용자({len(passed_users)}명)가 MFA를 적절하게 설정했거나 MFA가 필요하지 않습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_OK,
                 message=message,
-                data=data,
+                resources=user_analysis,
                 recommendations=recommendations
             )
     

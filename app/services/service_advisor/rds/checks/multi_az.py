@@ -7,7 +7,7 @@ from app.services.service_advisor.check_result import (
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     RDS 인스턴스의 다중 AZ 구성을 검사하고 고가용성 개선 방안을 제안합니다.
     

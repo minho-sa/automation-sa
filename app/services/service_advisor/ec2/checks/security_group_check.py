@@ -17,19 +17,29 @@ class SecurityGroupCheck(BaseEC2Check):
     def __init__(self):
         self.check_id = 'ec2-security-group'
     
-    def collect_data(self) -> Dict[str, Any]:
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """
         EC2 보안 그룹 데이터를 수집합니다.
         
+        Args:
+            role_arn: AWS 역할 ARN (선택 사항)
+            
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
-        ec2 = create_boto3_client('ec2')
-        security_groups = ec2.describe_security_groups()
-        
-        return {
-            'security_groups': security_groups['SecurityGroups']
-        }
+        try:
+            ec2 = create_boto3_client('ec2', role_arn=role_arn)
+            security_groups = ec2.describe_security_groups()
+            
+            return {
+                'security_groups': security_groups['SecurityGroups']
+            }
+        except Exception as e:
+            print(f"보안 그룹 데이터 수집 중 오류: {str(e)}")
+            # 오류 발생 시 빈 데이터 반환
+            return {
+                'security_groups': []
+            }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -179,10 +189,13 @@ class SecurityGroupCheck(BaseEC2Check):
         else:
             return f'모든 보안 그룹({total_groups_count}개)이 적절하게 구성되어 있습니다.'
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     보안 그룹 설정 검사를 실행합니다.
     
+    Args:
+        role_arn: AWS 역할 ARN (선택 사항)
+        
     Returns:
         Dict[str, Any]: 검사 결과
     """

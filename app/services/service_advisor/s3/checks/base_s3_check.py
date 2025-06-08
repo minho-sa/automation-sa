@@ -1,5 +1,5 @@
 """
-EC2 검사 항목의 기본 클래스
+S3 검사 항목의 기본 클래스
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
@@ -8,8 +8,8 @@ from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR
 )
 
-class BaseEC2Check(ABC):
-    """EC2 검사 항목의 기본 클래스"""
+class BaseS3Check(ABC):
+    """S3 검사 항목의 기본 클래스"""
     
     @abstractmethod
     def collect_data(self) -> Dict[str, Any]:

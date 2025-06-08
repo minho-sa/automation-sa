@@ -2,32 +2,13 @@
  * 서비스 어드바이저 공통 스타일
  */
 
-/* 페이지 헤더 */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #eaeded;
+/* 기본 스타일 */
+.trusted-advisor-container {
+    font-family: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #16191f;
 }
 
-.page-header-title h1 {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.page-header-title p {
-    margin-bottom: 0;
-    font-size: 14px;
-}
-
-.page-header-actions {
-    display: flex;
-    gap: 8px;
-}
-
-/* 서비스 내비게이션 */
+/* 서비스 네비게이션 */
 .service-nav {
     list-style: none;
     padding: 0;
@@ -35,7 +16,7 @@
 }
 
 .service-nav-item {
-    border-bottom: 1px solid #eaeded;
+    border-bottom: 1px solid #eee;
 }
 
 .service-nav-item:last-child {
@@ -43,222 +24,359 @@
 }
 
 .service-nav-item a {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    color: #16191f;
+    display: block;
+    padding: 12px 15px;
+    color: #333;
     text-decoration: none;
     transition: all 0.2s ease;
 }
 
 .service-nav-item a:hover {
-    background-color: #f2f8fd;
+    background-color: #f8f9fa;
 }
 
 .service-nav-item.active a {
-    background-color: #f1faff;
-    color: #0972d3;
-    font-weight: 500;
-    border-left: 4px solid #0972d3;
+    background-color: #e9ecef;
+    font-weight: 600;
 }
 
 .service-nav-item i {
     margin-right: 8px;
-    width: 20px;
+    width: 16px;
     text-align: center;
 }
 
-/* 검사 기록 내비게이션 */
-.history-nav {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.history-nav-item {
-    border-bottom: 1px solid #eaeded;
-}
-
-.history-nav-item:last-child {
-    border-bottom: none;
-}
-
-.history-nav-item a {
-    display: block;
-    padding: 10px 16px;
-    color: #16191f;
-    text-decoration: none;
+/* 서비스 카드 */
+.service-card {
+    height: 100%;
     transition: all 0.2s ease;
 }
 
-.history-nav-item a:hover {
-    background-color: #f2f8fd;
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.history-service {
-    font-weight: 500;
-    font-size: 14px;
+.service-card-icon {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #0073bb;
 }
 
-.history-date {
-    font-size: 12px;
-    color: #5f6b7a;
+/* 서비스 통계 */
+.service-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
 }
 
-.history-nav-item.empty {
-    color: #5f6b7a;
-    font-size: 14px;
+.service-stat-item {
     text-align: center;
+    flex: 1;
+    padding: 10px;
+    border-right: 1px solid #eee;
 }
 
-/* 권장 사항 카드 */
-.recommendation-card {
-    margin-bottom: 16px;
+.service-stat-item:last-child {
+    border-right: none;
 }
 
-.recommendation-header {
+.service-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.service-stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* 검사 항목 컨테이너 */
+.check-items-container {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* 검사 항목 */
+.check-item {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.check-item-hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 검사 항목 헤더 */
+.check-item-header {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    background-color: #f6f7f7;
+    cursor: default;
+}
+
+.check-item-title {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background-color: #f2f3f3;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border: 1px solid #e9ebed;
-    border-bottom: none;
-}
-
-.recommendation-title {
-    font-weight: 500;
-    font-size: 16px;
-    margin: 0;
-}
-
-.recommendation-body {
-    padding: 16px;
-    border: 1px solid #e9ebed;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
-.recommendation-description {
-    margin-bottom: 16px;
-}
-
-.recommendation-resources {
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    padding: 12px;
-}
-
-.recommendation-resources-title {
-    font-weight: 500;
-    margin-bottom: 8px;
-}
-
-.resource-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.resource-item {
-    padding: 8px 0;
-    border-bottom: 1px solid #eaeded;
-}
-
-.resource-item:last-child {
-    border-bottom: none;
-}
-
-.resource-name {
-    font-weight: 500;
-}
-
-.resource-details {
-    font-size: 13px;
-    color: #5f6b7a;
-}
-
-/* 심각도 배지 */
-.severity-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.severity-high {
-    background-color: #fff8f8;
-    color: #d91515;
-    border: 1px solid #fad9d9;
-}
-
-.severity-medium {
-    background-color: #fffdf7;
-    color: #d09118;
-    border: 1px solid #faebd7;
-}
-
-.severity-low {
-    background-color: #f2fcf3;
-    color: #037f0c;
-    border: 1px solid #d7f0db;
-}
-
-/* 요약 메트릭 */
-.summary-metrics {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.summary-metric {
     flex: 1;
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 1px 1px 0 rgba(0, 28, 36, 0.15);
+    gap: 0.75rem;
 }
 
-.summary-metric-title {
-    font-size: 14px;
-    color: #5f6b7a;
-    margin-bottom: 8px;
+.check-item-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
 }
 
-.summary-metric-value {
-    font-size: 24px;
+.check-item-category {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-right: 8px;
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.check-item-category.cost, .check-item-category.비용-최적화 {
+    background-color: #ec7211;
+    color: white;
+}
+
+.check-item-category.security, .check-item-category.보안 {
+    background-color: #0073bb;
+    color: white;
+}
+
+.check-item-category.performance, .check-item-category.성능 {
+    background-color: #1d8102;
+    color: white;
+}
+
+.check-item-category.reliability {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.check-item-severity {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #e9ecef;
+    color: #495057;
     font-weight: 500;
+    text-transform: uppercase;
 }
 
-.summary-metric-high {
-    border-left: 4px solid #d91515;
+.check-item-severity.high {
+    background-color: #d13212;
+    color: white;
 }
 
-.summary-metric-medium {
-    border-left: 4px solid #d09118;
+.check-item-severity.medium {
+    background-color: #ff9900;
+    color: white;
 }
 
-.summary-metric-low {
-    border-left: 4px solid #037f0c;
+.check-item-severity.low {
+    background-color: #2ea597;
+    color: white;
 }
 
-/* 반응형 스타일 */
-@media (max-width: 768px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .page-header-actions {
-        margin-top: 16px;
-    }
-    
-    .summary-metrics {
-        flex-direction: column;
-    }
+.check-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.last-check-date {
+    font-size: 12px;
+    color: #6c757d;
+    margin-right: 10px;
+}
+
+/* 검사 항목 설명 */
+.check-item-description {
+    padding: 15px;
+    font-size: 14px;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    line-height: 1.4;
+}
+
+/* 검사 항목 결과 */
+.check-item-result {
+    padding: 15px;
+    border-top: 1px solid #eaeded;
+    background-color: #f9f9f9;
+}
+
+.check-result-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 10px;
+}
+
+.check-result-content {
+    margin-top: 10px;
+}
+
+/* 권장 사항 */
+.check-recommendations {
+    background-color: #e2f0fb;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.check-recommendations h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #0c5460;
+}
+
+.check-recommendations ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.check-recommendations li {
+    margin-bottom: 5px;
+}
+
+/* 리소스 목록 */
+.check-resources h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.resource-count {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.resource-advice {
+    font-size: 14px;
+}
+
+/* 검사 작업 버튼 */
+.check-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 1rem;
+}
+
+/* 버튼 스타일 */
+.awsui-button {
+    padding: 0.5rem 1rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.awsui-button-primary {
+    background-color: #0073bb;
+    color: white;
+    border-color: #0073bb;
+}
+
+.awsui-button-primary:hover {
+    background-color: #005d95;
+    border-color: #005d95;
+}
+
+.awsui-button-normal {
+    background-color: #fff;
+    border-color: #d5dbdb;
+    color: #16191f;
+}
+
+.awsui-button-normal:hover {
+    background-color: #f2f3f3;
+}
+
+/* PDF 다운로드 버튼 스타일 */
+.download-pdf-btn {
+    background-color: #f8f9fa;
+    border-color: #ddd;
+    color: #dc3545;
+}
+
+.download-pdf-btn:hover {
+    background-color: #e9ecef;
+    border-color: #c8c9ca;
+    color: #bd2130;
+}
+
+/* 체크박스 스타일 */
+.form-check {
+    display: flex;
+    align-items: center;
+}
+
+.form-check-input {
+    margin-right: 0.5rem;
+}
+
+/* 스피너 */
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 유틸리티 클래스 */
+.ml-3 {
+    margin-left: 0.75rem;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+/* 뷰 결과 버튼 */
+.view-result-btn {
+    background-color: #fff;
+    border: 1px solid #d5dbdb;
+    color: #0073bb;
 }

@@ -1,13 +1,13 @@
 {% extends "service_advisor/common/base.html" %}
 
-{% block title %}EC2 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
+{% block title %}{{ service_name|upper }} 서비스 어드바이저 - AWS 콘솔 체크{% endblock %}
 
 {% block advisor_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/service-advisor/ec2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/service-advisor/common.css') }}">
 {% endblock %}
 
-{% block advisor_title %}EC2 서비스 어드바이저{% endblock %}
-{% block advisor_description %}EC2 인스턴스 최적화 및 보안 검사{% endblock %}
+{% block advisor_title %}{{ service_name|upper }} 서비스 어드바이저{% endblock %}
+{% block advisor_description %}{{ service_name|upper }} 서비스 최적화 및 보안 검사{% endblock %}
 
 {% block advisor_content %}
 <div class="trusted-advisor-container">
@@ -68,5 +68,5 @@
 {% endblock %}
 
 {% block advisor_js %}
-<script src="{{ url_for('static', filename='js/pages/service-advisor/ec2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/service-advisor/common.js') }}"></script>
 {% endblock %}

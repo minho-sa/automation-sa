@@ -48,10 +48,20 @@ class ServiceAdvisorFactory:
         advisor_class = self.service_mapping[service_name]
         self.logger.info(f"어드바이저 생성: {service_name} ({advisor_class.__name__})")
         
-        # AWS 자격증명 설정
-        session = self._create_aws_session(role_arn)
-        
-        return advisor_class(session=session)
+        try:
+            # AWS 자격증명 설정
+            session = self._create_aws_session(role_arn)
+            
+            # 모든 서비스에 대해 실제 어드바이저 객체 생성
+            advisor = advisor_class(session=session)
+            print(f"어드바이저 객체 생성 성공: {service_name}, 클래스: {advisor_class.__name__}")
+            return advisor
+        except Exception as e:
+            self.logger.error(f"어드바이저 생성 중 오류 발생: {str(e)}")
+            print(f"어드바이저 생성 중 오류 발생: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return None
     
     def _create_aws_session(self, role_arn: str = None) -> boto3.Session:
         """

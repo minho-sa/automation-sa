@@ -7,7 +7,7 @@ from app.services.service_advisor.check_result import (
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     S3 버킷의 객체 잠금(Object Lock) 설정을 검사하고 데이터 보호 개선 방안을 제안합니다.
     

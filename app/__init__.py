@@ -43,4 +43,4 @@ from app.routes import auth, dashboard, resource
 from app.routes.service_advisor import service_advisor_bp
 
 # 블루프린트 등록
-app.register_blueprint(service_advisor_bp, url_prefix='/service_advisor')
+app.register_blueprint(service_advisor_bp, url_prefix='/advisor')

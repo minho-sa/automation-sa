@@ -23,7 +23,7 @@
         <div class="awsui-container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">서비스 선택</h2>
-                <a href="{{ url_for('service_advisor.service_advisor_history') }}" class="btn btn-outline-primary">
+                <a href="/advisor/history" class="btn btn-outline-primary">
                     <i class="fas fa-history"></i> 검사 기록 보기
                 </a>
             </div>
@@ -38,7 +38,7 @@
                             <p>Amazon Elastic Compute Cloud</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='ec2') }}" class="awsui-button awsui-button-normal service-advisor-button">
+                            <a href="/advisor/ec2" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -54,7 +54,7 @@
                             <p>AWS Lambda</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='lambda') }}" class="awsui-button awsui-button-normal service-advisor-button">
+                            <a href="/advisor/lambda" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -70,7 +70,7 @@
                             <p>AWS Identity and Access Management</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='iam') }}" class="awsui-button awsui-button-normal service-advisor-button">
+                            <a href="/advisor/iam" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -86,7 +86,7 @@
                             <p>Amazon Relational Database Service</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='rds') }}" class="awsui-button awsui-button-normal service-advisor-button">
+                            <a href="/advisor/rds" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>
@@ -102,7 +102,7 @@
                             <p>Amazon Simple Storage Service</p>
                         </div>
                         <div class="service-card-action">
-                            <a href="{{ url_for('service_advisor.service_advisor_detail', service_name='s3') }}" class="awsui-button awsui-button-normal service-advisor-button">
+                            <a href="/advisor/s3" class="awsui-button awsui-button-normal service-advisor-button">
                                 <i class="fas fa-arrow-right"></i> 검사 항목 보기
                             </a>
                         </div>

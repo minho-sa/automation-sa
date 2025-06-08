@@ -11,16 +11,20 @@
 
 {% block advisor_content %}
 <div class="trusted-advisor-container">
-    <div class="check-actions mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="select-all-checks">
-            <label class="form-check-label" for="select-all-checks">
-                전체 선택
-            </label>
+    <div class="check-actions">
+        <div class="check-actions-left">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="select-all-checks">
+                <label class="form-check-label" for="select-all-checks">
+                    전체 선택
+                </label>
+            </div>
         </div>
-        <button id="run-selected-checks" class="awsui-button awsui-button-primary ml-3">
-            <i class="fas fa-play"></i> 선택한 항목 검사하기
-        </button>
+        <div class="check-actions-right">
+            <button id="run-selected-checks" class="awsui-button awsui-button-primary">
+                <i class="fas fa-play"></i> 선택한 항목 검사하기
+            </button>
+        </div>
     </div>
     
     <div class="check-items-container">
@@ -38,6 +42,9 @@
                     <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
                         <i class="fas fa-play"></i> 검사하기
                     </button>
+                    <button class="awsui-button awsui-button-normal download-pdf-btn" data-check-id="{{ check.id }}" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> PDF 다운로드
+                    </button>
                 </div>
             </div>
             <div class="check-item-description">
@@ -45,7 +52,7 @@
             </div>
             <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
                 <div class="check-result-loading">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     <span>검사 중입니다...</span>

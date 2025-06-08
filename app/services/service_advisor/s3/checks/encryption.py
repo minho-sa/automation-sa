@@ -1,13 +1,13 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
-from app.services.service_advisor.check_result import (
-    create_check_result, create_resource_result,
-    create_error_result, STATUS_OK, STATUS_WARNING, STATUS_ERROR,
+from app.services.service_advisor.common.unified_result import (
+    create_unified_check_result, create_resource_result, create_error_result,
+    STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     S3 버킷의 암호화 설정을 검사하고 보안 개선 방안을 제안합니다.
     
@@ -107,40 +107,29 @@ def run() -> Dict[str, Any]:
         recommendations.append('모든 S3 버킷에 기본 암호화를 설정하세요.')
         recommendations.append('중요한 데이터를 저장하는 버킷에는 SSE-KMS 암호화를 사용하세요.')
         
-        # 데이터 준비
-        data = {
-            'buckets': bucket_analysis,
-            'passed_buckets': passed_buckets,
-            'warning_buckets': warning_buckets,
-            'failed_buckets': failed_buckets,
-            'unknown_buckets': unknown_buckets,
-            'improvement_needed_count': improvement_needed_count,
-            'total_buckets_count': len(bucket_analysis)
-        }
-        
         # 전체 상태 결정 및 결과 생성
         if len(failed_buckets) > 0:
             message = f'{len(bucket_analysis)}개 버킷 중 {len(failed_buckets)}개에 기본 암호화 설정이 필요합니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=bucket_analysis,
                 recommendations=recommendations
             )
         elif len(warning_buckets) > 0:
             message = f'{len(bucket_analysis)}개 버킷 중 {len(warning_buckets)}개에 암호화 설정 개선이 필요합니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,
-                data=data,
+                resources=bucket_analysis,
                 recommendations=recommendations
             )
         else:
             message = f'모든 버킷({len(passed_buckets)}개)이 적절하게 암호화되어 있습니다.'
-            return create_check_result(
+            return create_unified_check_result(
                 status=STATUS_OK,
                 message=message,
-                data=data,
+                resources=bucket_analysis,
                 recommendations=recommendations
             )
     

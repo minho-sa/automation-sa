@@ -8,7 +8,7 @@ from app.services.service_advisor.check_result import (
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_UNKNOWN
 )
 
-def run() -> Dict[str, Any]:
+def run(role_arn=None) -> Dict[str, Any]:
     """
     IAM 액세스 키 교체 상태를 검사하고 오래된 액세스 키에 대한 교체 방안을 제안합니다.
     

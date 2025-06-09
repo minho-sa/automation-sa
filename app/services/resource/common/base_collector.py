@@ -20,16 +20,12 @@ class BaseCollector:
         self.region = region or Config.AWS_REGION
         self.logger = logging.getLogger(self.__class__.__name__)
         
-        # 세션 설정
-        if session:
-            self.session = session
-        else:
-            # 서비스 어드바이저와 동일한 방식으로 세션 생성
-            self.session = boto3.Session(
-                aws_access_key_id=Config.AWS_ACCESS_KEY,
-                aws_secret_access_key=Config.AWS_SECRET_KEY,
-                region_name=self.region
-            )
+        # 세션 설정 (간소화)
+        self.session = session or boto3.Session(
+            aws_access_key_id=Config.AWS_ACCESS_KEY,
+            aws_secret_access_key=Config.AWS_SECRET_KEY,
+            region_name=self.region
+        )
         
         # 클라이언트 초기화
         self._init_clients()

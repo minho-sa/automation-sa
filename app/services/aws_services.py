@@ -9,7 +9,7 @@ from app.services.resource.common.data_storage import ResourceDataStorage
 logger = logging.getLogger(__name__)
 
 def collect_service_data(username: str, service_name: str, region: str, 
-                        auth_type: str = 'access_key', **auth_params) -> Dict[str, Any]:
+                        auth_type: str = 'access_key', role_arn: str = None) -> Dict[str, Any]:
     """
     AWS 서비스 데이터 수집
     
@@ -18,9 +18,7 @@ def collect_service_data(username: str, service_name: str, region: str,
         service_name: 서비스 이름
         region: AWS 리전
         auth_type: 인증 유형 ('access_key' 또는 'role_arn')
-        **auth_params: 인증 유형에 따른 추가 파라미터
-            - access_key 인증: aws_access_key, aws_secret_key, aws_session_token(선택)
-            - role_arn 인증: role_arn, aws_access_key, aws_secret_key, aws_session_token(선택)
+        role_arn: AWS 역할 ARN (선택 사항)
     
     Returns:
         Dict[str, Any]: 수집 결과
@@ -32,11 +30,11 @@ def collect_service_data(username: str, service_name: str, region: str,
         
         logger.info(f"{log_prefix}데이터 수집 시작: 사용자={username}, 서비스={service_name}, 리전={region}")
         
-        # 서비스 어드바이저와 동일한 방식으로 세션 생성
+        # 간소화된 세션 생성
         import boto3
         from config import Config
         
-        # .env 파일의 자격 증명 사용
+        # 기본 세션 생성
         session = boto3.Session(
             aws_access_key_id=Config.AWS_ACCESS_KEY,
             aws_secret_access_key=Config.AWS_SECRET_KEY,
@@ -44,10 +42,10 @@ def collect_service_data(username: str, service_name: str, region: str,
         )
         
         # 역할 ARN이 제공된 경우 해당 역할로 임시 자격 증명 생성
-        if auth_type == 'role_arn' and auth_params.get('role_arn'):
+        if auth_type == 'role_arn' and role_arn:
             sts_client = session.client('sts')
             response = sts_client.assume_role(
-                RoleArn=auth_params.get('role_arn'),
+                RoleArn=role_arn,
                 RoleSessionName=f"CollectionSession-{collection_id}"
             )
             

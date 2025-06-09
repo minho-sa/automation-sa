@@ -3,7 +3,6 @@ import boto3
 from app.services.resource.common.base_collector import BaseCollector
 from app.services.resource.ec2_collector import EC2Collector
 from app.services.resource.s3_collector import S3Collector
-from app.services.resource.common.aws_client import AWSClient
 from config import Config
 
 class CollectorFactory:

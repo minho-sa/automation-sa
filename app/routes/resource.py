@@ -261,13 +261,13 @@ def collect_data(region, user_id, session_id, selected_services=None, auth_type=
             
             logger.info(f"서비스 데이터 수집 시작: {service_key}")
             
-            # 데이터 수집
+            # 간소화된 데이터 수집 호출
             result = collect_service_data(
                 username=user_id,
                 service_name=service_key,
                 region=region,
                 auth_type=auth_type,
-                **auth_params
+                role_arn=auth_params.get('role_arn') if auth_params else None
             )
             
             # 결과 처리

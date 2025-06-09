@@ -4,6 +4,7 @@
 import boto3
 from typing import Dict, List, Any, Optional
 import logging
+from config import Config
 
 class BaseAdvisor:
     """

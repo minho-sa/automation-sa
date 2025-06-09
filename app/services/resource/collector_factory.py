@@ -3,6 +3,8 @@ import boto3
 from app.services.resource.common.base_collector import BaseCollector
 from app.services.resource.ec2_collector import EC2Collector
 from app.services.resource.s3_collector import S3Collector
+from app.services.resource.common.aws_client import AWSClient
+from config import Config
 
 class CollectorFactory:
     """
@@ -36,6 +38,14 @@ class CollectorFactory:
         collector_class = cls._collectors.get(service_name.lower())
         if not collector_class:
             raise ValueError(f"지원하지 않는 서비스 이름: {service_name}")
+        
+        # 세션이 없는 경우 .env 파일의 자격 증명으로 세션 생성
+        if not session:
+            session = boto3.Session(
+                aws_access_key_id=Config.AWS_ACCESS_KEY,
+                aws_secret_access_key=Config.AWS_SECRET_KEY,
+                region_name=region or Config.AWS_REGION
+            )
         
         return collector_class(region=region, session=session)
     

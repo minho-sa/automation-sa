@@ -32,25 +32,20 @@ def collect_service_data(username: str, service_name: str, region: str,
         
         logger.info(f"{log_prefix}데이터 수집 시작: 사용자={username}, 서비스={service_name}, 리전={region}")
         
-        # 세션 생성
+        # 서비스 어드바이저와 동일한 방식으로 세션 생성
         import boto3
-        if auth_type == 'access_key':
-            session = boto3.Session(
-                aws_access_key_id=auth_params.get('aws_access_key'),
-                aws_secret_access_key=auth_params.get('aws_secret_key'),
-                aws_session_token=auth_params.get('aws_session_token'),
-                region_name=region
-            )
-        elif auth_type == 'role_arn':
-            # STS를 통한 역할 수임
-            sts_client = boto3.client(
-                'sts',
-                aws_access_key_id=auth_params.get('aws_access_key'),
-                aws_secret_access_key=auth_params.get('aws_secret_key'),
-                aws_session_token=auth_params.get('aws_session_token'),
-                region_name=region
-            )
-            
+        from config import Config
+        
+        # .env 파일의 자격 증명 사용
+        session = boto3.Session(
+            aws_access_key_id=Config.AWS_ACCESS_KEY,
+            aws_secret_access_key=Config.AWS_SECRET_KEY,
+            region_name=region or Config.AWS_REGION
+        )
+        
+        # 역할 ARN이 제공된 경우 해당 역할로 임시 자격 증명 생성
+        if auth_type == 'role_arn' and auth_params.get('role_arn'):
+            sts_client = session.client('sts')
             response = sts_client.assume_role(
                 RoleArn=auth_params.get('role_arn'),
                 RoleSessionName=f"CollectionSession-{collection_id}"
@@ -61,13 +56,8 @@ def collect_service_data(username: str, service_name: str, region: str,
                 aws_access_key_id=credentials['AccessKeyId'],
                 aws_secret_access_key=credentials['SecretAccessKey'],
                 aws_session_token=credentials['SessionToken'],
-                region_name=region
+                region_name=region or Config.AWS_REGION
             )
-        else:
-            return {
-                'success': False,
-                'error': f"지원하지 않는 인증 유형: {auth_type}"
-            }
         
         # 수집기 생성 및 데이터 수집
         try:

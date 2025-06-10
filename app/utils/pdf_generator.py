@@ -16,9 +16,15 @@ import reportlab.rl_config
 # 누락된 글리프에 대한 경고 비활성화
 reportlab.rl_config.warnOnMissingFontGlyphs = 0
 
-# 시스템에 설치된 나눔고딕 폰트 사용
-NANUM_GOTHIC_PATH = '/usr/share/fonts/truetype/nanum/NanumGothic.ttf'
-NANUM_GOTHIC_BOLD_PATH = '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf'
+# 프로젝트 내 폰트 경로 설정 (어떤 환경에서든 사용 가능)
+import os.path
+
+# 현재 파일 기준 상대 경로로 폰트 파일 찾기
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FONTS_DIR = os.path.join(BASE_DIR, 'static', 'fonts', 'nanum')
+
+NANUM_GOTHIC_PATH = os.path.join(FONTS_DIR, 'NanumGothic-Regular.ttf')
+NANUM_GOTHIC_BOLD_PATH = os.path.join(FONTS_DIR, 'NanumGothic-Bold.ttf')
 
 # 폰트 등록 및 매핑
 pdfmetrics.registerFont(TTFont('NanumGothic', NANUM_GOTHIC_PATH))

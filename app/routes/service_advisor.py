@@ -324,4 +324,135 @@ def export_pdf(service_name, check_id):
             'message': f'PDF 생성 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
+@service_advisor_bp.route('/export-multiple-pdf', methods=['POST'])
+@service_advisor_access_required
+def export_multiple_pdf():
+    """여러 검사 항목을 하나의 PDF로 내보냅니다."""
+    data = request.json
+    check_items = data.get('check_items', [])
+    
+    if not check_items or len(check_items) == 0:
+        return jsonify({
+            'success': False,
+            'message': '선택된 검사 항목이 없습니다.'
+        }), 400
+    
+    current_app.logger.info(f"사용자 {current_user.username}이 {len(check_items)}개의 검사 항목을 PDF로 내보냅니다.")
+    
+    try:
+        # 한글 지원 PDF 생성 유틸리티 사용
+        from app.utils.pdf_generator import generate_multiple_check_results_pdf
+        
+        history_storage = AdvisorHistoryStorage()
+        advisor_factory = ServiceAdvisorFactory()
+        
+        check_results = []
+        
+        for item in check_items:
+            service_name = item.get('service_name')
+            check_id = item.get('check_id')
+            
+            # 최신 검사 결과 조회
+            result = history_storage.get_latest_check_result(
+                username=current_user.username,
+                service_name=service_name,
+                check_id=check_id
+            )
+            
+            if result and 'result' in result and 'metadata' in result:
+                # 검사 정보 가져오기
+                advisor = advisor_factory.get_advisor(service_name)
+                checks = advisor.get_available_checks()
+                check_info = next((check for check in checks if check.get('id') == check_id), {})
+                
+                check_results.append({
+                    'result': result.get('result', {}),
+                    'service_name': service_name,
+                    'check_id': check_id,
+                    'check_info': check_info,
+                    'timestamp': result.get('metadata', {}).get('timestamp', datetime.now().isoformat())
+                })
+        
+        if not check_results:
+            return jsonify({
+                'success': False,
+                'message': '검사 결과를 찾을 수 없습니다.'
+            }), 404
+        
+        # 여러 PDF 생성 및 병합
+        buffer = generate_multiple_check_results_pdf(
+            check_results=check_results,
+            username=current_user.username
+        )
+        
+        if not buffer:
+            return jsonify({
+                'success': False,
+                'message': 'PDF 생성에 실패했습니다.'
+            }), 500
+        
+        filename = f"aws-advisor-multiple-checks-{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    
+    except Exception as e:
+        current_app.logger.error(f"여러 PDF 내보내기 중 오류 발생: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'PDF 생성 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
+@service_advisor_bp.route('/check-results-status', methods=['POST'])
+@service_advisor_access_required
+def check_results_status():
+    """선택한 검사 항목들의 결과 상태를 확인합니다."""
+    data = request.json
+    check_items = data.get('check_items', [])
+    
+    if not check_items or len(check_items) == 0:
+        return jsonify({
+            'success': False,
+            'message': '선택된 검사 항목이 없습니다.'
+        }), 400
+    
+    current_app.logger.info(f"사용자 {current_user.username}이 {len(check_items)}개의 검사 항목 상태를 확인합니다.")
+    
+    history_storage = AdvisorHistoryStorage()
+    results_status = []
+    
+    for item in check_items:
+        service_name = item.get('service_name')
+        check_id = item.get('check_id')
+        
+        # 최신 검사 결과 조회
+        result = history_storage.get_latest_check_result(
+            username=current_user.username,
+            service_name=service_name,
+            check_id=check_id
+        )
+        
+        if result and 'result' in result and 'metadata' in result:
+            results_status.append({
+                'service_name': service_name,
+                'check_id': check_id,
+                'has_result': True,
+                'timestamp': result.get('metadata', {}).get('timestamp')
+            })
+        else:
+            results_status.append({
+                'service_name': service_name,
+                'check_id': check_id,
+                'has_result': False
+            })
+    
+    return jsonify({
+        'success': True,
+        'results_status': results_status
+    })
+
 # PDF 생성 유틸리티로 이동

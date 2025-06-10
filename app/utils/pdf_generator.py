@@ -6,12 +6,13 @@ import os
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Flowable, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Flowable, KeepTogether, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import reportlab.rl_config
+from PyPDF2 import PdfMerger
 
 # 누락된 글리프에 대한 경고 비활성화
 reportlab.rl_config.warnOnMissingFontGlyphs = 0
@@ -450,3 +451,64 @@ def get_status_text(status):
         'fail': u'문제 있음'
     }
     return status_map.get(status, status)
+
+def merge_pdfs(pdf_buffers):
+    """
+    여러 PDF 버퍼를 하나의 PDF로 병합합니다.
+    
+    Args:
+        pdf_buffers: PDF 바이트 데이터의 리스트
+        
+    Returns:
+        병합된 PDF 바이트 데이터
+    """
+    merger = PdfMerger()
+    
+    for buffer in pdf_buffers:
+        buffer.seek(0)  # 버퍼 포인터를 처음으로 이동
+        merger.append(buffer)
+    
+    merged_buffer = io.BytesIO()
+    merger.write(merged_buffer)
+    merger.close()
+    
+    merged_buffer.seek(0)
+    return merged_buffer
+
+def generate_multiple_check_results_pdf(check_results, username):
+    """
+    여러 검사 결과를 하나의 PDF로 생성합니다.
+    
+    Args:
+        check_results: 검사 결과 데이터 리스트 (각 항목은 결과, 서비스명, 검사ID, 검사정보, 타임스탬프 포함)
+        username: 사용자 이름
+        
+    Returns:
+        병합된 PDF 바이트 데이터
+    """
+    pdf_buffers = []
+    
+    for item in check_results:
+        check_result = item.get('result', {})
+        service_name = item.get('service_name', '')
+        check_id = item.get('check_id', '')
+        check_info = item.get('check_info', {})
+        timestamp = item.get('timestamp', datetime.now().isoformat())
+        
+        # 각 검사 결과에 대한 PDF 생성
+        pdf_buffer = generate_check_result_pdf(
+            check_result=check_result,
+            service_name=service_name,
+            check_id=check_id,
+            check_info=check_info,
+            username=username,
+            timestamp=timestamp
+        )
+        
+        pdf_buffers.append(pdf_buffer)
+    
+    # 모든 PDF 병합
+    if pdf_buffers:
+        return merge_pdfs(pdf_buffers)
+    
+    return None

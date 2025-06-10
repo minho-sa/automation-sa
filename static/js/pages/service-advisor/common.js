@@ -217,6 +217,7 @@ function initSelectAllChecks() {
 function updateSelectedCount() {
     const selectedCheckboxes = document.querySelectorAll('.check-select:checked');
     const runSelectedButton = document.getElementById('run-selected-checks');
+    const downloadSelectedButton = document.getElementById('download-selected-checks');
     
     if (runSelectedButton) {
         if (selectedCheckboxes.length > 0) {
@@ -227,6 +228,16 @@ function updateSelectedCount() {
             runSelectedButton.disabled = true;
         }
     }
+    
+    if (downloadSelectedButton) {
+        if (selectedCheckboxes.length > 0) {
+            downloadSelectedButton.innerHTML = `<i class="fas fa-file-pdf"></i> 선택한 항목 PDF 다운로드 (${selectedCheckboxes.length})`;
+            downloadSelectedButton.disabled = false;
+        } else {
+            downloadSelectedButton.innerHTML = '<i class="fas fa-file-pdf"></i> 선택한 항목 PDF 다운로드';
+            downloadSelectedButton.disabled = true;
+        }
+    }
 }
 
 /**
@@ -234,6 +245,7 @@ function updateSelectedCount() {
  */
 function initRunSelectedChecks() {
     const runSelectedButton = document.getElementById('run-selected-checks');
+    const downloadSelectedButton = document.getElementById('download-selected-checks');
     const serviceName = getCurrentServiceName();
     
     if (runSelectedButton) {
@@ -308,6 +320,156 @@ function initRunSelectedChecks() {
                     this.disabled = false;
                     this.innerHTML = originalText;
                 });
+        });
+        
+        // 초기 상태 설정
+        updateSelectedCount();
+    }
+    
+    // 선택한 항목 PDF 다운로드 버튼 초기화
+    if (downloadSelectedButton) {
+        downloadSelectedButton.addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.check-select:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('다운로드할 항목을 선택해주세요.');
+                return;
+            }
+            
+            // 선택한 항목의 검사 결과 상태 확인
+            const checkItems = Array.from(selectedCheckboxes).map(checkbox => {
+                return {
+                    service_name: serviceName,
+                    check_id: checkbox.getAttribute('data-check-id')
+                };
+            });
+            
+            // 버튼 상태 업데이트
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 준비 중...';
+            
+            // 선택한 항목의 검사 결과 상태 확인
+            fetch('/advisor/check-results-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ check_items: checkItems })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.results_status) {
+                    // 검사 결과가 없는 항목 필터링
+                    const noResultItems = data.results_status.filter(item => !item.has_result);
+                    
+                    if (noResultItems.length > 0) {
+                        // 검사 결과가 없는 항목이 있는 경우 경고
+                        const noResultIds = noResultItems.map(item => item.check_id);
+                        alert(`다음 항목은 검사 결과가 없습니다: ${noResultIds.join(', ')}\n\n검사를 먼저 실행해주세요.`);
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        return;
+                    }
+                    
+                    // 모든 항목에 검사 결과가 있는 경우 PDF 다운로드 진행
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 다운로드 중...';
+                    
+                    // PDF 다운로드 요청
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    // POST 요청을 위한 폼 생성
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/advisor/export-multiple-pdf';
+                    form.target = 'download-iframe';
+                    form.style.display = 'none';
+                    
+                    // CSRF 토큰 추가
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = getCsrfToken();
+                    form.appendChild(csrfInput);
+                    
+                    // 데이터 추가
+                    const dataInput = document.createElement('input');
+                    dataInput.type = 'hidden';
+                    dataInput.name = 'data';
+                    dataInput.value = JSON.stringify({ check_items: checkItems });
+                    form.appendChild(dataInput);
+                    
+                    // 폼 제출
+                    document.body.appendChild(form);
+                    iframe.name = 'download-iframe';
+                    
+                    // iframe 로드 이벤트
+                    iframe.onload = () => {
+                        // 다운로드 완료 후 버튼 상태 복원
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                            document.body.removeChild(iframe);
+                            document.body.removeChild(form);
+                        }, 1000);
+                    };
+                    
+                    // 폼 제출 대신 fetch API 사용
+                    fetch('/advisor/export-multiple-pdf', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ check_items: checkItems })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('PDF 생성 중 오류가 발생했습니다.');
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // Blob을 다운로드 링크로 변환
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `aws-advisor-multiple-checks-${new Date().toISOString().replace(/[:.]/g, '-')}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        // 정리
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        // 버튼 상태 복원
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('PDF 다운로드 중 오류 발생:', error);
+                        alert('PDF 다운로드 중 오류가 발생했습니다.');
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    });
+                } else {
+                    alert('검사 결과 상태를 확인하는 중 오류가 발생했습니다.');
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking results status:', error);
+                alert('검사 결과 상태를 확인하는 중 오류가 발생했습니다.');
+                this.disabled = false;
+                this.innerHTML = originalText;
+            });
         });
         
         // 초기 상태 설정

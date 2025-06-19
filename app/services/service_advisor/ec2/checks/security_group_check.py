@@ -77,21 +77,38 @@ class SecurityGroupCheck(BaseEC2Check):
                         protocol = rule.get('IpProtocol', '-1')
                         
                         # 위험한 포트 목록 (SSH, RDP, MySQL, PostgreSQL 등)
-                        risky_ports = [22, 3389, 3306, 5432]
+                        risky_ports = {
+                            22: 'SSH',
+                            3389: 'RDP', 
+                            3306: 'MySQL',
+                            5432: 'PostgreSQL',
+                            1433: 'SQL Server',
+                            27017: 'MongoDB',
+                            6379: 'Redis',
+                            5984: 'CouchDB'
+                        }
                         
-                        if protocol == '-1' or (from_port <= min(risky_ports) and to_port >= max(risky_ports)):
+                        if protocol == '-1':  # 모든 프로토콜
                             risky_rules.append({
                                 'cidr': cidr,
                                 'protocol': protocol,
-                                'port_range': f"{from_port}-{to_port}" if from_port != to_port else str(from_port),
-                                'risk': '모든 IP에 대해 위험한 포트가 개방되어 있습니다.'
+                                'port_range': 'ALL',
+                                'risk': '모든 트래픽이 인터넷에 개방됨'
                             })
-                        elif any(from_port <= port <= to_port for port in risky_ports):
+                        elif from_port in risky_ports:
+                            risky_rules.append({
+                                'cidr': cidr,
+                                'protocol': protocol,
+                                'port_range': str(from_port),
+                                'risk': f'{risky_ports[from_port]} 포트({from_port})가 인터넷에 개방됨'
+                            })
+                        elif any(from_port <= port <= to_port for port in risky_ports.keys()):
+                            affected_ports = [f'{risky_ports[port]}({port})' for port in risky_ports.keys() if from_port <= port <= to_port]
                             risky_rules.append({
                                 'cidr': cidr,
                                 'protocol': protocol,
                                 'port_range': f"{from_port}-{to_port}" if from_port != to_port else str(from_port),
-                                'risk': '모든 IP에 대해 위험한 포트가 개방되어 있습니다.'
+                                'risk': f'위험한 포트들이 인터넷에 개방됨: {", ".join(affected_ports)}'
                             })
             
             # 보안 그룹 상태 결정
@@ -99,28 +116,11 @@ class SecurityGroupCheck(BaseEC2Check):
             status_text = '안전' if not risky_rules else '위험'
             
             # 권장 사항 설명
-            advice = None
-            
             if risky_rules:
-                # 위험 유형 분석
-                has_ssh = any(r['port_range'] == '22' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 22 and int(r['port_range'].split('-')[1]) >= 22) for r in risky_rules)
-                has_rdp = any(r['port_range'] == '3389' or (r['port_range'].find('-') > 0 and int(r['port_range'].split('-')[0]) <= 3389 and int(r['port_range'].split('-')[1]) >= 3389) for r in risky_rules)
-                has_db = any(r['port_range'] in ['3306', '5432'] or (r['port_range'].find('-') > 0 and ((int(r['port_range'].split('-')[0]) <= 3306 and int(r['port_range'].split('-')[1]) >= 3306) or (int(r['port_range'].split('-')[0]) <= 5432 and int(r['port_range'].split('-')[1]) >= 5432))) for r in risky_rules)
-                has_all = any(r['protocol'] == '-1' for r in risky_rules)
-                
-                advice_items = []
-                if has_ssh:
-                    advice_items.append("이 보안 그룹은 SSH 포트(22)가 모든 IP에 개방되어 있어 무차별 대입 공격에 취약합니다.")
-                if has_rdp:
-                    advice_items.append("이 보안 그룹은 RDP 포트(3389)가 모든 IP에 개방되어 있어 보안 위험이 높습니다.")
-                if has_db:
-                    advice_items.append("이 보안 그룹은 데이터베이스 포트가 인터넷에 직접 노출되어 있어 데이터 유출 위험이 있습니다.")
-                if has_all:
-                    advice_items.append("이 보안 그룹은 모든 포트(0-65535)가 개방되어 있어 심각한 보안 위험이 있습니다.")
-                
-                advice = " ".join(advice_items)
+                risk_descriptions = [rule['risk'] for rule in risky_rules]
+                advice = f"보안 위험 발견: {'; '.join(risk_descriptions)}"
             else:
-                advice = "이 보안 그룹은 모든 인바운드 규칙이 적절하게 구성되어 있습니다."
+                advice = "보안 그룹이 적절히 구성되어 있습니다."
             
             # 보안 그룹 결과 생성
             sg_result = create_resource_result(

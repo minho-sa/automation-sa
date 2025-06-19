@@ -12,6 +12,7 @@ from app.services.service_advisor.iam.checks import (
     credential_report_check,
     service_control_policy_check
 )
+from app.services.service_advisor.iam.checks import iam_user_comprehensive_check
 
 class IAMAdvisor(BaseAdvisor):
     """
@@ -109,4 +110,14 @@ class IAMAdvisor(BaseAdvisor):
             function=service_control_policy_check.run,
             category='거버넌스',
             severity='medium'
+        )
+        
+        # IAM 사용자 종합 검사
+        self.register_check(
+            check_id='iam-user-comprehensive',
+            name='IAM 사용자 종합 검사',
+            description='IAM 사용자에 대한 전반적인 확인을 수행합니다. 사용자 비밀번호, 자격 증명, 활동 기록 등을 종합적으로 분석하여 오래된 자격 증명이나 미사용 계정을 식별하고 정리 방안을 제시합니다.',
+            function=iam_user_comprehensive_check.run,
+            category='보안',
+            severity='high'
         )

@@ -1,10 +1,9 @@
-from app.services.service_advisor.iam.checks import (
-    access_key_rotation,
-    password_policy,
-    mfa_check,
-    inactive_users_check,
-    root_account_check,
-    policy_analyzer_check,
-    credential_report_check,
-    service_control_policy_check
-)
+from . import access_key_rotation
+from . import password_policy
+from . import mfa_check
+from . import inactive_users_check
+from . import root_account_check
+from . import policy_analyzer_check
+from . import credential_report_check
+from . import service_control_policy_check
+from . import iam_user_comprehensive_check

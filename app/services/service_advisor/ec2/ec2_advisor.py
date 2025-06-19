@@ -72,6 +72,68 @@ class EC2Advisor(BaseAdvisor):
                 severity='medium'
             )
             
+
+            
+            # EC2 퍼블릭 인스턴스 검사
+            from app.services.service_advisor.ec2.checks.public_instance_check import PublicInstanceCheck
+            public_instance_check = PublicInstanceCheck()
+            self.register_check(
+                check_id=public_instance_check.check_id,
+                name='EC2 퍼블릭 인스턴스 검사',
+                description='EC2 인스턴스의 퍼블릭 IP 할당 상태를 검사합니다. 불필요하게 퍼블릭 액세스가 허용된 인스턴스를 식별하고 보안 강화를 위한 네트워크 구성 개선 방안을 제시합니다.',
+                function=public_instance_check.run,
+                category='보안',
+                severity='medium'
+            )
+            
+            # EBS 암호화 검사
+            from app.services.service_advisor.ec2.checks.ebs_encryption_check import EBSEncryptionCheck
+            ebs_encryption_check = EBSEncryptionCheck()
+            self.register_check(
+                check_id=ebs_encryption_check.check_id,
+                name='EBS 볼륨 암호화 검사',
+                description='EBS 볼륨의 암호화 설정을 검사합니다. 암호화되지 않은 볼륨을 식별하고 데이터 보호를 위한 암호화 활성화 방안을 제시합니다.',
+                function=ebs_encryption_check.run,
+                category='보안',
+                severity='high'
+            )
+            
+            # 미사용 리소스 검사
+            from app.services.service_advisor.ec2.checks.unused_resources_check import UnusedResourcesCheck
+            unused_resources_check = UnusedResourcesCheck()
+            self.register_check(
+                check_id=unused_resources_check.check_id,
+                name='미사용 리소스 검사',
+                description='사용되지 않는 Elastic IP와 EBS 볼륨을 검사합니다. 불필요한 비용을 발생시키는 미사용 리소스를 식별하고 비용 최적화 방안을 제시합니다.',
+                function=unused_resources_check.run,
+                category='비용 최적화',
+                severity='medium'
+            )
+            
+            # 인스턴스 모니터링 검사
+            from app.services.service_advisor.ec2.checks.instance_monitoring_check import InstanceMonitoringCheck
+            monitoring_check = InstanceMonitoringCheck()
+            self.register_check(
+                check_id=monitoring_check.check_id,
+                name='인스턴스 모니터링 설정 검사',
+                description='EC2 인스턴스의 CloudWatch 모니터링 설정을 검사합니다. 상세 모니터링 활성화 여부를 확인하고 성능 모니터링 개선 방안을 제시합니다.',
+                function=monitoring_check.run,
+                category='운영',
+                severity='low'
+            )
+            
+            # 인스턴스 태그 검사
+            from app.services.service_advisor.ec2.checks.instance_tags_check import InstanceTagsCheck
+            tags_check = InstanceTagsCheck()
+            self.register_check(
+                check_id=tags_check.check_id,
+                name='인스턴스 태그 관리 검사',
+                description='EC2 인스턴스의 태그 설정을 검사합니다. 필수 태그(Name, Environment, Owner) 누락을 확인하고 리소스 관리 개선 방안을 제시합니다.',
+                function=tags_check.run,
+                category='거버넌스',
+                severity='low'
+            )
+            
             print(f"EC2Advisor: 검사 항목 등록 완료, 총 {len(self.checks)}개 항목")
         except Exception as e:
             print(f"EC2Advisor: 검사 항목 등록 중 오류 발생 - {str(e)}")

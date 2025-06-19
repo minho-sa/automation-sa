@@ -124,15 +124,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         passed_users = [u for u in user_analysis if u['status'] == RESOURCE_STATUS_PASS]
         
         # 권장사항 생성
-        recommendations = []
-        if warning_users:
-            recommendations.append(f'{len(warning_users)}명의 사용자에게 개선이 필요합니다.')
-            recommendations.append('90일 이상 사용하지 않은 비밀번호나 액세스 키를 교체하세요.')
-            recommendations.append('모든 사용자에게 MFA를 설정하세요.')
-            recommendations.append('장기간 미사용 계정을 검토하고 필요시 비활성화하세요.')
-        
-        recommendations.append('정기적으로 IAM 자격 증명 보고서를 검토하세요.')
-        recommendations.append('최소 권한 원칙에 따라 사용자 권한을 관리하세요.')
+        recommendations = [
+            '오래된 비밀번호와 액세스 키를 교체하세요.',
+            '모든 사용자에게 MFA를 설정하세요.',
+            '미사용 계정을 정기적으로 검토하세요.'
+        ]
         
         # 전체 상태 결정
         if warning_users:

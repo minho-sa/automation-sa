@@ -55,10 +55,11 @@ class EBSEncryptionCheck(BaseEC2Check):
     
     def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
         recommendations = []
-        if analysis_result['problem_count'] > 0:
-            recommendations.append('모든 EBS 볼륨에 암호화를 활성화하세요.')
-            recommendations.append('기본 EBS 암호화를 활성화하여 새 볼륨이 자동으로 암호화되도록 하세요.')
-        recommendations.append('AWS KMS를 사용하여 암호화 키를 중앙에서 관리하세요.')
+        recommendations = [
+            '모든 EBS 볼륨에 암호화를 활성화하세요.',
+            '계정 수준에서 기본 암호화를 설정하세요.',
+            'KMS로 암호화 키를 관리하세요.'
+        ]
         return recommendations
     
     def create_message(self, analysis_result: Dict[str, Any]) -> str:

@@ -128,18 +128,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         rotation_needed_count = len(warning_users) + len(failed_users)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 교체 필요 사용자 찾기
-        if failed_users:
-            recommendations.append(f'{len(failed_users)}명의 사용자에게 180일 이상 교체되지 않은 액세스 키가 있습니다. 즉시 교체하세요. (영향받는 사용자: {", ".join([u["user_name"] for u in failed_users])})')
-        
-        if warning_users:
-            recommendations.append(f'{len(warning_users)}명의 사용자에게 90일 이상 교체되지 않은 액세스 키가 있습니다. 곧 교체하세요. (영향받는 사용자: {", ".join([u["user_name"] for u in warning_users])})')
-        
-        # 일반적인 권장사항
-        recommendations.append('액세스 키는 90일마다 교체하는 것이 좋습니다.')
-        recommendations.append('프로그래밍 방식 액세스가 필요하지 않은 사용자에게는 액세스 키를 발급하지 마세요.')
+        recommendations = [
+            '액세스 키는 90일마다 교체하세요.',
+            '불필요한 액세스 키는 삭제하세요.',
+            'IAM 역할과 임시 자격 증명을 사용하세요.'
+        ]
         
         # 데이터 준비
         data = {

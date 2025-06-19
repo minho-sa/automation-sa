@@ -117,15 +117,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         improvement_needed_count = len(failed_buckets)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 퍼블릭 액세스 차단 설정이 필요한 버킷 찾기
-        if failed_buckets:
-            recommendations.append(f'{len(failed_buckets)}개 버킷에 퍼블릭 액세스 차단 설정이 필요합니다. (영향받는 버킷: {", ".join([b["bucket_name"] for b in failed_buckets])})')
-        
-        # 일반적인 권장사항
-        recommendations.append('모든 S3 버킷에 퍼블릭 액세스 차단 설정을 활성화하세요.')
-        recommendations.append('계정 수준에서 S3 퍼블릭 액세스 차단 설정을 활성화하는 것이 좋습니다.')
+        recommendations = [
+            '모든 S3 버킷에 퍼블릭 액세스 차단을 설정하세요.',
+            '계정 수준에서 퍼블릭 액세스 차단을 활성화하세요.',
+            '정기적으로 버킷 권한을 검토하세요.'
+        ]
         
         # 데이터 준비
         data = {

@@ -97,15 +97,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         improvement_needed_count = len(failed_buckets) + len(warning_buckets)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 암호화가 필요한 버킷 찾기
-        if failed_buckets:
-            recommendations.append(f'{len(failed_buckets)}개 버킷에 기본 암호화 설정이 필요합니다. (영향받는 버킷: {", ".join([b["bucket_name"] for b in failed_buckets])})')
-        
-        # 일반적인 권장사항
-        recommendations.append('모든 S3 버킷에 기본 암호화를 설정하세요.')
-        recommendations.append('중요한 데이터를 저장하는 버킷에는 SSE-KMS 암호화를 사용하세요.')
+        recommendations = [
+            '모든 S3 버킷에 기본 암호화를 설정하세요.',
+            '중요한 데이터는 SSE-KMS 암호화를 사용하세요.',
+            'KMS 키 관리 정책을 수립하세요.'
+        ]
         
         # 전체 상태 결정 및 결과 생성
         if len(failed_buckets) > 0:

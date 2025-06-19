@@ -122,18 +122,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         mfa_needed_count = len(warning_users) + len(failed_users)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # MFA 설정 필요 사용자 찾기
-        if failed_users:
-            recommendations.append(f'{len(failed_users)}명의 관리자 권한을 가진 사용자에게 MFA가 설정되어 있지 않습니다. 즉시 MFA를 설정하세요. (영향받는 사용자: {", ".join([u["user_name"] for u in failed_users])})')
-        
-        if warning_users:
-            recommendations.append(f'{len(warning_users)}명의 콘솔 액세스 권한이 있는 사용자에게 MFA가 설정되어 있지 않습니다. MFA를 설정하는 것이 좋습니다. (영향받는 사용자: {", ".join([u["user_name"] for u in warning_users])})')
-        
-        # 일반적인 권장사항
-        recommendations.append('모든 IAM 사용자, 특히 관리자 권한이 있는 사용자에게 MFA를 설정하세요.')
-        recommendations.append('가상 MFA 디바이스, U2F 보안 키 또는 하드웨어 MFA 디바이스를 사용할 수 있습니다.')
+        recommendations = [
+            '모든 IAM 사용자에게 MFA를 설정하세요.',
+            '관리자 권한 사용자는 MFA 필수로 설정하세요.',
+            '가상 MFA 또는 하드웨어 MFA를 사용하세요.'
+        ]
         
         # 전체 상태 결정 및 결과 생성
         if len(failed_users) > 0:

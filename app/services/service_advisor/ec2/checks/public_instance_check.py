@@ -90,14 +90,11 @@ class PublicInstanceCheck(BaseEC2Check):
         """권장사항 생성"""
         recommendations = []
         
-        if analysis_result['problem_count'] > 0:
-            recommendations.append('퍼블릭 IP가 필요하지 않은 인스턴스는 프라이빗 서브넷으로 이동하세요.')
-            recommendations.append('웹 서버 등 퍼블릭 액세스가 필요한 경우 ALB/NLB를 통해 접근하도록 구성하세요.')
-            recommendations.append('퍼블릭 인스턴스의 보안 그룹을 엄격하게 관리하세요.')
-        
-        recommendations.append('NAT Gateway나 NAT Instance를 통해 프라이빗 인스턴스의 아웃바운드 인터넷 액세스를 제공하세요.')
-        recommendations.append('Systems Manager Session Manager를 사용하여 프라이빗 인스턴스에 안전하게 접근하세요.')
-        recommendations.append('정기적으로 네트워크 구성을 검토하고 최소 권한 원칙을 적용하세요.')
+        recommendations = [
+            '불필요한 퍼블릭 IP를 제거하세요.',
+            'ALB/NLB로 웹 서버를 안전하게 노출하세요.',
+            'Session Manager로 안전하게 관리하세요.'
+        ]
         
         return recommendations
     

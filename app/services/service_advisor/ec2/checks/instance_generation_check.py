@@ -6,12 +6,12 @@ from app.services.service_advisor.common.unified_result import (
 )
 from app.services.service_advisor.ec2.checks.base_ec2_check import BaseEC2Check
 
-class InstanceMonitoringCheck(BaseEC2Check):
-    """EC2 인스턴스 모니터링 설정 검사"""
+class InstanceGenerationCheck(BaseEC2Check):
+    """EC2 인스턴스 세대 및 타입 최신성 검사"""
     
     def __init__(self, session=None):
         self.session = session or boto3.Session()
-        self.check_id = 'ec2_instance_monitoring_check'
+        self.check_id = 'ec2_instance_generation_check'
     
     def collect_data(self) -> Dict[str, Any]:
         ec2_client = create_boto3_client('ec2')
@@ -22,6 +22,11 @@ class InstanceMonitoringCheck(BaseEC2Check):
         resources = []
         problem_count = 0
         
+        # 구세대 인스턴스 타입 정의
+        old_generations = {
+            't1', 't2', 'm1', 'm2', 'm3', 'c1', 'c3', 'r3', 'i2', 'd2', 'g2'
+        }
+        
         for reservation in collected_data['reservations']:
             for instance in reservation['Instances']:
                 instance_id = instance['InstanceId']
@@ -30,26 +35,24 @@ class InstanceMonitoringCheck(BaseEC2Check):
                 if instance_state == 'terminated':
                     continue
                 
-                # 상세 모니터링 설정 확인
-                monitoring = instance.get('Monitoring', {})
-                detailed_monitoring = monitoring.get('State') == 'enabled'
+                instance_type = instance.get('InstanceType', '')
+                instance_family = instance_type.split('.')[0] if '.' in instance_type else instance_type
                 
-                # 인스턴스 이름 찾기
                 instance_name = 'N/A'
                 for tag in instance.get('Tags', []):
                     if tag['Key'] == 'Name':
                         instance_name = tag['Value']
                         break
                 
-                if not detailed_monitoring:
+                if instance_family in old_generations:
                     status = RESOURCE_STATUS_WARNING
-                    advice = '상세 모니터링이 비활성화되어 있습니다. 성능 문제 감지를 위해 활성화를 고려하세요.'
-                    status_text = '기본 모니터링'
+                    advice = f'구세대 인스턴스 타입({instance_type})을 사용하고 있습니다. 최신 세대로 업그레이드를 고려하세요.'
+                    status_text = '구세대'
                     problem_count += 1
                 else:
                     status = RESOURCE_STATUS_PASS
-                    advice = '상세 모니터링이 활성화되어 있습니다.'
-                    status_text = '상세 모니터링'
+                    advice = f'최신 세대 인스턴스 타입({instance_type})을 사용하고 있습니다.'
+                    status_text = '최신 세대'
                 
                 resources.append(create_resource_result(
                     resource_id=instance_id,
@@ -58,8 +61,9 @@ class InstanceMonitoringCheck(BaseEC2Check):
                     status_text=status_text,
                     instance_id=instance_id,
                     instance_name=instance_name,
-                    instance_type=instance.get('InstanceType', 'N/A'),
-                    detailed_monitoring=detailed_monitoring
+                    instance_type=instance_type,
+                    instance_family=instance_family,
+                    is_old_generation=instance_family in old_generations
                 ))
         
         return {
@@ -71,9 +75,9 @@ class InstanceMonitoringCheck(BaseEC2Check):
     def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
         recommendations = []
         recommendations = [
-            '중요한 인스턴스에 상세 모니터링을 활성화하세요.',
-            'CloudWatch 알람을 설정하세요.',
-            'CloudWatch Logs 에이전트를 설치하세요.'
+            '구세대 인스턴스를 최신 세대로 업그레이드하세요.',
+            '업그레이드 전 성능 테스트를 수행하세요.',
+            'Compute Optimizer로 최적 타입을 확인하세요.'
         ]
         return recommendations
     
@@ -81,6 +85,6 @@ class InstanceMonitoringCheck(BaseEC2Check):
         total = analysis_result['total_resources']
         problems = analysis_result['problem_count']
         if problems > 0:
-            return f'{total}개 인스턴스 중 {problems}개가 기본 모니터링만 사용하고 있습니다.'
+            return f'{total}개 인스턴스 중 {problems}개가 구세대 인스턴스 타입을 사용하고 있습니다.'
         else:
-            return f'모든 인스턴스({total}개)에 상세 모니터링이 활성화되어 있습니다.'
+            return f'모든 인스턴스({total}개)가 최신 세대 인스턴스 타입을 사용하고 있습니다.'

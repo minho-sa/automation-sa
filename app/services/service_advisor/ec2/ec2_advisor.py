@@ -134,6 +134,54 @@ class EC2Advisor(BaseAdvisor):
                 severity='low'
             )
             
+            # 인스턴스 생명주기 검사
+            from app.services.service_advisor.ec2.checks.instance_lifecycle_check import InstanceLifecycleCheck
+            lifecycle_check = InstanceLifecycleCheck()
+            self.register_check(
+                check_id=lifecycle_check.check_id,
+                name='인스턴스 생명주기 검사',
+                description='오래된 EC2 인스턴스를 식별합니다. 1년 이상 실행된 인스턴스를 찾아 업데이트나 교체 필요성을 평가하고 보안 및 성능 개선 방안을 제시합니다.',
+                function=lifecycle_check.run,
+                category='운영',
+                severity='medium'
+            )
+            
+            # 인스턴스 백업 검사
+            from app.services.service_advisor.ec2.checks.instance_backup_check import InstanceBackupCheck
+            backup_check = InstanceBackupCheck()
+            self.register_check(
+                check_id=backup_check.check_id,
+                name='인스턴스 백업 상태 검사',
+                description='EC2 인스턴스의 백업(스냅샷) 상태를 검사합니다. 최근 7일 내 백업이 없는 인스턴스를 식별하고 데이터 보호를 위한 백업 정책 수립 방안을 제시합니다.',
+                function=backup_check.run,
+                category='데이터 보호',
+                severity='high'
+            )
+            
+            # 종료 보호 검사
+            from app.services.service_advisor.ec2.checks.instance_termination_protection_check import InstanceTerminationProtectionCheck
+            protection_check = InstanceTerminationProtectionCheck()
+            self.register_check(
+                check_id=protection_check.check_id,
+                name='인스턴스 종료 보호 검사',
+                description='프로덕션 환경의 EC2 인스턴스 종료 보호 설정을 검사합니다. 중요한 인스턴스의 실수로 인한 종료를 방지하기 위한 보호 설정 방안을 제시합니다.',
+                function=protection_check.run,
+                category='보안',
+                severity='medium'
+            )
+            
+            # 인스턴스 세대 검사
+            from app.services.service_advisor.ec2.checks.instance_generation_check import InstanceGenerationCheck
+            generation_check = InstanceGenerationCheck()
+            self.register_check(
+                check_id=generation_check.check_id,
+                name='인스턴스 세대 검사',
+                description='구세대 EC2 인스턴스 타입을 식별합니다. 성능과 비용 효율성 향상을 위해 최신 세대 인스턴스로의 업그레이드 필요성을 평가하고 개선 방안을 제시합니다.',
+                function=generation_check.run,
+                category='성능 최적화',
+                severity='medium'
+            )
+            
             print(f"EC2Advisor: 검사 항목 등록 완료, 총 {len(self.checks)}개 항목")
         except Exception as e:
             print(f"EC2Advisor: 검사 항목 등록 중 오류 발생 - {str(e)}")

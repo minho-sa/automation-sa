@@ -133,17 +133,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         optimization_needed_count = len(failed_functions)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 낮은 메모리 사용률 함수 찾기
-        low_memory_functions = [f for f in function_analysis if f.get('avg_memory') != 'N/A' and f.get('avg_memory') != 'Error' and f.get('avg_memory') < 20]
-        if low_memory_functions:
-            recommendations.append(f'사용률이 낮은 {len(low_memory_functions)}개 함수는 메모리 크기를 줄여 비용을 절감하세요. (영향받는 함수: {", ".join([f["function_name"] for f in low_memory_functions])})')
-            
-        # 높은 메모리 사용률 함수 찾기
-        high_memory_functions = [f for f in function_analysis if f.get('avg_memory') != 'N/A' and f.get('avg_memory') != 'Error' and f.get('max_memory') > 90]
-        if high_memory_functions:
-            recommendations.append(f'사용률이 높은 {len(high_memory_functions)}개 함수는 메모리 크기를 늘려 성능을 개선하세요. (영향받는 함수: {", ".join([f["function_name"] for f in high_memory_functions])})')
+        recommendations = [
+            '메모리 사용률에 맞게 함수 메모리를 조정하세요.',
+            '성능 테스트를 통해 최적 메모리 크기를 찾으세요.',
+            'CloudWatch 메트릭을 정기적으로 모니터링하세요.'
+        ]
         
         # 전체 상태 결정 및 결과 생성
         if optimization_needed_count > 0:

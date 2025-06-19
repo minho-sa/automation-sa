@@ -47,46 +47,44 @@ def run(role_arn=None) -> Dict[str, Any]:
         
         # 정책 문제점 분석
         issues = []
-        recommendations = []
         
         # 최소 암호 길이 검사
         min_length = policy.get('MinimumPasswordLength', 0)
         if min_length < 14:
             issues.append(f'최소 암호 길이가 {min_length}자로 설정되어 있습니다.')
-            recommendations.append('최소 암호 길이를 14자 이상으로 설정하세요.')
         
         # 암호 복잡성 요구사항 검사
         if not policy.get('RequireUppercaseCharacters', False):
             issues.append('대문자 요구사항이 설정되지 않았습니다.')
-            recommendations.append('암호에 대문자를 요구하도록 설정하세요.')
         
         if not policy.get('RequireLowercaseCharacters', False):
             issues.append('소문자 요구사항이 설정되지 않았습니다.')
-            recommendations.append('암호에 소문자를 요구하도록 설정하세요.')
         
         if not policy.get('RequireNumbers', False):
             issues.append('숫자 요구사항이 설정되지 않았습니다.')
-            recommendations.append('암호에 숫자를 요구하도록 설정하세요.')
         
         if not policy.get('RequireSymbols', False):
             issues.append('특수 문자 요구사항이 설정되지 않았습니다.')
-            recommendations.append('암호에 특수 문자를 요구하도록 설정하세요.')
         
         # 암호 만료 검사
         if not policy.get('ExpirePasswords', False):
             issues.append('암호 만료가 설정되지 않았습니다.')
-            recommendations.append('암호 만료를 활성화하고 최대 암호 사용 기간을 90일로 설정하세요.')
         else:
             max_age = policy.get('MaxPasswordAge', 0)
             if max_age > 90:
                 issues.append(f'최대 암호 사용 기간이 {max_age}일로 설정되어 있습니다.')
-                recommendations.append('최대 암호 사용 기간을 90일 이하로 설정하세요.')
         
         # 암호 재사용 방지 검사
         password_reuse_prevention = policy.get('PasswordReusePrevention', 0)
         if password_reuse_prevention < 24:
             issues.append(f'암호 재사용 방지가 {password_reuse_prevention}개로 설정되어 있습니다.')
-            recommendations.append('암호 재사용 방지를 24개 이상으로 설정하세요.')
+        
+        # 권장사항 생성
+        recommendations = [
+            '최소 14자 이상의 암호 길이를 설정하세요.',
+            '대소문자, 숫자, 특수문자를 모두 요구하세요.',
+            '90일 만료 및 24개 재사용 방지를 설정하세요.'
+        ]
         
         # 결과 상태 결정
         if issues:
@@ -95,7 +93,6 @@ def run(role_arn=None) -> Dict[str, Any]:
         else:
             status = STATUS_OK
             message = '계정 암호 정책이 모범 사례를 준수합니다.'
-            recommendations = ['현재 암호 정책을 유지하세요.']
         
         # 데이터 준비
         data = {

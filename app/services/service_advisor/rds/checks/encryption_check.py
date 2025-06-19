@@ -91,19 +91,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         improvement_needed_count = len(warning_instances) + len(failed_instances)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 암호화 필요 인스턴스 찾기
-        if failed_instances:
-            recommendations.append(f'{len(failed_instances)}개 프로덕션 인스턴스가 암호화되어 있지 않습니다. 즉시 암호화를 활성화하세요. (영향받는 인스턴스: {", ".join([i["instance_id"] for i in failed_instances])})')
-        
-        # 암호화 권장 인스턴스 찾기
-        if warning_instances:
-            recommendations.append(f'{len(warning_instances)}개 인스턴스가 암호화되어 있지 않습니다. 데이터 보호를 위해 암호화를 활성화하세요. (영향받는 인스턴스: {", ".join([i["instance_id"] for i in warning_instances])})')
-        
-        # 일반적인 권장사항
-        recommendations.append('모든 데이터베이스 인스턴스에 저장 시 암호화를 활성화하세요.')
-        recommendations.append('기존 암호화되지 않은 인스턴스는 스냅샷을 생성하고 암호화된 새 인스턴스로 복원하여 암호화할 수 있습니다.')
+        recommendations = [
+            '모든 RDS 인스턴스에 암호화를 활성화하세요.',
+            '스냅샷을 통해 기존 인스턴스를 암호화하세요.',
+            'KMS 키로 암호화 키를 관리하세요.'
+        ]
         
         # 데이터 준비
         data = {

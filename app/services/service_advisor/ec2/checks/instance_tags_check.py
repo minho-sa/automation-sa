@@ -67,11 +67,11 @@ class InstanceTagsCheck(BaseEC2Check):
     
     def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
         recommendations = []
-        if analysis_result['problem_count'] > 0:
-            recommendations.append('모든 인스턴스에 Name, Environment, Owner 태그를 설정하세요.')
-            recommendations.append('태그 정책을 수립하여 일관된 태그 관리를 하세요.')
-        recommendations.append('비용 할당을 위해 Project, CostCenter 태그도 고려하세요.')
-        recommendations.append('AWS Config를 사용하여 태그 규정 준수를 자동화하세요.')
+        recommendations = [
+            '필수 태그(Name, Environment, Owner)를 설정하세요.',
+            '조직 차원의 태그 정책을 수립하세요.',
+            'Infrastructure as Code로 태그를 자동화하세요.'
+        ]
         return recommendations
     
     def create_message(self, analysis_result: Dict[str, Any]) -> str:

@@ -71,19 +71,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         improvement_needed_count = len(warning_instances) + len(failed_instances)
         
         # 권장사항 생성 (문자열 배열)
-        recommendations = []
-        
-        # 백업 없는 인스턴스 찾기
-        if failed_instances:
-            recommendations.append(f'{len(failed_instances)}개 인스턴스에 자동 백업이 비활성화되어 있습니다. 백업을 활성화하세요. (영향받는 인스턴스: {", ".join([i["instance_id"] for i in failed_instances])})')
-        
-        # 보존 기간 부족 인스턴스 찾기
-        if warning_instances:
-            recommendations.append(f'{len(warning_instances)}개 인스턴스의 백업 보존 기간이 권장 기간({recommended_retention}일)보다 짧습니다. 보존 기간을 늘리세요. (영향받는 인스턴스: {", ".join([i["instance_id"] for i in warning_instances])})')
-        
-        # 일반적인 권장사항
-        recommendations.append(f'프로덕션 데이터베이스의 경우 최소 {recommended_retention}일의 백업 보존 기간을 설정하세요.')
-        recommendations.append('중요한 데이터베이스의 경우 스냅샷을 정기적으로 생성하여 장기 보존하는 것이 좋습니다.')
+        recommendations = [
+            '모든 RDS 인스턴스에 자동 백업을 활성화하세요.',
+            '백업 보존 기간을 최소 7일로 설정하세요.',
+            '중요한 데이터는 스냅샷으로 장기 보존하세요.'
+        ]
         
         # 전체 상태 결정 및 결과 생성
         if len(failed_instances) > 0:

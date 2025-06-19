@@ -82,11 +82,11 @@ class UnusedResourcesCheck(BaseEC2Check):
     
     def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
         recommendations = []
-        if analysis_result['problem_count'] > 0:
-            recommendations.append('사용하지 않는 Elastic IP를 해제하여 비용을 절약하세요.')
-            recommendations.append('연결되지 않은 EBS 볼륨을 삭제하거나 스냅샷으로 백업 후 삭제하세요.')
-        recommendations.append('정기적으로 미사용 리소스를 점검하여 비용을 최적화하세요.')
-        recommendations.append('AWS Cost Explorer를 사용하여 리소스 사용량을 모니터링하세요.')
+        recommendations = [
+            '미사용 Elastic IP를 해제하세요.',
+            '사용되지 않는 EBS 볼륨을 정리하세요.',
+            '정기적으로 미사용 리소스를 점검하세요.'
+        ]
         return recommendations
     
     def create_message(self, analysis_result: Dict[str, Any]) -> str:

@@ -21,9 +21,10 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 
 #### 검사 기준
 - **FAIL 조건**:
-  - 퍼블릭 액세스 차단 설정이 완전히 활성화되지 않음
-  - 퍼블릭 ACL이 설정된 버킷
-  - 퍼블릭 액세스를 허용하는 버킷 정책 존재
+  - 퍼블릭 액세스 차단 설정이 완전히 활성화되지 않음 (4개 설정 중 하나라도 false)
+  - 퍼블릭 ACL이 설정된 버킷 (AllUsers 그룹에 권한 부여)
+  - 퍼블릭 액세스 차단 설정이 아예 구성되지 않음
+- **UNKNOWN 조건**: 권한 부족 등으로 설정 확인 불가
 - **검사 항목**:
   - BlockPublicAcls: true
   - IgnorePublicAcls: true
@@ -53,11 +54,12 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 4. **비용 대비 효과**: 암호화 비용은 미미하지만 보안 효과는 큼
 
 #### 검사 기준
-- **FAIL 조건**: 기본 암호화가 설정되지 않은 버킷
+- **FAIL 조건**: 기본 암호화가 설정되지 않은 버킷 (ServerSideEncryptionConfigurationNotFoundError)
 - **PASS 조건**: 
   - SSE-S3 (AES256) 암호화 설정
-  - SSE-KMS 암호화 설정
+  - SSE-KMS (aws:kms) 암호화 설정
 - **WARNING 조건**: 알 수 없는 암호화 유형
+- **UNKNOWN 조건**: 권한 부족 등으로 암호화 설정 확인 불가
 
 #### 권장 개선 방안
 1. **기본 암호화**: 모든 버킷에 기본 암호화 설정
@@ -82,9 +84,12 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 4. **관리 복잡성**: 버전 관리는 추가적인 관리 부담
 
 #### 검사 기준
-- **FAIL 조건**: 프로덕션 환경 버킷의 버전 관리 미활성화
-- **WARNING 조건**: 일반 버킷의 버전 관리 미활성화
-- **환경 식별**: 태그 또는 버킷명을 통한 프로덕션 환경 식별
+- **FAIL 조건**: 프로덕션 환경 버킷의 Status가 'Enabled'가 아님
+- **WARNING 조건**: 일반 버킷의 Status가 'Enabled'가 아님
+- **PASS 조건**: Status가 'Enabled'인 경우
+- **환경 식별**: 
+  - 태그: environment/env가 'prod'/'production'
+  - 버킷명: 'prod-', 'production-' 시작하거나 'prod' 포함
 
 #### 권장 개선 방안
 1. **중요 데이터 우선**: 중요한 데이터를 저장하는 버킷부터 적용
@@ -110,9 +115,11 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 
 #### 검사 기준
 - **FAIL 조건**: 
-  - 수명 주기 정책이 전혀 없는 버킷
-  - 버전 관리 활성화되었지만 이전 버전 정책 없음
-- **WARNING 조건**: 전환 또는 만료 정책이 없는 버킷
+  - Status가 'Enabled'인 활성 규칙이 없는 버킷 (NoSuchLifecycleConfiguration)
+- **WARNING 조건**: 
+  - 버전 관리 활성화되었지만 NoncurrentVersionTransitions/NoncurrentVersionExpiration 규칙 없음
+  - Transitions나 Expiration 규칙이 모두 없는 경우
+- **PASS 조건**: 적절한 수명 주기 정책이 설정된 경우
 
 #### 권장 개선 방안
 1. **액세스 패턴 분석**: 데이터 액세스 빈도 분석 후 정책 설정
@@ -137,9 +144,12 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 4. **선택적 적용**: 모든 버킷에 필수는 아니지만 중요한 버킷에는 권장
 
 #### 검사 기준
-- **FAIL 조건**: 프로덕션 환경 버킷의 액세스 로깅 미활성화
-- **WARNING 조건**: 일반 버킷의 액세스 로깅 미활성화
-- **환경 식별**: 태그를 통한 중요도 분류
+- **FAIL 조건**: 프로덕션 환경 버킷의 LoggingEnabled 미설정
+- **WARNING 조건**: 일반 버킷의 LoggingEnabled 미설정
+- **PASS 조건**: LoggingEnabled가 설정되어 TargetBucket과 TargetPrefix 존재
+- **환경 식별**: 
+  - 태그: environment/env가 'prod'/'production'
+  - 버킷명: 'prod-', 'production-' 시작하거나 'prod' 포함
 
 #### 권장 개선 방안
 1. **중요 버킷 우선**: 민감한 데이터를 저장하는 버킷부터 적용
@@ -164,9 +174,9 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 4. **복잡성**: 적절한 CORS 설정에는 웹 애플리케이션 구조 이해 필요
 
 #### 검사 기준
-- **FAIL 조건**: 모든 오리진(*) 및 모든 메서드(*) 허용
-- **WARNING 조건**: 모든 오리진(*) 허용
-- **PASS 조건**: 특정 오리진만 허용하거나 CORS 설정 없음
+- **FAIL 조건**: AllowedOrigins와 AllowedMethods 모두에 '*' 포함
+- **WARNING 조건**: AllowedOrigins에만 '*' 포함
+- **PASS 조건**: 특정 오리진만 허용하거나 CORS 설정 없음 (NoSuchCORSConfiguration)
 
 #### 권장 개선 방안
 1. **특정 오리진**: 와일드카드 대신 특정 도메인 지정
@@ -191,9 +201,11 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 4. **점진적 도입**: 조직의 규제 요구사항에 따라 선택적 적용
 
 #### 검사 기준
-- **WARNING 조건**: 중요한 데이터를 저장하는 버킷의 객체 잠금 미설정
-- **중요 데이터 식별**: 태그를 통한 중요도 분류
-- **규제 환경**: 금융, 의료, 법률 등 규제 산업 식별
+- **WARNING 조건**: 중요 데이터 버킷의 ObjectLockEnabled가 'Enabled'가 아님
+- **PASS 조건**: ObjectLockEnabled가 'Enabled'이거나 중요 데이터가 아닌 경우
+- **중요 데이터 식별**: 
+  - 태그: data_classification/data-classification/importance가 'critical'/'sensitive'/'important'/'high'
+  - 버킷명: 'critical', 'sensitive', 'important', 'backup', 'archive' 포함
 
 #### 권장 개선 방안
 1. **규제 요구사항 분석**: 해당 산업의 데이터 보존 규정 확인
@@ -219,8 +231,9 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 
 #### 검사 기준
 - **WARNING 조건**: 
-  - 프로덕션 환경 버킷의 복제 미설정
-  - 버전 관리는 활성화되었지만 복제 미설정
+  - 프로덕션 환경이면서 버전 관리 활성화되었지만 Status가 'Enabled'인 복제 규칙 없음
+  - 프로덕션 환경이지만 버전 관리가 비활성화된 경우
+- **PASS 조건**: Status가 'Enabled'인 활성 복제 규칙이 있거나 프로덕션이 아닌 경우
 - **전제 조건**: 복제를 위해서는 버전 관리가 먼저 활성화되어야 함
 
 #### 권장 개선 방안
@@ -247,8 +260,11 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 
 #### 검사 기준
 - **WARNING 조건**: 
-  - 수명 주기 정책이 없고 Intelligent-Tiering도 없는 버킷
-  - 액세스 패턴이 예측 불가능한 데이터의 Intelligent-Tiering 미사용
+  - 수명 주기 정책이 없는 버킷 (NoSuchLifecycleConfiguration)
+  - INTELLIGENT_TIERING이나 GLACIER/DEEP_ARCHIVE 전환 규칙이 모두 없는 경우
+- **PASS 조건**: 
+  - StorageClass가 'INTELLIGENT_TIERING'인 전환 규칙 존재
+  - 또는 'GLACIER'/'DEEP_ARCHIVE' 아카이브 계층 사용 중
 
 #### 권장 개선 방안
 1. **액세스 패턴 분석**: 데이터 액세스 빈도 및 패턴 분석
@@ -325,5 +341,35 @@ S3 서비스 어드바이저는 Amazon S3 버킷의 보안, 비용 최적화, �
 - **AWS DataSync**: 대용량 데이터 전송 및 동기화
 - **AWS Storage Gateway**: 온프레미스와 S3 간 하이브리드 스토리지
 - **Amazon Athena**: S3 데이터 직접 쿼리 및 분석
+
+## 검사 항목 요약
+
+### 총 검사 항목: 10개
+
+### HIGH (높음) - 즉시 조치 필요 (2개)
+- 퍼블릭 액세스 설정
+- 암호화 설정
+
+### MEDIUM (중간) - 계획적 개선 필요 (6개)
+- 버전 관리 설정
+- 수명 주기 정책
+- 액세스 로깅 설정
+- CORS 설정
+- 객체 잠금 설정
+- 복제 설정
+
+### LOW (낮음) - 점진적 개선 권장 (1개)
+- Intelligent-Tiering 설정
+
+### 실제 구현된 검사 파일 (10개)
+1. public_access.py
+2. encryption.py (및 encryption_updated.py)
+3. versioning_check.py
+4. lifecycle_check.py
+5. logging_check.py
+6. cors_check.py
+7. object_lock_check.py
+8. replication_check.py
+9. intelligent_tiering_check.py
 
 이 문서는 S3 서비스 어드바이저의 각 검사항목이 객체 스토리지 환경에서 왜 중요한지, 어떤 기준으로 심각도를 설정했는지에 대한 상세한 분석을 제공합니다.

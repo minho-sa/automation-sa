@@ -18,7 +18,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        iam_client = create_boto3_client('iam')
+        iam_client = create_boto3_client('iam', role_arn=role_arn)
         
         # 자격 증명 보고서 생성
         try:

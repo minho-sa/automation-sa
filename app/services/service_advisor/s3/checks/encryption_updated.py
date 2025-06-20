@@ -15,14 +15,17 @@ class EncryptionCheck:
     
     check_id = 's3-encryption-check'
     
-    def collect_data(self) -> Dict[str, Any]:
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """
         S3 버킷 및 암호화 설정 데이터를 수집합니다.
         
+        Args:
+            role_arn: AWS 역할 ARN
+            
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
-        s3_client = create_boto3_client('s3')
+        s3_client = create_boto3_client('s3', role_arn=role_arn)
         
         # S3 버킷 목록 가져오기
         buckets = s3_client.list_buckets()

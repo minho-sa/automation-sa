@@ -16,7 +16,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        s3_client = create_boto3_client('s3')
+        s3_client = create_boto3_client('s3', role_arn=role_arn)
         
         # S3 버킷 목록 가져오기
         buckets = s3_client.list_buckets()

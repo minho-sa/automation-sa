@@ -16,7 +16,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        iam_client = create_boto3_client('iam')
+        iam_client = create_boto3_client('iam', role_arn=role_arn)
         
         # IAM 사용자 목록 가져오기
         users = iam_client.list_users()

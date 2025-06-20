@@ -15,7 +15,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        rds_client = create_boto3_client('rds')
+        rds_client = create_boto3_client('rds', role_arn=role_arn)
         
         # RDS 인스턴스 목록 가져오기
         instances = rds_client.describe_db_instances()

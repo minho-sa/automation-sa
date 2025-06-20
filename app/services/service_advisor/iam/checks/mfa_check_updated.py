@@ -22,7 +22,7 @@ class MFACheck:
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
-        iam_client = create_boto3_client('iam')
+        iam_client = create_boto3_client('iam', role_arn=role_arn)
         
         # IAM 사용자 목록 가져오기
         users = iam_client.list_users()

@@ -16,7 +16,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        lambda_client = create_boto3_client('lambda')
+        lambda_client = create_boto3_client('lambda', role_arn=role_arn)
         cloudwatch = create_boto3_client('cloudwatch')
         
         # Lambda 함수 정보 수집

@@ -13,7 +13,7 @@ def run(role_arn=None) -> Dict[str, Any]:
     IAM User에 대한 전반적인 확인 (User 비번, Credential, 활동기록 등 오래된 것들 정리)
     """
     try:
-        iam_client = create_boto3_client('iam')
+        iam_client = create_boto3_client('iam', role_arn=role_arn)
         
         # 자격 증명 보고서 생성 및 가져오기
         try:

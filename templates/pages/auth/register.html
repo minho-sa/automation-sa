@@ -41,6 +41,25 @@
                                pattern="^arn:aws:iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]+$"
                                title="올바른 AWS Role ARN 형식을 입력하세요. (예: arn:aws:iam::123456789012:role/MyRole)">
                         <div class="form-text">AWS 자격증명에 사용할 Role ARN을 입력하세요. (예: arn:aws:iam::123456789012:role/MyRole)</div>
+                        <div class="mt-2">
+                            <div class="awsui-alert awsui-alert-info">
+                                <div class="awsui-alert-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="awsui-alert-content">
+                                    <div class="awsui-alert-header">
+                                        <h3>ARN 설정 도움말</h3>
+                                    </div>
+                                    <div class="awsui-alert-message">
+                                        AWS Role ARN 설정 방법을 모르시나요? 
+                                        <a href="https://github.com/minho-sa/automation-sa/blob/main/docs/service_advisor_permissions_guide.md" 
+                                           target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt"></i> ARN 설정 가이드 보기
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="d-grid gap-2">

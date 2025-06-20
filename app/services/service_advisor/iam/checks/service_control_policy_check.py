@@ -17,7 +17,7 @@ def run(role_arn=None) -> Dict[str, Any]:
     """
     try:
         # Organizations 클라이언트 생성
-        org_client = create_boto3_client('organizations')
+        org_client = create_boto3_client('organizations',role_arn=role_arn)
         
         # 조직 정보 확인
         try:

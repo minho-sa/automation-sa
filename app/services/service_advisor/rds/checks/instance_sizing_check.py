@@ -17,7 +17,7 @@ def run(role_arn=None) -> Dict[str, Any]:
     """
     try:
         rds_client = create_boto3_client('rds', role_arn=role_arn)
-        cloudwatch = create_boto3_client('cloudwatch')
+        cloudwatch = create_boto3_client('cloudwatch', role_arn=role_arn)
         
         # RDS 인스턴스 목록 가져오기
         instances = rds_client.describe_db_instances()

@@ -243,11 +243,19 @@ s3://bucket-name/
 - reportlab==3.6.1 (PDF 생성)
 - PyPDF2>=3.0.0 (PDF 병합)
 
-### 로그
-- 애플리케이션 로그: `logs/app.log`
-- 로그 순환: 자동 (10개 파일)
-- 로그 레벨: INFO, ERROR, WARNING
 
-## 라이선스
+## 상세 문서
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+### 📋 서비스 어드바이저 검사 항목
+- [EC2 검사 항목 상세 분석](docs/service_advisor_checks/ec2_check_reasons.md)
+- [S3 검사 항목 상세 분석](docs/service_advisor_checks/s3_check_reasons.md)
+- [Lambda 검사 항목](docs/service_advisor_checks/lambda_check_reasons.md)
+- [RDS 검사 항목](docs/service_advisor_checks/rds_check_reasons.md)
+- [IAM 검사 항목](docs/service_advisor_checks/iam_check_reasons.md)
+
+### 🔧 설정 가이드
+- [서비스 어드바이저 권한 설정 가이드](docs/service_advisor_permissions_guide.md)
+  - IAM 역할 생성 방법
+  - 필수 권한 정책
+  - 단계별 설정 가이드 (스크린샷 포함)
+

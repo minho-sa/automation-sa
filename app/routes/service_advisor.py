@@ -299,7 +299,7 @@ def export_pdf(service_name, check_id):
         check_info = next((check for check in checks if check.get('id') == check_id), {})
         
         # PDF 생성 유틸리티 사용
-        buffer = generate_check_result_pdf(
+        pdf_data = generate_check_result_pdf(
             check_result=check_result,
             service_name=service_name,
             check_id=check_id,
@@ -307,6 +307,16 @@ def export_pdf(service_name, check_id):
             username=current_user.username,
             timestamp=timestamp
         )
+        
+        if not pdf_data:
+            return jsonify({
+                'success': False,
+                'message': 'PDF 생성에 실패했습니다.'
+            }), 500
+        
+        # 바이트 데이터를 BytesIO 객체로 변환
+        buffer = io.BytesIO(pdf_data)
+        buffer.seek(0)
         
         filename = f"aws-advisor-{service_name}-{check_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
         
@@ -380,16 +390,20 @@ def export_multiple_pdf():
             }), 404
         
         # 여러 PDF 생성 및 병합
-        buffer = generate_multiple_check_results_pdf(
+        pdf_data = generate_multiple_check_results_pdf(
             check_results=check_results,
             username=current_user.username
         )
         
-        if not buffer:
+        if not pdf_data:
             return jsonify({
                 'success': False,
                 'message': 'PDF 생성에 실패했습니다.'
             }), 500
+        
+        # 바이트 데이터를 BytesIO 객체로 변환
+        buffer = io.BytesIO(pdf_data)
+        buffer.seek(0)
         
         filename = f"aws-advisor-multiple-checks-{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
         

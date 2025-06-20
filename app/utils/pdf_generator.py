@@ -624,3 +624,37 @@ def generate_check_result_pdf(check_result, service_name, check_id, check_info, 
     finally:
         if not buffer.closed:
             buffer.close()
+
+def generate_multiple_check_results_pdf(check_results, username):
+    """개별 PDF들을 생성하고 병합"""
+    from PyPDF2 import PdfMerger
+    
+    try:
+        merger = PdfMerger()
+        
+        # 각 검사 결과에 대해 개별 PDF 생성
+        for check_data in check_results:
+            pdf_data = generate_check_result_pdf(
+                check_result=check_data.get('result', {}),
+                service_name=check_data.get('service_name', ''),
+                check_id=check_data.get('check_id', ''),
+                check_info=check_data.get('check_info', {}),
+                username=username,
+                timestamp=check_data.get('timestamp', '')
+            )
+            
+            if pdf_data:
+                pdf_buffer = io.BytesIO(pdf_data)
+                merger.append(pdf_buffer)
+        
+        # 병합된 PDF 반환
+        merged_buffer = io.BytesIO()
+        merger.write(merged_buffer)
+        merger.close()
+        
+        merged_buffer.seek(0)
+        return merged_buffer.getvalue()
+        
+    except Exception as e:
+        print(f"PDF 병합 오류: {e}")
+        return None

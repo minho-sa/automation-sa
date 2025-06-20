@@ -18,15 +18,18 @@ class InstanceTypeCheck(BaseEC2Check):
     def __init__(self):
         self.check_id = 'ec2-instance-type'
     
-    def collect_data(self) -> Dict[str, Any]:
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """
         EC2 인스턴스 및 CloudWatch 메트릭 데이터를 수집합니다.
         
+        Args:
+            role_arn: AWS 역할 ARN
+            
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
-        ec2 = create_boto3_client('ec2')
-        cloudwatch = create_boto3_client('cloudwatch')
+        ec2 = create_boto3_client('ec2', role_arn=role_arn)
+        cloudwatch = create_boto3_client('cloudwatch', role_arn=role_arn)
         
         # 실행 중인 인스턴스 정보 수집
         instances = ec2.describe_instances(

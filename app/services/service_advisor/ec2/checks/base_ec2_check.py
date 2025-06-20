@@ -12,10 +12,13 @@ class BaseEC2Check(ABC):
     """EC2 검사 항목의 기본 클래스"""
     
     @abstractmethod
-    def collect_data(self) -> Dict[str, Any]:
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """
         AWS에서 필요한 데이터를 수집합니다.
         
+        Args:
+            role_arn: AWS 역할 ARN
+            
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
@@ -65,14 +68,14 @@ class BaseEC2Check(ABC):
         검사를 실행하고 결과를 반환합니다.
         
         Args:
-            role_arn: AWS 역할 ARN (선택 사항)
+            role_arn: AWS 역할 ARN (필수)
             
         Returns:
             Dict[str, Any]: 검사 결과
         """
         try:
-            # 데이터 수집
-            collected_data = self.collect_data()
+            # 데이터 수집 (role_arn 전달)
+            collected_data = self.collect_data(role_arn=role_arn)
             
             # 데이터 분석
             analysis_result = self.analyze_data(collected_data)

@@ -13,8 +13,8 @@ class UnusedResourcesCheck(BaseEC2Check):
         self.session = session or boto3.Session()
         self.check_id = 'ec2_unused_resources_check'
     
-    def collect_data(self) -> Dict[str, Any]:
-        ec2_client = create_boto3_client('ec2')
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
+        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
         
         # Elastic IP 조회
         eips = ec2_client.describe_addresses()

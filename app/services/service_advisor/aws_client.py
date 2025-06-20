@@ -82,7 +82,7 @@ def create_boto3_client(service_name, region_name=None, role_arn=None):
     Args:
         service_name: AWS 서비스 이름
         region_name: AWS 리전 이름 (선택 사항)
-        role_arn: AWS 역할 ARN (선택 사항)
+        role_arn: AWS 역할 ARN (필수 - 사용자 세션의 Role ARN)
         
     Returns:
         boto3 클라이언트 객체
@@ -90,105 +90,71 @@ def create_boto3_client(service_name, region_name=None, role_arn=None):
     from config import Config
     
     try:
-        # 기본 세션 생성
+        # Role ARN이 없으면 오류 발생
+        if not role_arn:
+            raise Exception("Role ARN이 필요합니다. 사용자가 로그인하지 않았거나 Role ARN이 설정되지 않았습니다.")
+        
+        # 기본 세션 생성 (.env의 자격증명 사용)
+        if not Config.AWS_ACCESS_KEY or not Config.AWS_SECRET_KEY:
+            raise Exception(".env 파일에 AWS_ACCESS_KEY와 AWS_SECRET_KEY가 설정되지 않았습니다.")
+        
         session = boto3.Session(
             aws_access_key_id=Config.AWS_ACCESS_KEY,
             aws_secret_access_key=Config.AWS_SECRET_KEY,
             region_name=region_name or Config.AWS_REGION
         )
         
-        # 역할 ARN이 제공된 경우 해당 역할로 임시 자격 증명 생성
-        if role_arn:
-            sts_client = session.client('sts')
-            response = sts_client.assume_role(
-                RoleArn=role_arn,
-                RoleSessionName='ServiceAdvisorSession'
-            )
-            
-            credentials = response['Credentials']
-            
-            # 임시 자격 증명으로 새 세션 생성
-            session = boto3.Session(
-                aws_access_key_id=credentials['AccessKeyId'],
-                aws_secret_access_key=credentials['SecretAccessKey'],
-                aws_session_token=credentials['SessionToken'],
-                region_name=region_name or Config.AWS_REGION
-            )
+        # STS 클라이언트로 역할 전환
+        sts_client = session.client('sts')
+        logging.info(f"Role ARN으로 인증 시도: {role_arn}")
+        
+        # 현재 자격증명 확인
+        try:
+            current_identity = sts_client.get_caller_identity()
+            logging.info(f"현재 자격증명: {current_identity['Arn']}")
+        except Exception as e:
+            logging.error(f"현재 자격증명 확인 실패: {str(e)}")
+        
+        response = sts_client.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName='ServiceAdvisorSession',
+            DurationSeconds=3600  # 1시간
+        )
+        
+        credentials = response['Credentials']
+        logging.info(f"Role 전환 성공: {response['AssumedRoleUser']['Arn']}")
+        
+        # 임시 자격 증명으로 새 세션 생성
+        session = boto3.Session(
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name=region_name or Config.AWS_REGION
+        )
         
         # 클라이언트 생성
         client = session.client(service_name)
         
-        # 연결 테스트 (STS 호출)
+        # 연결 테스트
         if service_name == 'sts':
-            client.get_caller_identity()
+            identity = client.get_caller_identity()
+            logging.info(f"클라이언트 생성 성공: {identity['Arn']}")
         
         return client
     except Exception as e:
-        logging.error(f"AWS 클라이언트 생성 중 오류: {str(e)}")
-        # 모의 클라이언트 반환 (테스트용)
-        return MockAWSClient(service_name)
-
-# 테스트용 모의 AWS 클라이언트
-class MockAWSClient:
-    def __init__(self, service_name):
-        self.service_name = service_name
-        logging.warning(f"모의 {service_name} 클라이언트가 생성되었습니다. 실제 AWS API 호출은 작동하지 않습니다.")
-    
-    def describe_security_groups(self, **kwargs):
-        return {"SecurityGroups": [
-            {
-                "GroupId": "sg-12345678",
-                "GroupName": "default",
-                "Description": "default VPC security group",
-                "IpPermissions": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 22,
-                        "ToPort": 22,
-                        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
-                    }
-                ],
-                "VpcId": "vpc-12345678"
-            }
-        ]}
-    
-    def describe_instances(self, **kwargs):
-        return {
-            "Reservations": [
-                {
-                    "Instances": [
-                        {
-                            "InstanceId": "i-0787a481d5ad3daed",
-                            "InstanceType": "t2.micro",
-                            "Tags": [{"Key": "Name", "Value": "ttt"}]
-                        },
-                        {
-                            "InstanceId": "i-0c85364be4c503455",
-                            "InstanceType": "t2.small",
-                            "Tags": [{"Key": "Name", "Value": "chat"}]
-                        }
-                    ]
-                }
-            ]
-        }
-    
-    def get_metric_statistics(self, **kwargs):
-        instance_id = kwargs.get("Dimensions", [{}])[0].get("Value", "")
+        error_msg = str(e)
+        logging.error(f"AWS 클라이언트 생성 중 오류: {error_msg}")
         
-        if instance_id == "i-0787a481d5ad3daed":
-            return {
-                "Datapoints": [
-                    {"Average": 0.41, "Maximum": 26.78, "Timestamp": "2023-06-08T12:00:00Z"},
-                    {"Average": 0.38, "Maximum": 22.45, "Timestamp": "2023-06-08T13:00:00Z"}
-                ]
-            }
+        # 오류 유형에 따른 상세 메시지 제공
+        if 'AccessDenied' in error_msg:
+            if 'AssumeRole' in error_msg:
+                raise Exception(f"Role 전환 권한이 없습니다. .env의 project-automation 사용자가 {role_arn} 역할을 assume할 수 있는 권한이 필요합니다.")
+            else:
+                raise Exception(f"AWS 서비스 접근 권한이 없습니다: {error_msg}")
+        elif 'InvalidClientTokenId' in error_msg:
+            raise Exception(f".env 파일의 AWS 자격증명이 잘못되었습니다: {error_msg}")
+        elif 'SignatureDoesNotMatch' in error_msg:
+            raise Exception(f".env 파일의 AWS Secret Key가 잘못되었습니다: {error_msg}")
         else:
-            return {
-                "Datapoints": [
-                    {"Average": 4.85, "Maximum": 64.94, "Timestamp": "2023-06-08T12:00:00Z"},
-                    {"Average": 5.12, "Maximum": 58.32, "Timestamp": "2023-06-08T13:00:00Z"}
-                ]
-            }
-    
-    def get_caller_identity(self):
-        return {"UserId": "AIDACKCEVSQ6C2EXAMPLE", "Account": "123456789012", "Arn": "arn:aws:iam::123456789012:user/test-user"}
+            raise Exception(f"AWS 인증 실패: {error_msg}")
+

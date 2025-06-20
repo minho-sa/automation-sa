@@ -15,9 +15,9 @@ class PublicInstanceCheck(BaseEC2Check):
         self.session = session or boto3.Session()
         self.check_id = 'ec2_public_instance_check'
     
-    def collect_data(self) -> Dict[str, Any]:
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """EC2 인스턴스 데이터 수집"""
-        ec2_client = create_boto3_client('ec2')
+        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
         
         instances = ec2_client.describe_instances()
         return {'reservations': instances['Reservations']}

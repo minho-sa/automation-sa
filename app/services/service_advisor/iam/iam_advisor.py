@@ -9,8 +9,7 @@ from app.services.service_advisor.iam.checks import (
     inactive_users_check,
     root_account_check,
     policy_analyzer_check,
-    credential_report_check,
-    service_control_policy_check
+    credential_report_check
 )
 from app.services.service_advisor.iam.checks import iam_user_comprehensive_check
 
@@ -102,16 +101,7 @@ class IAMAdvisor(BaseAdvisor):
             severity='high'
         )
         
-        # 서비스 제어 정책 검사
-        self.register_check(
-            check_id='iam-service-control-policy',
-            name='서비스 제어 정책',
-            description='AWS Organizations의 서비스 제어 정책(SCP)을 분석합니다. 권장되는 SCP 구현 여부를 확인하고 보안 강화를 위한 개선 방안을 제시합니다.',
-            function=service_control_policy_check.run,
-            category='거버넌스',
-            severity='medium'
-        )
-        
+
         # IAM 사용자 종합 검사
         self.register_check(
             check_id='iam-user-comprehensive',

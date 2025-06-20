@@ -42,11 +42,19 @@ def run(role_arn=None) -> Dict[str, Any]:
                     break
             
             # 태그에서 프로덕션 환경 여부 추정
-            if 'TagList' in instance:
-                for tag in instance['TagList']:
-                    if tag['Key'].lower() == 'environment' and any(ind in tag['Value'].lower() for ind in production_indicators):
+            try:
+                tags_response = rds_client.list_tags_for_resource(
+                    ResourceName=instance['DBInstanceArn']
+                )
+                tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagList', [])}
+                
+                for key, value in tags.items():
+                    if (key.lower() in ['environment', 'env'] and 
+                        any(ind in value.lower() for ind in production_indicators)):
                         is_production = True
                         break
+            except Exception:
+                pass
             
             # 다중 AZ 구성 분석
             status = RESOURCE_STATUS_PASS

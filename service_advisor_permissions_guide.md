@@ -3,9 +3,22 @@
 ## 개요
 서비스 어드바이저 전체 기능을 사용하기 위해 필요한 최소 권한을 정리했습니다. 모든 권한은 읽기 전용으로 제한되어 있어 AWS 리소스에 대한 안전한 분석만 수행합니다.
 
-## 필요한 IAM 권한
+## IAM 역할 생성 방법
 
-### 통합 권한 정책
+### 1단계: 권한 정책 먼저 생성
+
+1. **AWS Management Console**에 로그인
+2. **IAM 서비스**로 이동
+3. 왼쪽 메뉴에서 **"정책(Policies)"** 클릭
+4. **"정책 생성"** 버튼 클릭
+
+![IAM 정책 생성 시작](images/iam-create-policy-start.png)
+
+### 2단계: 정책 권한 설정
+
+1. **"JSON"** 탭 클릭
+2. 아래 정책을 복사하여 붙여넣기:
+
 ```json
 {
     "Version": "2012-10-17",
@@ -31,6 +44,75 @@
     ]
 }
 ```
+
+3. **"다음: 태그"** 클릭
+
+![정책 JSON 입력](images/iam-policy-json.png)
+
+### 3단계: 정책 이름 및 생성
+
+1. 태그는 선택사항이므로 **"다음: 검토"** 클릭
+2. 정책 이름 입력: **"console-check-policy"**
+3. 설명 입력: **"서비스 어드바이저를 위한 읽기 전용 권한"**
+4. **"정책 생성"** 클릭
+
+![정책 생성 완료](images/iam-policy-create.png)
+
+### 4단계: IAM 역할 생성
+
+1. 왼쪽 메뉴에서 **"역할(Roles)"** 클릭
+2. **"역할 만들기"** 버튼 클릭
+
+![IAM 역할 생성 시작](images/iam-create-role-start.png)
+
+### 5단계: 신뢰할 수 있는 엔터티 선택
+
+1. **"AWS 계정"** 선택
+2. **"다른 계정"** 선택
+3. 계정 ID 입력: **713881821833**
+4. **"외부 ID 필요"** 체크박스는 선택하지 않음
+5. **"다음"** 클릭
+
+![신뢰할 수 있는 엔터티 선택](images/iam-trusted-entity.png)
+
+### 6단계: 생성한 정책 연결
+
+1. 검색창에 **"console-check-policy"** 입력
+2. 앞서 생성한 정책 선택
+3. **"다음"** 클릭
+
+![정책 연결](images/iam-attach-policy.png)
+
+### 7단계: 역할 이름 및 생성
+
+1. 역할 이름 입력: **"console-check-role"**
+2. 설명 입력: **"서비스 어드바이저를 위한 읽기 전용 역할"**
+3. 신뢰할 수 있는 엔터티와 권한 정책 확인
+4. **"역할 만들기"** 클릭
+
+![역할 생성 완료](images/iam-role-review.png)
+
+### 8단계: 역할 ARN 복사
+
+1. 생성된 역할 클릭
+2. **역할 ARN** 복사 (예: `arn:aws:iam::123456789012:role/console-check-role`)
+3. 이 ARN을 서비스 어드바이저에서 사용
+
+![역할 ARN 복사](images/iam-role-arn.png)
+
+### 9단계: 회원가입 하기
+1. 회원가입 클릭
+![메인 페이지](images/main-page.png)
+2. 사용자 ID와 비밀번호 입력
+3. 8단계에서 복사한 **역할 ARN** (예: `arn:aws:iam::123456789012:role/console-check-role`) 입력
+4. 회원가입 클릭
+![회원가입](images/register-page.png)
+
+### 10단계: 서비스 이용
+1. 사용자 ID와 비밀번호 입력
+2. 로그인
+![로그인](images/login.png)
+
 
 ## 권한별 안전성 분석
 
@@ -87,67 +169,3 @@
 - **필요한 권한만**: 서비스 어드바이저 기능에 필요한 최소한의 권한
 - **와일드카드 제한**: 읽기 전용 작업에만 와일드카드 사용
 - **리소스 범위**: 필요시 특정 리소스로 제한 가능
-
-## 역할 생성 및 사용
-
-### 1. 신뢰 정책 (Trust Policy)
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:root"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "Bool": {
-                    "aws:MultiFactorAuthPresent": "true"
-                }
-            }
-        }
-    ]
-}
-```
-
-### 2. 역할 생성 CLI 명령어
-```bash
-# 역할 생성
-aws iam create-role \
-    --role-name ServiceAdvisorRole \
-    --assume-role-policy-document file://trust-policy.json
-
-# 정책 연결
-aws iam put-role-policy \
-    --role-name ServiceAdvisorRole \
-    --policy-name ServiceAdvisorPolicy \
-    --policy-document file://service_advisor_minimum_permissions.json
-```
-
-### 3. 사용 예시
-```python
-# 서비스 어드바이저 실행
-role_arn = "arn:aws:iam::123456789012:role/ServiceAdvisorRole"
-result = service_advisor.run(role_arn=role_arn)
-```
-
-## 추가 보안 권장사항
-
-### 1. MFA 요구
-- 역할 사용 시 MFA 인증 필수 설정
-- 신뢰 정책에 MFA 조건 포함
-
-### 2. 시간 제한
-- 역할 세션 시간 제한 (예: 1시간)
-- 정기적인 재인증 요구
-
-### 3. IP 제한
-- 특정 IP 주소에서만 역할 사용 허용
-- VPN이나 특정 네트워크에서만 접근
-
-### 4. 로깅 및 모니터링
-- CloudTrail을 통한 API 호출 로깅
-- 비정상적인 접근 패턴 모니터링
-
-이 권한 설정을 통해 서비스 어드바이저는 AWS 리소스를 안전하게 분석하면서도 보안을 유지할 수 있습니다.

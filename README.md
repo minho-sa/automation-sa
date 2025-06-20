@@ -1,163 +1,253 @@
-# AWS 리소스 최적화 분석기: 자동화된 클라우드 인프라 추천 시스템
+# AWS 리소스 관리 및 최적화 콘솔
 
-AWS 리소스 최적화 분석기는 AWS 인프라를 분석하고 여러 AWS 서비스에 걸쳐 보안, 성능 및 비용 효율성을 개선하기 위한 실행 가능한 권장 사항을 제공하는 종합적인 웹 애플리케이션입니다.
+AWS 리소스를 수집하고 분석하여 최적화 권장사항을 제공하는 Flask 기반 웹 애플리케이션입니다.
 
-이 애플리케이션은 EC2 인스턴스, Lambda 함수, S3 버킷, RDS 데이터베이스 등을 포함한 AWS 리소스에 대한 심층 분석을 수행합니다. AWS 모범 사례와 일반적인 최적화 패턴을 기반으로 구체적이고 실행 가능한 권장 사항을 생성합니다. 분석기는 전체 AWS 인프라에서 보안 취약점, 성능 병목 현상 및 비용 최적화 기회를 식별하는 데 도움을 줍니다.
+## 주요 기능
 
-## 저장소 구조
+### 🔐 사용자 인증
+- S3 기반 사용자 데이터 저장
+- bcrypt를 사용한 비밀번호 해싱
+- Flask-Login 세션 관리
+- AWS 자격증명 (Access Key/Role ARN) 지원
+
+### 📊 리소스 수집
+- **지원 서비스**: EC2, S3 (현재 구현됨)
+- CloudWatch 메트릭 수집 (EC2 CPU, 메모리, 네트워크)
+- S3 기반 데이터 영구 저장
+- 메모리 캐시를 통한 성능 최적화
+
+### 🎯 서비스 어드바이저
+- **지원 서비스**: EC2, S3, Lambda, RDS, IAM
+- 보안, 성능, 비용 최적화 검사
+- PDF 리포트 생성
+- 검사 이력 관리
+
+## 프로젝트 구조
 ```
 .
-├── app/                            # 메인 애플리케이션 디렉토리
-│   ├── models/                     # 데이터 모델 및 스키마
-│   ├── routes/                     # 애플리케이션 라우트 핸들러
-│   ├── services/                   # 핵심 비즈니스 로직 및 AWS 서비스 통합
-│       ├── aws_services.py         # AWS 서비스 구성
-│       ├── recommendation/         # 권장 사항 생성 로직
-│       └── resource/              # AWS 리소스 데이터 수집
-├── docs/                          # 서비스별 문서
-├── static/                        # 프론트엔드 자산(CSS, JavaScript)
-├── templates/                     # HTML 템플릿
-├── config.py                      # 애플리케이션 구성
-├── requirements.txt               # Python 종속성
-└── run.py                        # 애플리케이션 진입점
+├── app/
+│   ├── models/
+│   │   └── user.py                        # 사용자 모델 (Flask-Login)
+│   ├── routes/
+│   │   ├── auth.py                        # 로그인/로그아웃
+│   │   ├── dashboard.py                   # 메인 대시보드 (호환성)
+│   │   ├── resource.py                    # 리소스 수집/관리
+│   │   └── service_advisor.py             # 서비스 어드바이저
+│   ├── services/
+│   │   ├── resource/
+│   │   │   ├── collectors/
+│   │   │   │   ├── common/                # 공통 수집기 모듈
+│   │   │   │   ├── ec2/                   # EC2 수집기 (구현됨)
+│   │   │   │   ├── s3/                    # S3 수집기 (구현됨)
+│   │   │   │   ├── lambda/                # Lambda 수집기 (미구현)
+│   │   │   │   └── rds/                   # RDS 수집기 (미구현)
+│   │   │   ├── common/
+│   │   │   │   ├── resource_model.py      # 리소스 데이터 모델
+│   │   │   │   ├── data_storage.py        # S3 데이터 저장소
+│   │   │   │   ├── base_collector.py      # 기본 수집기 클래스
+│   │   │   │   └── aws_client.py          # AWS 클라이언트
+│   │   │   ├── collector_factory.py       # 수집기 팩토리
+│   │   │   ├── ec2_collector.py           # EC2 수집기 구현
+│   │   │   └── s3_collector.py            # S3 수집기 구현
+│   │   ├── service_advisor/
+│   │   │   ├── common/                    # 공통 어드바이저 모듈
+│   │   │   ├── ec2/                       # EC2 어드바이저
+│   │   │   ├── s3/                        # S3 어드바이저
+│   │   │   ├── lambda_service/            # Lambda 어드바이저
+│   │   │   ├── rds/                       # RDS 어드바이저
+│   │   │   ├── iam/                       # IAM 어드바이저
+│   │   │   └── advisor_factory.py         # 어드바이저 팩토리
+│   │   ├── aws_services.py                # AWS 서비스 통합
+│   │   ├── aws_utils.py                   # AWS 유틸리티
+│   │   ├── user_storage.py                # S3 기반 사용자 저장소
+│   │   └── s3_storage.py                  # S3 저장소 서비스
+│   ├── utils/
+│   │   └── pdf_generator.py               # PDF 리포트 생성
+│   └── __init__.py                        # Flask 앱 초기화
+├── static/                                # CSS, JavaScript
+├── templates/                             # Jinja2 템플릿
+├── docs/                                  # 문서
+├── logs/                                  # 애플리케이션 로그
+├── config.py                              # 설정 파일
+├── requirements.txt                       # Python 의존성
+└── run.py                                 # 애플리케이션 실행
 ```
 
-## 사용 지침
+## 설치 및 설정
+
 ### 사전 요구 사항
-- Python 3.7 이상
-- 적절한 IAM 권한이 있는 AWS 계정
-- AWS 액세스 키 ID 및 비밀 액세스 키
-- Boto3(Python용 AWS SDK)
-- Flask 웹 프레임워크 및 종속성
+- Python 3.7+
+- AWS 계정 및 자격증명
+- S3 버킷 (데이터 저장용)
 
 ### 설치
+
+1. **저장소 복제**
 ```bash
-# 저장소 복제
 git clone <repository-url>
-cd aws-resource-optimization-analyzer
-
-# 가상 환경 생성 및 활성화
-python3 -m venv venv
-source venv/bin/activate  # Windows에서는: venv\Scripts\activate
-
-# 종속성 설치
-pip install -r requirements.txt
-
-# 환경 변수 구성
-cp .env.example .env
-# AWS 자격 증명 및 구성으로 .env 편집
+cd again_console
 ```
 
-### 빠른 시작
-1. 애플리케이션 시작:
+2. **가상 환경 및 의존성**
 ```bash
-python3 run.py
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-2. 웹 인터페이스 접속:
-- 브라우저를 열고 `http://localhost:5000`으로 이동
-- AWS 자격 증명으로 로그인
-- "수집 시작"을 클릭하여 리소스 분석 시작
-
-3. 권장 사항 보기:
-- 권장 사항 탭으로 이동
-- 서비스 또는 심각도별로 권장 사항 필터링
-- 자세한 정보를 위해 개별 권장 사항 클릭
-
-### 더 자세한 예시
-```python
-# 예시: EC2 권장 사항 보기
-1. EC2 섹션으로 이동
-2. 인스턴스 사용률 지표 확인
-3. 비용 최적화 제안 확인
-4. 보안 그룹 구성 검토
-
-# 예시: Lambda 함수 최적화
-1. 메모리 할당 확인
-2. 타임아웃 설정 검토
-3. 콜드 스타트 영향 분석
-4. 코드 패키지 크기 최적화
+3. **환경 설정**
+`.env` 파일 생성:
+```env
+SECRET_KEY=your-secret-key
+AWS_ACCESS_KEY=your-access-key
+AWS_SECRET_KEY=your-secret-key
+AWS_REGION=ap-northeast-2
+DATA_BUCKET_NAME=your-bucket-name
 ```
 
-### 문제 해결
-1. 데이터 수집 문제
-   - 오류: "AWS 자격 증명을 찾을 수 없음"
-     ```bash
-     # 환경 변수 확인
-     echo $AWS_ACCESS_KEY_ID
-     echo $AWS_SECRET_ACCESS_KEY
-     ```
-   - 해결책: .env 파일에서 AWS 자격 증명 확인
-
-2. 권한 문제
-   - 오류: "액세스 거부됨"
-   - 해결책: 필요한 서비스에 대한 IAM 권한 확인
-   - 필요한 권한:
-     ```json
-     {
-       "Version": "2012-10-17",
-       "Statement": [
-         {
-           "Effect": "Allow",
-           "Action": [
-             "ec2:Describe*",
-             "lambda:List*",
-             "s3:List*"
-           ],
-           "Resource": "*"
-         }
-       ]
-     }
-     ```
-
-## 데이터 흐름
-애플리케이션은 권장 사항을 생성하기 위해 구조화된 데이터 수집 및 분석 파이프라인을 따릅니다.
-
-```ascii
-[AWS 계정] --> [리소스 수집기] --> [분석 엔진] --> [권장 사항 생성기] --> [웹 인터페이스]
-     |                |                |                |                   |
-     v                v                v                v                   v
-자격 증명 --> 서비스별 API 호출 --> 패턴 분석 및 --> 서비스별 권장 사항 --> 필터링 및 그룹화된
-                                  모범 사례                                 표시
+4. **실행**
+```bash
+python run.py
 ```
 
-주요 구성 요소 상호 작용:
-1. 리소스 수집기는 boto3를 사용하여 AWS 서비스에서 데이터를 가져옵니다
-2. 분석 엔진은 사전 정의된 패턴에 대해 원시 데이터를 처리합니다
-3. 권장 사항 생성기는 분석을 기반으로 실행 가능한 항목을 생성합니다
-4. 웹 인터페이스는 필터링 및 그룹화와 함께 권장 사항을 표시합니다
-5. 비동기 데이터 수집을 통한 실시간 업데이트
-6. 세션 관리를 사용한 안전한 자격 증명 처리
-7. 확장성을 위한 모듈식 서비스 통합
-## S3를 이용한 데이터 관리 기능
+## 사용 방법
 
-통합 대시보드에서 수집한 데이터는 S3에 저장되어 사용자별로 관리됩니다. 이를 통해 다음과 같은 기능을 제공합니다:
+### 1. 사용자 등록/로그인
+- `http://localhost:5000` 접속
+- 회원가입 후 AWS 자격증명 입력
+- 로그인하여 대시보드 접속
 
-1. 사용자별 데이터 분리 - 각 사용자는 자신이 수집한 데이터만 볼 수 있습니다.
-2. 수집 데이터 영구 저장 - 서버 재시작 후에도 이전에 수집한 데이터를 볼 수 있습니다.
-3. 수집 이력 관리 - 여러 번 수집한 데이터를 시간별로 확인할 수 있습니다.
-4. 불필요한 데이터 삭제 - 더 이상 필요하지 않은 수집 데이터를 삭제할 수 있습니다.
+### 2. 리소스 수집
+- 리소스 관리 메뉴 접속
+- 수집할 서비스 선택 (현재: EC2, S3)
+- AWS 리전 선택 후 수집 시작
+- 실시간 진행 상황 모니터링
 
-### 데이터 저장 구조
+### 3. 데이터 조회
+- 수집 이력에서 데이터 확인
+- 서비스별 상세 정보 조회
+- CloudWatch 메트릭 확인 (EC2)
 
-S3에 저장되는 데이터는 다음과 같은 구조로 관리됩니다:
+### 4. 서비스 어드바이저
+- 서비스 어드바이저 메뉴 접속
+- 검사할 서비스 선택
+- 보안/성능/비용 검사 실행
+- PDF 리포트 다운로드
+
+## 현재 구현된 기능
+
+### 리소스 수집 (구현됨)
+- **EC2**: 인스턴스 정보, CPU/메모리/네트워크 메트릭, 보안 그룹, 볼륨 정보
+- **S3**: 버킷 정보, 암호화 설정, 퍼블릭 액세스, 라이프사이클 정책, 스토리지 클래스
+
+### 서비스 어드바이저 (구현됨)
+- **EC2**: 인스턴스 타입, 보안 그룹, EBS 암호화, 백업, 미사용 리소스, 종료 보호, 모니터링
+- **S3**: 퍼블릭 액세스, 암호화, 버전 관리, 라이프사이클, 로깅, 지능형 계층화
+- **Lambda**: 메모리 할당, 타임아웃, 런타임, 코드 서명, 권한
+- **RDS**: 백업 보존, 암호화, Multi-AZ, 퍼블릭 액세스, 인스턴스 크기
+- **IAM**: MFA, 액세스 키 순환, 비활성 사용자, 루트 계정, 비밀번호 정책
+
+### 데이터 저장
+- S3 기반 계층적 데이터 저장
+- 사용자별 데이터 분리
+- 메모리 캐시 시스템
+- 수집 이력 관리
+
+## 문제 해결
+
+### 필수 IAM 권한
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "s3:List*",
+        "s3:Get*",
+        "cloudwatch:Get*",
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::your-bucket/*"
+    }
+  ]
+}
+```
+
+### 일반적인 문제
+1. **자격증명 오류**: `.env` 파일의 AWS 키 확인
+2. **권한 부족**: 위 IAM 정책 적용
+3. **S3 접근 오류**: 버킷 존재 및 권한 확인
+4. **데이터 미표시**: 브라우저 캐시 삭제, 로그 확인
+5. **CloudWatch 메트릭 없음**: EC2에 CloudWatch 에이전트 설치 필요
+
+## 기술 스택
+
+### 백엔드
+- **Flask**: 웹 프레임워크
+- **Flask-Login**: 사용자 인증
+- **Boto3**: AWS SDK
+- **bcrypt**: 비밀번호 해싱
+
+### 프론트엔드
+- **Bootstrap**: UI 프레임워크
+- **JavaScript**: 동적 기능
+- **Chart.js**: 데이터 시각화
+
+### 저장소
+- **S3**: 사용자 데이터 및 수집 데이터 저장
+- **메모리 캐시**: 성능 최적화
+
+### AWS 서비스
+- **EC2**: 인스턴스 정보 수집
+- **S3**: 버킷 정보 수집
+- **CloudWatch**: 메트릭 수집
+- **STS**: 자격증명 관리
+
+## S3 데이터 구조
 
 ```
-users/
-  ├── {user_id}/
-  │   └── dashboard_data/
-  │       └── collections/
-  │           ├── {collection_id}/
-  │           │   ├── metadata.json
-  │           │   └── services/
-  │           │       ├── ec2.json
-  │           │       ├── s3.json
-  │           │       └── ...
-  │           └── ...
-  └── ...
+s3://bucket-name/
+├── users/
+│   └── {username}/
+│       ├── profile.json                # 사용자 정보
+│       └── collections/
+│           └── {collection_id}/
+│               ├── metadata.json       # 수집 메타데이터
+│               ├── ec2.json           # EC2 데이터
+│               └── s3.json            # S3 데이터
+└── service_advisor/
+    └── history/
+        └── {username}/
+            └── {service}/
+                └── {timestamp}.json    # 검사 결과
 ```
 
-- `{user_id}`: 사용자 ID
-- `{collection_id}`: 수집 ID (UUID)
-- `metadata.json`: 수집 메타데이터 (수집 시간, 선택한 서비스 등)
-- `services/`: 각 서비스별 수집 데이터
+## 개발 정보
+
+### 의존성
+- flask==2.0.1
+- flask-login==0.5.0
+- boto3==1.18.0
+- python-dotenv==0.19.0
+- reportlab==3.6.1 (PDF 생성)
+- PyPDF2>=3.0.0 (PDF 병합)
+
+### 로그
+- 애플리케이션 로그: `logs/app.log`
+- 로그 순환: 자동 (10개 파일)
+- 로그 레벨: INFO, ERROR, WARNING
+
+## 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.

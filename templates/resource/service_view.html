@@ -140,6 +140,7 @@
             <table class="resource-table" id="ec2-table">
                 <thead>
                     <tr>
+                        <th data-sort="name">인스턴스 이름</th>
                         <th data-sort="id">인스턴스 ID</th>
                         <th data-sort="type">유형</th>
                         <th data-sort="state">상태</th>
@@ -153,6 +154,7 @@
                 <tbody>
                     {% for instance in all_services_data.ec2.instances %}
                     <tr>
+                        <td data-column="name">{% for tag in instance.tags %}{% if tag.Key == 'Name' %}{{ tag.Value }}{% endif %}{% endfor %}{% if not instance.tags or not (instance.tags|selectattr('Key', 'equalto', 'Name')|list) %}-{% endif %}</td>
                         <td data-column="id">{{ instance.id }}</td>
                         <td data-column="type">{{ instance.type }}</td>
                         <td data-column="state">
@@ -187,7 +189,7 @@
                         </td>
                     </tr>
                     <tr id="instance-detail-{{ loop.index }}" style="display: none;">
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="detail-panel">
                                 <!-- 인스턴스 상세 정보 탭 -->
                                 <div class="resource-tabs">
@@ -200,27 +202,193 @@
                                 
                                 <!-- 기본 정보 탭 -->
                                 <div class="resource-tab-content active" id="instance-info-{{ loop.index }}">
-                                    <!-- 기본 정보 내용 -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>인스턴스 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>인스턴스 이름</td><td>{% for tag in instance.tags %}{% if tag.Key == 'Name' %}{{ tag.Value }}{% endif %}{% endfor %}{% if not instance.tags or not (instance.tags|selectattr('Key', 'equalto', 'Name')|list) %}-{% endif %}</td></tr>
+                                                <tr><td>인스턴스 ID</td><td>{{ instance.id }}</td></tr>
+                                                <tr><td>인스턴스 유형</td><td>{{ instance.type }}</td></tr>
+                                                <tr><td>상태</td><td>{{ instance.state }}</td></tr>
+                                                <tr><td>가용 영역</td><td>{{ instance.az }}</td></tr>
+                                                <tr><td>리전</td><td>{{ instance.region }}</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>시스템 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>아키텍처</td><td>{{ instance.architecture or '-' }}</td></tr>
+                                                <tr><td>하이퍼바이저</td><td>{{ instance.hypervisor or '-' }}</td></tr>
+                                                <tr><td>가상화 유형</td><td>{{ instance.virtualization_type or '-' }}</td></tr>
+                                                <tr><td>루트 디바이스</td><td>{{ instance.root_device_type or '-' }}</td></tr>
+                                                <tr><td>시작 시간</td><td>{{ instance.launch_time|replace('T', ' ')|truncate(19, True, '') }}</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <!-- 네트워크 탭 -->
                                 <div class="resource-tab-content" id="instance-network-{{ loop.index }}">
-                                    <!-- 네트워크 정보 내용 -->
+                                    <h6>네트워크 인터페이스</h6>
+                                    {% if instance.network_interfaces %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>인터페이스 ID</th>
+                                                    <th>서브넷 ID</th>
+                                                    <th>VPC ID</th>
+                                                    <th>사설 IP</th>
+                                                    <th>공인 IP</th>
+                                                    <th>상태</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for ni in instance.network_interfaces %}
+                                                <tr>
+                                                    <td>{{ ni.id or '-' }}</td>
+                                                    <td>{{ ni.subnet_id or '-' }}</td>
+                                                    <td>{{ ni.vpc_id or '-' }}</td>
+                                                    <td>{{ ni.private_ip or '-' }}</td>
+                                                    <td>{{ ni.public_ip or '-' }}</td>
+                                                    <td>{{ ni.status or '-' }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>네트워크 인터페이스 정보가 없습니다.</p>
+                                    {% endif %}
                                 </div>
                                 
                                 <!-- 스토리지 탭 -->
                                 <div class="resource-tab-content" id="instance-storage-{{ loop.index }}">
-                                    <!-- 스토리지 정보 내용 -->
+                                    <h6>EBS 볼륨</h6>
+                                    {% if instance.volumes %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>볼륨 ID</th>
+                                                    <th>크기 (GB)</th>
+                                                    <th>볼륨 유형</th>
+                                                    <th>암호화</th>
+                                                    <th>상태</th>
+                                                    <th>디바이스</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for volume in instance.volumes %}
+                                                <tr>
+                                                    <td>{{ volume.volume_id or '-' }}</td>
+                                                    <td>{{ volume.size or '-' }}</td>
+                                                    <td>{{ volume.volume_type or '-' }}</td>
+                                                    <td>{{ '예' if volume.encrypted else '아니오' }}</td>
+                                                    <td>{{ volume.state or '-' }}</td>
+                                                    <td>{% for att in volume.attachments %}{{ att.device or '-' }}{% endfor %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>EBS 볼륨 정보가 없습니다.</p>
+                                    {% endif %}
                                 </div>
                                 
                                 <!-- 보안 탭 -->
                                 <div class="resource-tab-content" id="instance-security-{{ loop.index }}">
-                                    <!-- 보안 정보 내용 -->
+                                    <h6>보안 그룹</h6>
+                                    {% if instance.security_groups %}
+                                    {% for sg in instance.security_groups %}
+                                    <div class="mb-3">
+                                        <h6><strong>{{ sg.group_name }}</strong> <small class="text-muted">({{ sg.group_id }})</small></h6>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <h6>인바운드 규칙</h6>
+                                                {% if sg.inbound_rules %}
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>프로토콜</th>
+                                                            <th>포트</th>
+                                                            <th>소스</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for rule in sg.inbound_rules %}
+                                                        <tr>
+                                                            <td>{% if rule.protocol == '-1' %}All{% else %}{{ rule.protocol or 'all' }}{% endif %}</td>
+                                                            <td>{% if rule.from_port == rule.to_port %}{{ rule.from_port }}{% else %}{{ rule.from_port }}-{{ rule.to_port }}{% endif %}</td>
+                                                            <td>{{ rule.ip_ranges|join(', ') or rule.ipv6_ranges|join(', ') or '-' }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                                {% else %}
+                                                <p>인바운드 규칙이 없습니다.</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>아웃바운드 규칙</h6>
+                                                {% if sg.outbound_rules %}
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>프로토콜</th>
+                                                            <th>포트</th>
+                                                            <th>대상</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for rule in sg.outbound_rules %}
+                                                        <tr>
+                                                            <td>{% if rule.protocol == '-1' %}All{% else %}{{ rule.protocol or 'all' }}{% endif %}</td>
+                                                            <td>{% if rule.from_port == rule.to_port %}{{ rule.from_port }}{% else %}{{ rule.from_port }}-{{ rule.to_port }}{% endif %}</td>
+                                                            <td>{{ rule.ip_ranges|join(', ') or rule.ipv6_ranges|join(', ') or '-' }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                                {% else %}
+                                                <p>아웃바운드 규칙이 없습니다.</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    {% else %}
+                                    <p>보안 그룹 정보가 없습니다.</p>
+                                    {% endif %}
                                 </div>
                                 
                                 <!-- 태그 탭 -->
                                 <div class="resource-tab-content" id="instance-tags-{{ loop.index }}">
-                                    <!-- 태그 정보 내용 -->
+                                    <h6>태그</h6>
+                                    {% if instance.tags %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>태그 키</th>
+                                                    <th>태그 값</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for tag in instance.tags %}
+                                                <tr>
+                                                    <td><strong>{{ tag.Key }}</strong></td>
+                                                    <td>{{ tag.Value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>태그가 없습니다.</p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </td>
@@ -243,7 +411,545 @@
 <!-- S3 서비스 섹션 -->
 {% if 's3' in selected_services and all_services_data.s3 %}
 <div class="service-section" id="s3-section">
-    <!-- S3 섹션 내용 -->
+    <div class="service-section-header" data-bs-target="#s3-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-database"></i>
+            S3 버킷
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="s3-content">
+        <!-- S3 요약 정보 -->
+        {% if all_services_data.s3.summary %}
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-title">총 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.total_buckets }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">공개 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.public_buckets }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">암호화된 버킷</div>
+                <div class="summary-card-value">{{ all_services_data.s3.summary.encrypted_buckets }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- S3 버킷 목록 -->
+        {% if all_services_data.s3.buckets %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="s3-filter" data-table="s3-table" placeholder="버킷 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="s3-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">버킷 이름</th>
+                        <th data-sort="region">리전</th>
+                        <th data-sort="public_access">퍼블릭 액세스</th>
+                        <th data-sort="encryption_enabled">암호화</th>
+                        <th data-sort="versioning_enabled">버전 관리</th>
+                        <th data-sort="creation_date">생성 시간</th>
+                        <th>상세 정보</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bucket in all_services_data.s3.buckets %}
+                    <tr>
+                        <td data-column="name">{{ bucket.name }}</td>
+                        <td data-column="region">{{ bucket.region }}</td>
+                        <td data-column="public_access">
+                            {% if bucket.public_access %}
+                            <span class="badge bg-danger">퍼블릭</span>
+                            {% else %}
+                            <span class="badge bg-success">비퍼블릭</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="encryption_enabled">
+                            {% if bucket.encryption_enabled %}
+                            <span class="badge bg-success">활성화</span>
+                            {% else %}
+                            <span class="badge bg-warning">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="versioning_enabled">
+                            {% if bucket.versioning_enabled %}
+                            <span class="badge bg-success">활성화</span>
+                            {% else %}
+                            <span class="badge bg-secondary">비활성화</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="creation_date">{{ bucket.creation_date|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary detail-toggle" data-target="bucket-detail-{{ loop.index }}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="bucket-detail-{{ loop.index }}" style="display: none;">
+                        <td colspan="7">
+                            <div class="detail-panel">
+                                <div class="resource-tabs">
+                                    <div class="resource-tab active" data-tab="bucket-info-{{ loop.index }}">기본 정보</div>
+                                    <div class="resource-tab" data-tab="bucket-policy-{{ loop.index }}">정책</div>
+                                    <div class="resource-tab" data-tab="bucket-lifecycle-{{ loop.index }}">수명 주기</div>
+                                </div>
+                                
+                                <div class="resource-tab-content active" id="bucket-info-{{ loop.index }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>버킷 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>버킷 이름</td><td>{{ bucket.name }}</td></tr>
+                                                <tr><td>리전</td><td>{{ bucket.region }}</td></tr>
+                                                <tr><td>생성 시간</td><td>{{ bucket.creation_date|replace('T', ' ')|truncate(19, True, '') }}</td></tr>
+                                                <tr><td>퍼블릭 액세스</td><td>{{ '예' if bucket.public_access else '아니오' }}</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>설정</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>암호화</td><td>{{ '활성화' if bucket.encryption_enabled else '비활성화' }}</td></tr>
+                                                <tr><td>버전 관리</td><td>{{ '활성화' if bucket.versioning_enabled else '비활성화' }}</td></tr>
+                                                <tr><td>웹사이트 호스팅</td><td>{{ '활성화' if bucket.website_enabled else '비활성화' }}</td></tr>
+                                                <tr><td>로깅</td><td>{{ '활성화' if bucket.logging_enabled else '비활성화' }}</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="resource-tab-content" id="bucket-policy-{{ loop.index }}">
+                                    <h6>버킷 정책</h6>
+                                    {% if bucket.policy %}
+                                    <pre><code>{{ bucket.policy|tojson(indent=2) }}</code></pre>
+                                    {% else %}
+                                    <p>버킷 정책이 설정되지 않았습니다.</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="resource-tab-content" id="bucket-lifecycle-{{ loop.index }}">
+                                    <h6>수명 주기 규칙</h6>
+                                    {% if bucket.lifecycle_rules %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>규칙 ID</th>
+                                                    <th>상태</th>
+                                                    <th>접두사</th>
+                                                    <th>만료</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rule in bucket.lifecycle_rules %}
+                                                <tr>
+                                                    <td>{{ rule.id or '-' }}</td>
+                                                    <td>{{ rule.status or '-' }}</td>
+                                                    <td>{{ rule.prefix or '-' }}</td>
+                                                    <td>{{ rule.expiration.days if rule.expiration else '-' }}일</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>수명 주기 규칙이 설정되지 않았습니다.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-database"></i>
+            <h3>S3 버킷 데이터가 없습니다</h3>
+            <p>이 계정에서 S3 버킷을 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- RDS 서비스 섹션 -->
+{% if 'rds' in selected_services and all_services_data.rds %}
+<div class="service-section" id="rds-section">
+    <div class="service-section-header" data-bs-target="#rds-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-database"></i>
+            RDS 데이터베이스
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="rds-content">
+        <!-- RDS 요약 정보 -->
+        {% if all_services_data.rds.summary %}
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-title">총 인스턴스</div>
+                <div class="summary-card-value">{{ all_services_data.rds.summary.total_instances }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">사용 가능</div>
+                <div class="summary-card-value">{{ all_services_data.rds.summary.available_instances }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">중지됨</div>
+                <div class="summary-card-value">{{ all_services_data.rds.summary.stopped_instances }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- RDS 인스턴스 목록 -->
+        {% if all_services_data.rds.instances %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="rds-filter" data-table="rds-table" placeholder="RDS 인스턴스 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="rds-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">DB 식별자</th>
+                        <th data-sort="engine">엔진</th>
+                        <th data-sort="db_instance_class">인스턴스 클래스</th>
+                        <th data-sort="db_instance_status">상태</th>
+                        <th data-sort="multi_az">Multi-AZ</th>
+                        <th data-sort="storage_encrypted">암호화</th>
+                        <th data-sort="instance_create_time">생성 시간</th>
+                        <th>상세 정보</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instance in all_services_data.rds.instances %}
+                    <tr>
+                        <td data-column="name">{{ instance.name }}</td>
+                        <td data-column="engine">{{ instance.engine }} {{ instance.engine_version }}</td>
+                        <td data-column="db_instance_class">{{ instance.db_instance_class }}</td>
+                        <td data-column="db_instance_status">
+                            <span class="status-badge {% if instance.db_instance_status == 'available' %}status-running{% elif instance.db_instance_status == 'stopped' %}status-stopped{% else %}status-pending{% endif %}">
+                                {{ instance.db_instance_status }}
+                            </span>
+                        </td>
+                        <td data-column="multi_az">
+                            {% if instance.multi_az %}
+                            <span class="badge bg-success">예</span>
+                            {% else %}
+                            <span class="badge bg-secondary">아니오</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="storage_encrypted">
+                            {% if instance.storage_encrypted %}
+                            <span class="badge bg-success">예</span>
+                            {% else %}
+                            <span class="badge bg-warning">아니오</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="instance_create_time">{{ instance.instance_create_time|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary detail-toggle" data-target="rds-detail-{{ loop.index }}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="rds-detail-{{ loop.index }}" style="display: none;">
+                        <td colspan="8">
+                            <div class="detail-panel">
+                                <div class="resource-tabs">
+                                    <div class="resource-tab active" data-tab="rds-info-{{ loop.index }}">기본 정보</div>
+                                    <div class="resource-tab" data-tab="rds-storage-{{ loop.index }}">스토리지</div>
+                                    <div class="resource-tab" data-tab="rds-security-{{ loop.index }}">보안</div>
+                                </div>
+                                
+                                <div class="resource-tab-content active" id="rds-info-{{ loop.index }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>DB 인스턴스 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>DB 식별자</td><td>{{ instance.name }}</td></tr>
+                                                <tr><td>엔진</td><td>{{ instance.engine }}</td></tr>
+                                                <tr><td>엔진 버전</td><td>{{ instance.engine_version }}</td></tr>
+                                                <tr><td>인스턴스 클래스</td><td>{{ instance.db_instance_class }}</td></tr>
+                                                <tr><td>상태</td><td>{{ instance.db_instance_status }}</td></tr>
+                                                <tr><td>가용 영역</td><td>{{ instance.availability_zone or '-' }}</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>연결 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>엔드포인트</td><td>{{ instance.endpoint or '-' }}</td></tr>
+                                                <tr><td>포트</td><td>{{ instance.port or '-' }}</td></tr>
+                                                <tr><td>생성 시간</td><td>{{ instance.instance_create_time|replace('T', ' ')|truncate(19, True, '') }}</td></tr>
+                                                <tr><td>리전</td><td>{{ instance.region }}</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="resource-tab-content" id="rds-storage-{{ loop.index }}">
+                                    <h6>스토리지 설정</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>할당된 스토리지</td><td>{{ instance.allocated_storage }} GB</td></tr>
+                                        <tr><td>스토리지 유형</td><td>{{ instance.storage_type }}</td></tr>
+                                        <tr><td>스토리지 암호화</td><td>{{ '예' if instance.storage_encrypted else '아니오' }}</td></tr>
+                                        <tr><td>Multi-AZ</td><td>{{ '예' if instance.multi_az else '아니오' }}</td></tr>
+                                        <tr><td>백업 보존 기간</td><td>{{ instance.backup_retention_period }}일</td></tr>
+                                    </table>
+                                </div>
+                                
+                                <div class="resource-tab-content" id="rds-security-{{ loop.index }}">
+                                    <h6>보안 설정</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>퍼블릭 액세스</td><td>{{ '예' if instance.publicly_accessible else '아니오' }}</td></tr>
+                                        <tr><td>DB 서브넷 그룹</td><td>{{ instance.db_subnet_group_name or '-' }}</td></tr>
+                                    </table>
+                                    
+                                    {% if instance.vpc_security_groups %}
+                                    <h6 class="mt-3">VPC 보안 그룹</h6>
+                                    <ul>
+                                        {% for sg in instance.vpc_security_groups %}
+                                        <li>{{ sg }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-database"></i>
+            <h3>RDS 인스턴스 데이터가 없습니다</h3>
+            <p>이 계정에서 RDS 인스턴스를 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Lambda 서비스 섹션 -->
+{% if 'lambda' in selected_services and all_services_data.lambda %}
+<div class="service-section" id="lambda-section">
+    <div class="service-section-header" data-bs-target="#lambda-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-code"></i>
+            Lambda 함수
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="lambda-content">
+        <!-- Lambda 요약 정보 -->
+        {% if all_services_data.lambda.summary %}
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-title">총 함수</div>
+                <div class="summary-card-value">{{ all_services_data.lambda.summary.total_functions }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">총 코드 크기</div>
+                <div class="summary-card-value">{{ "%.1f"|format(all_services_data.lambda.summary.total_code_size / 1024 / 1024) }} MB</div>
+            </div>
+        </div>
+        
+        <!-- 런타임별 분포 -->
+        {% if all_services_data.lambda.summary.runtime_summary %}
+        <div class="chart-container">
+            <div class="chart-title">런타임별 분포</div>
+            <div class="table-responsive">
+                <table class="resource-table">
+                    <thead>
+                        <tr>
+                            <th>런타임</th>
+                            <th>함수 개수</th>
+                            <th>총 코드 크기 (MB)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for runtime, data in all_services_data.lambda.summary.runtime_summary.items() %}
+                        <tr>
+                            <td><strong>{{ runtime }}</strong></td>
+                            <td>{{ data.count }}</td>
+                            <td>{{ "%.1f"|format(data.total_size / 1024 / 1024) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        
+        <!-- Lambda 함수 목록 -->
+        {% if all_services_data.lambda.functions %}
+        <div class="filter-container">
+            <input type="text" class="filter-input" id="lambda-filter" data-table="lambda-table" placeholder="Lambda 함수 필터링...">
+        </div>
+        <div class="table-responsive">
+            <table class="resource-table" id="lambda-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">함수 이름</th>
+                        <th data-sort="runtime">런타임</th>
+                        <th data-sort="memory_size">메모리 (MB)</th>
+                        <th data-sort="timeout">타임아웃 (초)</th>
+                        <th data-sort="code_size">코드 크기</th>
+                        <th data-sort="invocations">호출 횟수</th>
+                        <th data-sort="errors">오류</th>
+                        <th data-sort="last_modified">최종 수정</th>
+                        <th>상세 정보</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for function in all_services_data.lambda.functions %}
+                    <tr>
+                        <td data-column="name">{{ function.name }}</td>
+                        <td data-column="runtime">{{ function.runtime }}</td>
+                        <td data-column="memory_size">{{ function.memory_size }}</td>
+                        <td data-column="timeout">{{ function.timeout }}</td>
+                        <td data-column="code_size">{{ "%.1f"|format(function.code_size / 1024) }} KB</td>
+                        <td data-column="invocations">{{ function.invocations or 0 }}</td>
+                        <td data-column="errors">
+                            {% if function.errors %}
+                            <span class="badge bg-danger">{{ function.errors }}</span>
+                            {% else %}
+                            <span class="badge bg-success">0</span>
+                            {% endif %}
+                        </td>
+                        <td data-column="last_modified">{{ function.last_modified|replace('T', ' ')|truncate(19, True, '') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary detail-toggle" data-target="lambda-detail-{{ loop.index }}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="lambda-detail-{{ loop.index }}" style="display: none;">
+                        <td colspan="9">
+                            <div class="detail-panel">
+                                <div class="resource-tabs">
+                                    <div class="resource-tab active" data-tab="lambda-info-{{ loop.index }}">기본 정보</div>
+                                    <div class="resource-tab" data-tab="lambda-config-{{ loop.index }}">구성</div>
+                                    <div class="resource-tab" data-tab="lambda-env-{{ loop.index }}">환경 변수</div>
+                                    <div class="resource-tab" data-tab="lambda-tags-{{ loop.index }}">태그</div>
+                                </div>
+                                
+                                <div class="resource-tab-content active" id="lambda-info-{{ loop.index }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>함수 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>함수 이름</td><td>{{ function.name }}</td></tr>
+                                                <tr><td>런타임</td><td>{{ function.runtime }}</td></tr>
+                                                <tr><td>핸들러</td><td>{{ function.handler }}</td></tr>
+                                                <tr><td>설명</td><td>{{ function.description or '-' }}</td></tr>
+                                                <tr><td>버전</td><td>{{ function.version }}</td></tr>
+                                                <tr><td>리전</td><td>{{ function.region }}</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>성능 정보</h6>
+                                            <table class="table table-sm">
+                                                <tr><td>메모리 크기</td><td>{{ function.memory_size }} MB</td></tr>
+                                                <tr><td>타임아웃</td><td>{{ function.timeout }}초</td></tr>
+                                                <tr><td>코드 크기</td><td>{{ "%.1f"|format(function.code_size / 1024) }} KB</td></tr>
+                                                <tr><td>평균 실행 시간</td><td>{{ "%.2f"|format(function.avg_duration) if function.avg_duration else '-' }}ms</td></tr>
+                                                <tr><td>최대 실행 시간</td><td>{{ "%.2f"|format(function.max_duration) if function.max_duration else '-' }}ms</td></tr>
+                                                <tr><td>최종 수정</td><td>{{ function.last_modified|replace('T', ' ')|truncate(19, True, '') }}</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="resource-tab-content" id="lambda-config-{{ loop.index }}">
+                                    <h6>구성</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>설명</td><td>{{ function.description or '-' }}</td></tr>
+                                        <tr><td>메모리</td><td>{{ function.memory_size }} MB</td></tr>
+                                        <tr><td>임시 스토리지</td><td>{{ function.ephemeral_storage or 512 }} MB</td></tr>
+                                        <tr><td>제한 시간</td><td>{{ function.timeout }}초</td></tr>
+                                        <tr><td>SnapStart</td><td>{{ function.snap_start or 'None' }}</td></tr>
+                                    </table>
+                                </div>
+                                
+                                <div class="resource-tab-content" id="lambda-env-{{ loop.index }}">
+                                    <h6>환경 변수</h6>
+                                    {% if function.environment_variables %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>키</th>
+                                                    <th>값</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for key, value in function.environment_variables.items() %}
+                                                <tr>
+                                                    <td><strong>{{ key }}</strong></td>
+                                                    <td>{{ value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>환경 변수가 없습니다.</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="resource-tab-content" id="lambda-tags-{{ loop.index }}">
+                                    <h6>태그</h6>
+                                    {% if function.tags %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>태그 키</th>
+                                                    <th>태그 값</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for tag in function.tags %}
+                                                <tr>
+                                                    <td><strong>{{ tag.Key }}</strong></td>
+                                                    <td>{{ tag.Value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p>태그가 없습니다.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-code"></i>
+            <h3>Lambda 함수 데이터가 없습니다</h3>
+            <p>이 계정에서 Lambda 함수를 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 
@@ -288,6 +994,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 data = {{ all_services_data.ec2.instances|default([])|tojson }};
             } else if (tableId === 's3-table') {
                 data = {{ all_services_data.s3.buckets|default([])|tojson }};
+            } else if (tableId === 'lambda-table') {
+                data = {{ all_services_data.lambda.functions|default([])|tojson }};
+            } else if (tableId === 'rds-table') {
+                data = {{ all_services_data.rds.instances|default([])|tojson }};
             }
             
             ServiceView.exportCSV(data, 'aws-' + tableId.replace('-table', ''));

@@ -100,48 +100,30 @@ class RDSInstance(ResourceModel):
     """
     RDS 인스턴스 리소스 모델
     """
-    db_instance_identifier: str = ""
-    db_instance_class: str = ""
+    name: str = ""
     engine: str = ""
     engine_version: str = ""
-    status: str = ""
-    az: str = ""
-    multi_az: bool = False
-    storage_type: str = ""
+    db_instance_class: str = ""
+    db_instance_status: str = ""
     allocated_storage: int = 0
-    endpoint: Optional[Dict[str, Any]] = None
-    create_time: Optional[datetime] = None
-    
-    # 성능 지표
-    cpu_utilization: Optional[float] = None
-    db_connections: Optional[int] = None
-    free_storage_space: Optional[float] = None
-    read_iops: Optional[float] = None
-    write_iops: Optional[float] = None
-    
-    # 백업 설정
-    backup_retention_period: int = 0
-    preferred_backup_window: str = ""
-    latest_backup_time: Optional[datetime] = None
-    
-    # 보안 설정
+    storage_type: str = ""
+    storage_encrypted: bool = False
+    multi_az: bool = False
     publicly_accessible: bool = False
-    vpc_security_groups: List[Dict[str, Any]] = field(default_factory=list)
-    parameter_groups: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # 모니터링 설정
-    enhanced_monitoring: bool = False
-    monitoring_interval: int = 0
-    
-    # 성능 인사이트
-    performance_insights_enabled: bool = False
+    backup_retention_period: int = 0
+    instance_create_time: Optional[datetime] = None
+    vpc_security_groups: List[str] = field(default_factory=list)
+    db_subnet_group_name: str = ""
+    availability_zone: str = ""
+    endpoint: str = ""
+    port: int = 0
 
 @dataclass
 class LambdaFunction(ResourceModel):
     """
     Lambda 함수 리소스 모델
     """
-    function_name: str = ""
+    name: str = ""
     runtime: str = ""
     handler: str = ""
     code_size: int = 0
@@ -149,6 +131,8 @@ class LambdaFunction(ResourceModel):
     timeout: int = 0
     memory_size: int = 0
     last_modified: Optional[datetime] = None
+    version: str = ""
+    role: str = ""
     
     # 환경 변수
     environment_variables: Dict[str, str] = field(default_factory=dict)
@@ -156,20 +140,25 @@ class LambdaFunction(ResourceModel):
     # VPC 설정
     vpc_config: Optional[Dict[str, Any]] = None
     
-    # 트리거 및 대상
-    event_sources: List[Dict[str, Any]] = field(default_factory=list)
-    destinations: Dict[str, str] = field(default_factory=dict)
+    # 레이어
+    layers: List[str] = field(default_factory=list)
+    
+    # 데드 레터 큐 설정
+    dead_letter_config: Dict[str, Any] = field(default_factory=dict)
+    
+    # 트레이싱 설정
+    tracing_config: Dict[str, Any] = field(default_factory=dict)
+    
+    # AWS 콘솔과 동일한 구성 정보
+    ephemeral_storage: int = 512
+    snap_start: str = "None"
+    architectures: List[str] = field(default_factory=lambda: ['x86_64'])
     
     # 성능 지표
     invocations: Optional[int] = None
     errors: Optional[int] = None
-    throttles: Optional[int] = None
-    duration_avg: Optional[float] = None
-    duration_max: Optional[float] = None
-    
-    # 동시성 설정
-    reserved_concurrency: Optional[int] = None
-    provisioned_concurrency: Optional[int] = None
+    avg_duration: Optional[float] = None
+    max_duration: Optional[float] = None
 
 @dataclass
 class IAMUser(ResourceModel):

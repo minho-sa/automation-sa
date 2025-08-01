@@ -664,9 +664,10 @@ function displayCheckResult(checkId, result) {
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th width="5%"></th>';
-        resultHtml += '<th width="25%">리소스 ID</th>';
-        resultHtml += '<th width="20%">상태</th>';
-        resultHtml += '<th width="50%">세부 정보</th>';
+        resultHtml += '<th width="20%">인스턴스 이름</th>';
+        resultHtml += '<th width="20%">리소스 ID</th>';
+        resultHtml += '<th width="15%">상태</th>';
+        resultHtml += '<th width="40%">세부 정보</th>';
         resultHtml += '</tr>';
         resultHtml += '</thead>';
         resultHtml += '<tbody>';
@@ -689,11 +690,13 @@ function displayCheckResult(checkId, result) {
                 resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
             }
             
-            // 리소스 ID 추출
+            // 리소스 ID와 이름 추출
             const resourceId = resource.id || resource.user_name || resource.role_name || resource.policy_name || resource.bucket_name || resource.instance_id || resource.function_name || '';
+            const resourceName = resource.name || '';
             
             resultHtml += `<tr class="table-${resourceStatusClass}">`;
             resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
+            resultHtml += `<td>${resourceName && resourceName !== 'N/A' ? resourceName : '-'}</td>`;
             resultHtml += `<td><code>${resourceId}</code></td>`;
             resultHtml += `<td>${resource.status_text || ''}</td>`;
             // 서비스별 추가 정보 표시

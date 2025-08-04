@@ -26,6 +26,13 @@ class EBSEncryptionCheck(BaseEC2Check):
             volume_id = volume['VolumeId']
             encrypted = volume.get('Encrypted', False)
             
+            # Name 태그 추출
+            volume_name = None
+            for tag in volume.get('Tags', []):
+                if tag['Key'] == 'Name':
+                    volume_name = tag['Value']
+                    break
+            
             if not encrypted:
                 status = RESOURCE_STATUS_FAIL
                 advice = 'EBS 볼륨이 암호화되지 않았습니다. 데이터 보호를 위해 암호화를 활성화하세요.'
@@ -41,6 +48,7 @@ class EBSEncryptionCheck(BaseEC2Check):
                 status=status,
                 advice=advice,
                 status_text=status_text,
+                name=volume_name,
                 volume_id=volume_id,
                 size=volume.get('Size', 0),
                 volume_type=volume.get('VolumeType', 'N/A'),

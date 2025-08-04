@@ -118,7 +118,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 모니터링 설정 검사',
                 description='EC2 인스턴스의 CloudWatch 모니터링 설정을 검사합니다. 상세 모니터링 활성화 여부를 확인하고 성능 모니터링 개선 방안을 제시합니다.',
                 function=monitoring_check.run,
-                category='운영',
+                category='운영 우수성',
                 severity='low'
             )
             
@@ -130,7 +130,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 태그 관리 검사',
                 description='EC2 인스턴스의 태그 설정을 검사합니다. 필수 태그(Name, Environment, Owner) 누락을 확인하고 리소스 관리 개선 방안을 제시합니다.',
                 function=tags_check.run,
-                category='거버넌스',
+                category='운영 우수성',
                 severity='low'
             )
             
@@ -142,7 +142,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 생명주기 검사',
                 description='오래된 EC2 인스턴스를 식별합니다. 1년 이상 실행된 인스턴스를 찾아 업데이트나 교체 필요성을 평가하고 보안 및 성능 개선 방안을 제시합니다.',
                 function=lifecycle_check.run,
-                category='운영',
+                category='운영 우수성',
                 severity='medium'
             )
             
@@ -154,7 +154,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 백업 상태 검사',
                 description='EC2 인스턴스의 백업(스냅샷) 상태를 검사합니다. 최근 7일 내 백업이 없는 인스턴스를 식별하고 데이터 보호를 위한 백업 정책 수립 방안을 제시합니다.',
                 function=backup_check.run,
-                category='데이터 보호',
+                category='내결함성',
                 severity='high'
             )
             
@@ -166,7 +166,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 종료 보호 검사',
                 description='프로덕션 환경의 EC2 인스턴스 종료 보호 설정을 검사합니다. 중요한 인스턴스의 실수로 인한 종료를 방지하기 위한 보호 설정 방안을 제시합니다.',
                 function=protection_check.run,
-                category='보안',
+                category='내결함성',
                 severity='medium'
             )
             
@@ -178,7 +178,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 세대 검사',
                 description='구세대 EC2 인스턴스 타입을 식별합니다. 성능과 비용 효율성 향상을 위해 최신 세대 인스턴스로의 업그레이드 필요성을 평가하고 개선 방안을 제시합니다.',
                 function=generation_check.run,
-                category='성능 최적화',
+                category='성능',
                 severity='medium'
             )
             

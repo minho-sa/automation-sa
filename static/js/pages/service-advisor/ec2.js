@@ -23,4 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 검사 항목 호버 효과
     initCheckItemHover();
+    
+    // 검사 항목 클릭으로 체크박스 토글
+    initCheckItemClick();
 });

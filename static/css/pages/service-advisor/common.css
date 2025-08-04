@@ -4,7 +4,7 @@
 
 /* 기본 스타일 */
 .trusted-advisor-container {
-    font-family: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Noto Sans KR', 'Helvetica Neue', Roboto, Arial, sans-serif;
     color: #16191f;
 }
 
@@ -100,6 +100,78 @@
     gap: 1rem;
 }
 
+/* 심각도 그룹 헤더 */
+.severity-group-header {
+    margin: 1.5rem 0 0.5rem 0;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-left: 4px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.severity-group-header.high {
+    border-left-color: #d13212;
+    background: #fdf2f2;
+}
+
+.severity-group-header.medium {
+    border-left-color: #ff9900;
+    background: #fff8f0;
+}
+
+.severity-group-header.low {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.severity-group-header:first-child {
+    margin-top: 0;
+}
+
+.severity-group-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #495057;
+}
+
+.severity-group-title.high {
+    color: #d13212;
+    border-left-color: #d13212;
+}
+
+.severity-group-title.medium {
+    color: #ff9900;
+    border-left-color: #ff9900;
+}
+
+.severity-group-title.low {
+    color: #28a745;
+    border-left-color: #28a745;
+}
+
+.severity-group-header.high {
+    border-left-color: #d13212;
+    background: #fdf2f2;
+}
+
+.severity-group-header.medium {
+    border-left-color: #ff9900;
+    background: #fff8f0;
+}
+
+.severity-group-header.low {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.severity-icon {
+    font-size: 1rem;
+}
+
 /* 검사 항목 */
 .check-item {
     background-color: #fff;
@@ -148,24 +220,60 @@
     color: #495057;
 }
 
-.check-item-category.cost, .check-item-category.비용-최적화 {
-    background-color: #ec7211;
-    color: white;
+/* 비용 최적화 - 연한 주황색 계열 */
+.check-item-category.cost, 
+.check-item-category.비용-최적화, 
+.check-item-category.비용최적화,
+.check-item-category[class*="비용"] {
+    background-color: #fff3e0 !important;
+    color: #e65100 !important;
+    border: 1px solid #ffcc80 !important;
 }
 
-.check-item-category.security, .check-item-category.보안 {
-    background-color: #0073bb;
-    color: white;
+/* 보안 - 파란색 계열 */
+.check-item-category.security, 
+.check-item-category.보안,
+.check-item-category[class*="보안"] {
+    background-color: #cce7ff !important;
+    color: #004085 !important;
+    border: 1px solid #74c0fc !important;
 }
 
-.check-item-category.performance, .check-item-category.성능 {
-    background-color: #1d8102;
-    color: white;
+/* 성능 - 초록색 계열 */
+.check-item-category.performance, 
+.check-item-category.성능,
+.check-item-category[class*="성능"] {
+    background-color: #d1ecf1 !important;
+    color: #0c5460 !important;
+    border: 1px solid #bee5eb !important;
 }
 
-.check-item-category.reliability {
-    background-color: #d4edda;
-    color: #155724;
+/* 내결함성 - 연한 초록색 */
+.check-item-category.reliability, 
+.check-item-category.내결함성,
+.check-item-category[class*="내결함성"] {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid #c3e6cb !important;
+}
+
+/* 운영 우수성 - 연한 보라색 계열 */
+.check-item-category.운영-우수성, 
+.check-item-category.운영우수성,
+.check-item-category[class*="운영"],
+.check-item-category[class*="우수성"] {
+    background-color: #f3e5f5 !important;
+    color: #7b1fa2 !important;
+    border: 1px solid #ce93d8 !important;
+}
+
+/* 서비스 한도 - 노란색 계열 */
+.check-item-category.서비스-한도, 
+.check-item-category.서비스한도,
+.check-item-category[class*="서비스"] {
+    background-color: #fff8e1 !important;
+    color: #8a6914 !important;
+    border: 1px solid #ffe082 !important;
 }
 
 .check-item-severity {
@@ -189,7 +297,7 @@
 }
 
 .check-item-severity.low {
-    background-color: #2ea597;
+    background-color: #28a745;
     color: white;
 }
 
@@ -210,43 +318,88 @@
     padding: 15px;
     font-size: 14px;
     color: #495057;
-    background-color: #f8f9fa;
+    background-color: #fdfdfd;
     border-bottom: 1px solid #eee;
     line-height: 1.4;
 }
 
 /* 검사 항목 결과 */
 .check-item-result {
-    padding: 15px;
+    padding: 20px;
     border-top: 1px solid #eaeded;
-    background-color: #f9f9f9;
+    background: #f8f9fa;
 }
 
 .check-result-loading {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    gap: 10px;
+    padding: 30px;
+    gap: 12px;
+    color: #6c757d;
+    font-size: 14px;
 }
 
 .check-result-content {
-    margin-top: 10px;
+    margin-top: 0;
 }
 
-/* 권장 사항 */
+/* Alert 스타일 개선 */
+.alert {
+    border-radius: 6px;
+    border: none;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-secondary {
+    background: #e2e3e5;
+    color: #383d41;
+    border-left: 4px solid #6c757d;
+}
+
+/* 권장 사항 개선 */
 .check-recommendations {
-    background-color: #e2f0fb;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-left: 4px solid #2196f3;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
 }
 
 .check-recommendations h4 {
     margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
-    color: #0c5460;
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1565c0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .check-recommendations ul {
@@ -255,24 +408,26 @@
 }
 
 .check-recommendations li {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1976d2;
 }
 
-/* 리소스 목록 */
+/* 리소스 목록 개선 */
 .check-resources h4 {
     margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.resource-count {
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.resource-advice {
-    font-size: 14px;
+.check-resources {
+    margin-top: 20px;
 }
 
 /* 검사 작업 버튼 */
@@ -317,14 +472,17 @@
 
 /* PDF 다운로드 버튼 스타일 */
 .download-pdf-btn {
-    background-color: #f8f9fa;
-    border-color: #ddd;
+    background-color: #fff;
+    border-color: #d5dbdb;
     color: #dc3545;
+    height: auto;
+    line-height: 1.5;
+    vertical-align: middle;
 }
 
 .download-pdf-btn:hover {
-    background-color: #e9ecef;
-    border-color: #c8c9ca;
+    background-color: #f2f3f3;
+    border-color: #d5dbdb;
     color: #bd2130;
 }
 
@@ -336,6 +494,21 @@
 
 .form-check-input {
     margin-right: 0.5rem;
+}
+
+/* 검사 항목 체크박스 커스텀 스타일 */
+.check-select {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    accent-color: #0073bb;
+    border-radius: 3px;
+}
+
+.check-select:focus {
+    outline: 2px solid #0073bb;
+    outline-offset: 2px;
 }
 
 /* 스피너 */

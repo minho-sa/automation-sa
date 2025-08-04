@@ -158,10 +158,13 @@ function initRunCheckButtons() {
                         checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
                     }
                     
-                    // PDF 다운로드 버튼 표시
+                    // PDF 다운로드 버튼 표시 및 순서 변경
                     const downloadPdfBtn = checkItem.querySelector('.download-pdf-btn');
-                    if (downloadPdfBtn) {
+                    const runCheckBtn = checkItem.querySelector('.run-check-btn');
+                    if (downloadPdfBtn && runCheckBtn) {
                         downloadPdfBtn.style.display = 'inline-block';
+                        // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                        runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                     }
                 })
                 .catch(error => {
@@ -290,10 +293,13 @@ function initRunSelectedChecks() {
                             checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
                         }
                         
-                        // PDF 다운로드 버튼 표시
+                        // PDF 다운로드 버튼 표시 및 순서 변경
                         const downloadPdfBtn = checkItem.querySelector('.download-pdf-btn');
-                        if (downloadPdfBtn) {
+                        const runCheckBtn = checkItem.querySelector('.run-check-btn');
+                        if (downloadPdfBtn && runCheckBtn) {
                             downloadPdfBtn.style.display = 'inline-block';
+                            // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                            runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                         }
                         
                         return result;
@@ -512,10 +518,13 @@ function loadLatestCheckResults() {
                         item.viewResultBtn.style.display = 'inline-flex';
                     }
                     
-                    // PDF 다운로드 버튼 표시
+                    // PDF 다운로드 버튼 표시 및 순서 변경
                     const downloadPdfBtn = item.querySelector('.download-pdf-btn');
-                    if (downloadPdfBtn) {
+                    const runCheckBtn = item.querySelector('.run-check-btn');
+                    if (downloadPdfBtn && runCheckBtn) {
                         downloadPdfBtn.style.display = 'inline-block';
+                        // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                        runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                     }
                 } else {
                     // 검사 결과가 없는 경우 기본 메시지 표시
@@ -664,7 +673,7 @@ function displayCheckResult(checkId, result) {
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th width="5%"></th>';
-        resultHtml += '<th width="20%">인스턴스 이름</th>';
+        resultHtml += '<th width="20%">리소스 이름</th>';
         resultHtml += '<th width="20%">리소스 ID</th>';
         resultHtml += '<th width="15%">상태</th>';
         resultHtml += '<th width="40%">세부 정보</th>';
@@ -681,7 +690,7 @@ function displayCheckResult(checkId, result) {
                 resourceStatusIcon = '<i class="fas fa-check-circle text-success"></i>';
             } else if (resource.status === 'fail') {
                 resourceStatusClass = 'danger';
-                resourceStatusIcon = '<i class="fas fa-times-circle text-danger"></i>';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else if (resource.status === 'warning') {
                 resourceStatusClass = 'warning';
                 resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
@@ -692,11 +701,19 @@ function displayCheckResult(checkId, result) {
             
             // 리소스 ID와 이름 추출
             const resourceId = resource.id || resource.user_name || resource.role_name || resource.policy_name || resource.bucket_name || resource.instance_id || resource.function_name || '';
-            const resourceName = resource.name || '';
+            // Name 태그나 다른 이름 필드에서 이름 추출
+            let resourceName = '-';
+            if (resource.name && resource.name !== resourceId && resource.name !== 'N/A') {
+                resourceName = resource.name;
+            } else if (resource.tags && resource.tags.Name) {
+                resourceName = resource.tags.Name;
+            } else if (resource.volume_name) {
+                resourceName = resource.volume_name;
+            }
             
             resultHtml += `<tr class="table-${resourceStatusClass}">`;
             resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
-            resultHtml += `<td>${resourceName && resourceName !== 'N/A' ? resourceName : '-'}</td>`;
+            resultHtml += `<td>${resourceName}</td>`;
             resultHtml += `<td><code>${resourceId}</code></td>`;
             resultHtml += `<td>${resource.status_text || ''}</td>`;
             // 서비스별 추가 정보 표시
@@ -738,7 +755,8 @@ function displayCheckResult(checkId, result) {
                 }
             }
             
-            resultHtml += `<td class="resource-advice">${additionalInfo ? additionalInfo + '<br>' : ''}${resource.advice || ''}</td>`;
+            const adviceText = resource.advice ? resource.advice.replace(/보안\s*위협\s*발견\s*:?\s*/g, '').replace(/보안\s*위험\s*발견\s*:?\s*/g, '').trim() : '';
+            resultHtml += `<td class="resource-advice">${additionalInfo ? additionalInfo + (adviceText ? ' ' + adviceText : '') : adviceText}</td>`;
             resultHtml += '</tr>';
         });
         
@@ -802,6 +820,42 @@ function formatTimestamp(timestamp) {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     
     return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+/**
+ * 검사 항목 클릭으로 체크박스 토글
+ */
+function initCheckItemClick() {
+    const checkItems = document.querySelectorAll('.check-item');
+    
+    checkItems.forEach(item => {
+        const checkbox = item.querySelector('.check-select');
+        const header = item.querySelector('.check-item-header');
+        const description = item.querySelector('.check-item-description');
+        
+        function toggleCheckbox(e) {
+            // 버튼이나 체크박스 자체를 클릭한 경우는 제외
+            if (e.target.closest('button') || e.target.closest('input[type="checkbox"]')) {
+                return;
+            }
+            
+            // 체크박스 토글
+            checkbox.checked = !checkbox.checked;
+            
+            // 선택된 항목 수 업데이트
+            updateSelectedCount();
+        }
+        
+        if (header && checkbox) {
+            header.addEventListener('click', toggleCheckbox);
+            header.style.cursor = 'pointer';
+        }
+        
+        if (description && checkbox) {
+            description.addEventListener('click', toggleCheckbox);
+            description.style.cursor = 'pointer';
+        }
+    });
 }
 
 /**

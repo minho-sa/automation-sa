@@ -43,7 +43,7 @@
 
 {% if all_services_data %}
 <!-- EC2 서비스 섹션 -->
-{% if 'ec2' in selected_services and all_services_data.ec2 %}
+{% if 'ec2' in selected_services and all_services_data.get('ec2') %}
 <div class="service-section" id="ec2-section">
     <div class="service-section-header" data-bs-target="#ec2-content" aria-expanded="true">
         <h3>
@@ -56,24 +56,24 @@
     </div>
     <div class="service-section-body collapse show" id="ec2-content">
         <!-- EC2 요약 정보 -->
-        {% if all_services_data.ec2.summary %}
+        {% if all_services_data.get('ec2', {}).get('summary') %}
         <div class="summary-cards">
             <div class="summary-card">
                 <div class="summary-card-title">총 인스턴스</div>
-                <div class="summary-card-value">{{ all_services_data.ec2.summary.total_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('ec2', {}).get('summary', {}).get('total_instances', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">실행 중</div>
-                <div class="summary-card-value">{{ all_services_data.ec2.summary.running_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('ec2', {}).get('summary', {}).get('running_instances', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">중지됨</div>
-                <div class="summary-card-value">{{ all_services_data.ec2.summary.stopped_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('ec2', {}).get('summary', {}).get('stopped_instances', 0) }}</div>
             </div>
         </div>
         
         <!-- 인스턴스 유형별 분포 -->
-        {% if all_services_data.ec2.summary.instance_types %}
+        {% if all_services_data.get('ec2', {}).get('summary', {}).get('instance_types') %}
         <div class="chart-container">
             <div class="chart-title">인스턴스 유형별 분포</div>
             <div class="table-responsive">
@@ -87,7 +87,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for type, data in all_services_data.ec2.summary.instance_types.items() %}
+                        {% for type, data in all_services_data.get('ec2', {}).get('summary', {}).get('instance_types', {}).items() %}
                         <tr>
                             <td><strong>{{ type }}</strong></td>
                             <td>{{ data.count }}</td>
@@ -102,7 +102,7 @@
         {% endif %}
         
         <!-- 가용 영역별 분포 -->
-        {% if all_services_data.ec2.summary.az_distribution %}
+        {% if all_services_data.get('ec2', {}).get('summary', {}).get('az_distribution') %}
         <div class="chart-container">
             <div class="chart-title">가용 영역별 분포</div>
             <div class="table-responsive">
@@ -116,7 +116,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for az, data in all_services_data.ec2.summary.az_distribution.items() %}
+                        {% for az, data in all_services_data.get('ec2', {}).get('summary', {}).get('az_distribution', {}).items() %}
                         <tr>
                             <td><strong>{{ az }}</strong></td>
                             <td>{{ data.count }}</td>
@@ -132,7 +132,7 @@
         {% endif %}
         
         <!-- EC2 인스턴스 목록 -->
-        {% if all_services_data.ec2.instances %}
+        {% if all_services_data.get('ec2', {}).get('instances') %}
         <div class="filter-container">
             <input type="text" class="filter-input" id="ec2-filter" data-table="ec2-table" placeholder="인스턴스 필터링...">
         </div>
@@ -152,7 +152,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for instance in all_services_data.ec2.instances %}
+                    {% for instance in all_services_data.get('ec2', {}).get('instances', []) %}
                     <tr>
                         <td data-column="name">{% for tag in instance.tags %}{% if tag.Key == 'Name' %}{{ tag.Value }}{% endif %}{% endfor %}{% if not instance.tags or not (instance.tags|selectattr('Key', 'equalto', 'Name')|list) %}-{% endif %}</td>
                         <td data-column="id">{{ instance.id }}</td>
@@ -409,7 +409,7 @@
 {% endif %}
 
 <!-- S3 서비스 섹션 -->
-{% if 's3' in selected_services and all_services_data.s3 %}
+{% if 's3' in selected_services and all_services_data.get('s3') %}
 <div class="service-section" id="s3-section">
     <div class="service-section-header" data-bs-target="#s3-content" aria-expanded="true">
         <h3>
@@ -422,25 +422,25 @@
     </div>
     <div class="service-section-body collapse show" id="s3-content">
         <!-- S3 요약 정보 -->
-        {% if all_services_data.s3.summary %}
+        {% if all_services_data.get('s3', {}).get('summary') %}
         <div class="summary-cards">
             <div class="summary-card">
                 <div class="summary-card-title">총 버킷</div>
-                <div class="summary-card-value">{{ all_services_data.s3.summary.total_buckets }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('s3', {}).get('summary', {}).get('total_buckets', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">공개 버킷</div>
-                <div class="summary-card-value">{{ all_services_data.s3.summary.public_buckets }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('s3', {}).get('summary', {}).get('public_buckets', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">암호화된 버킷</div>
-                <div class="summary-card-value">{{ all_services_data.s3.summary.encrypted_buckets }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('s3', {}).get('summary', {}).get('encrypted_buckets', 0) }}</div>
             </div>
         </div>
         {% endif %}
         
         <!-- S3 버킷 목록 -->
-        {% if all_services_data.s3.buckets %}
+        {% if all_services_data.get('s3', {}).get('buckets') %}
         <div class="filter-container">
             <input type="text" class="filter-input" id="s3-filter" data-table="s3-table" placeholder="버킷 필터링...">
         </div>
@@ -458,7 +458,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for bucket in all_services_data.s3.buckets %}
+                    {% for bucket in all_services_data.get('s3', {}).get('buckets', []) %}
                     <tr>
                         <td data-column="name">{{ bucket.name }}</td>
                         <td data-column="region">{{ bucket.region }}</td>
@@ -579,7 +579,7 @@
 {% endif %}
 
 <!-- RDS 서비스 섹션 -->
-{% if 'rds' in selected_services and all_services_data.rds %}
+{% if 'rds' in selected_services and all_services_data.get('rds') %}
 <div class="service-section" id="rds-section">
     <div class="service-section-header" data-bs-target="#rds-content" aria-expanded="true">
         <h3>
@@ -592,25 +592,25 @@
     </div>
     <div class="service-section-body collapse show" id="rds-content">
         <!-- RDS 요약 정보 -->
-        {% if all_services_data.rds.summary %}
+        {% if all_services_data.get('rds', {}).get('summary') %}
         <div class="summary-cards">
             <div class="summary-card">
                 <div class="summary-card-title">총 인스턴스</div>
-                <div class="summary-card-value">{{ all_services_data.rds.summary.total_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('rds', {}).get('summary', {}).get('total_instances', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">사용 가능</div>
-                <div class="summary-card-value">{{ all_services_data.rds.summary.available_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('rds', {}).get('summary', {}).get('available_instances', 0) }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">중지됨</div>
-                <div class="summary-card-value">{{ all_services_data.rds.summary.stopped_instances }}</div>
+                <div class="summary-card-value">{{ all_services_data.get('rds', {}).get('summary', {}).get('stopped_instances', 0) }}</div>
             </div>
         </div>
         {% endif %}
         
         <!-- RDS 인스턴스 목록 -->
-        {% if all_services_data.rds.instances %}
+        {% if all_services_data.get('rds', {}).get('instances') %}
         <div class="filter-container">
             <input type="text" class="filter-input" id="rds-filter" data-table="rds-table" placeholder="RDS 인스턴스 필터링...">
         </div>
@@ -629,7 +629,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for instance in all_services_data.rds.instances %}
+                    {% for instance in all_services_data.get('rds', {}).get('instances', []) %}
                     <tr>
                         <td data-column="name">{{ instance.name }}</td>
                         <td data-column="engine">{{ instance.engine }} {{ instance.engine_version }}</td>
@@ -740,7 +740,7 @@
 {% endif %}
 
 <!-- Lambda 서비스 섹션 -->
-{% if 'lambda' in selected_services and all_services_data.lambda %}
+{% if 'lambda' in selected_services and all_services_data.get('lambda') %}
 <div class="service-section" id="lambda-section">
     <div class="service-section-header" data-bs-target="#lambda-content" aria-expanded="true">
         <h3>
@@ -752,21 +752,32 @@
         </div>
     </div>
     <div class="service-section-body collapse show" id="lambda-content">
+        <!-- Lambda 함수 목록 변수 먼저 정의 -->
+        {% set lambda_functions = all_services_data.get('lambda', {}).get('functions', all_services_data.get('lambda', {}).get('result', {}).get('functions', [])) %}
+        
         <!-- Lambda 요약 정보 -->
-        {% if all_services_data.lambda.summary %}
+        {% set lambda_summary = all_services_data.get('lambda', {}).get('summary', all_services_data.get('lambda', {}).get('result', {}).get('summary', {})) %}
+        {% if lambda_summary %}
         <div class="summary-cards">
             <div class="summary-card">
                 <div class="summary-card-title">총 함수</div>
-                <div class="summary-card-value">{{ all_services_data.lambda.summary.total_functions }}</div>
+                <div class="summary-card-value">{{ lambda_summary.total_functions or 0 }}</div>
             </div>
             <div class="summary-card">
                 <div class="summary-card-title">총 코드 크기</div>
-                <div class="summary-card-value">{{ "%.1f"|format(all_services_data.lambda.summary.total_code_size / 1024 / 1024) }} MB</div>
+                <div class="summary-card-value">
+                    {% if lambda_functions %}
+                        {{ "%.1f"|format((lambda_functions|sum(attribute='code_size', start=0)) / 1024) }} KB
+                    {% else %}
+                        0.0 KB
+                    {% endif %}
+                </div>
             </div>
         </div>
         
         <!-- 런타임별 분포 -->
-        {% if all_services_data.lambda.summary.runtime_summary %}
+        {% set runtime_summary = lambda_summary.runtime_summary if lambda_summary.runtime_summary else {} %}
+        {% if runtime_summary %}
         <div class="chart-container">
             <div class="chart-title">런타임별 분포</div>
             <div class="table-responsive">
@@ -775,15 +786,23 @@
                         <tr>
                             <th>런타임</th>
                             <th>함수 개수</th>
-                            <th>총 코드 크기 (MB)</th>
+                            <th>총 코드 크기 (KB)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for runtime, data in all_services_data.lambda.summary.runtime_summary.items() %}
+                        {% for runtime in lambda_functions | map(attribute='runtime') | unique %}
+                        {% set runtime_functions = lambda_functions | selectattr('runtime', 'equalto', runtime) | list %}
+                        {% set runtime_code_size = runtime_functions | sum(attribute='code_size', start=0) %}
                         <tr>
                             <td><strong>{{ runtime }}</strong></td>
-                            <td>{{ data.count }}</td>
-                            <td>{{ "%.1f"|format(data.total_size / 1024 / 1024) }}</td>
+                            <td>{{ runtime_functions | length }}</td>
+                            <td>
+                                {% if runtime_code_size > 0 %}
+                                    {{ "%.1f"|format(runtime_code_size / 1024) }}
+                                {% else %}
+                                    0.0
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -794,7 +813,7 @@
         {% endif %}
         
         <!-- Lambda 함수 목록 -->
-        {% if all_services_data.lambda.functions %}
+        {% if lambda_functions %}
         <div class="filter-container">
             <input type="text" class="filter-input" id="lambda-filter" data-table="lambda-table" placeholder="Lambda 함수 필터링...">
         </div>
@@ -814,13 +833,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for function in all_services_data.lambda.functions %}
+                    {% for function in lambda_functions %}
                     <tr>
                         <td data-column="name">{{ function.name }}</td>
                         <td data-column="runtime">{{ function.runtime }}</td>
                         <td data-column="memory_size">{{ function.memory_size }}</td>
                         <td data-column="timeout">{{ function.timeout }}</td>
-                        <td data-column="code_size">{{ "%.1f"|format(function.code_size / 1024) }} KB</td>
+                        <td data-column="code_size">
+                            {% if function.code_size and function.code_size > 0 %}
+                                {{ "%.1f"|format(function.code_size / 1024) }} KB
+                            {% else %}
+                                0.0 KB
+                            {% endif %}
+                        </td>
                         <td data-column="invocations">{{ function.invocations or 0 }}</td>
                         <td data-column="errors">
                             {% if function.errors %}
@@ -864,7 +889,13 @@
                                             <table class="table table-sm">
                                                 <tr><td>메모리 크기</td><td>{{ function.memory_size }} MB</td></tr>
                                                 <tr><td>타임아웃</td><td>{{ function.timeout }}초</td></tr>
-                                                <tr><td>코드 크기</td><td>{{ "%.1f"|format(function.code_size / 1024) }} KB</td></tr>
+                                                <tr><td>코드 크기</td><td>
+                                                    {% if function.code_size and function.code_size > 0 %}
+                                                        {{ "%.1f"|format(function.code_size / 1024) }} KB
+                                                    {% else %}
+                                                        0.0 KB
+                                                    {% endif %}
+                                                </td></tr>
                                                 <tr><td>평균 실행 시간</td><td>{{ "%.2f"|format(function.avg_duration) if function.avg_duration else '-' }}ms</td></tr>
                                                 <tr><td>최대 실행 시간</td><td>{{ "%.2f"|format(function.max_duration) if function.max_duration else '-' }}ms</td></tr>
                                                 <tr><td>최종 수정</td><td>{{ function.last_modified|replace('T', ' ')|truncate(19, True, '') }}</td></tr>
@@ -953,6 +984,217 @@
 </div>
 {% endif %}
 
+<!-- IAM 서비스 섹션 -->
+{% if 'iam' in selected_services and all_services_data.get('iam') %}
+<div class="service-section" id="iam-section">
+    <div class="service-section-header" data-bs-target="#iam-content" aria-expanded="true">
+        <h3>
+            <i class="fas fa-users-cog"></i>
+            IAM 사용자
+        </h3>
+        <div class="toggle-icon">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+    <div class="service-section-body collapse show" id="iam-content">
+        <!-- IAM 요약 정보 -->
+        {% if all_services_data.get('iam', {}).get('summary') %}
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-title">총 사용자</div>
+                <div class="summary-card-value">{{ all_services_data.get('iam', {}).get('summary', {}).get('total_users', 0) }}</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-card-title">콘솔 액세스</div>
+                <div class="summary-card-value">{{ all_services_data.get('iam', {}).get('summary', {}).get('users_with_console_access', 0) }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">MFA 설정</div>
+                <div class="summary-card-value">{{ all_services_data.get('iam', {}).get('summary', {}).get('users_with_mfa', 0) }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- IAM 사용자 목록 -->
+        {% if all_services_data.get('iam', {}).get('users') %}
+        <div class="chart-container">
+            <div class="chart-title">IAM 사용자</div>
+            <div class="filter-container">
+                <input type="text" class="filter-input" id="iam-users-filter" data-table="iam-users-table" placeholder="사용자 필터링...">
+            </div>
+            <div class="table-responsive">
+                <table class="resource-table" id="iam-users-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="user_name">사용자 이름</th>
+                            <th data-sort="create_date">생성 시간</th>
+                            <th data-sort="has_console_password" style="text-align: center;">콘솔 액세스</th>
+                            <th data-sort="mfa_devices" style="text-align: center;">MFA</th>
+                            <th data-sort="has_active_access_keys" style="text-align: center;">액세스 키</th>
+                            <th data-sort="last_activity_days" style="text-align: center;">마지막 활동</th>
+                            <th data-sort="password_age_days" style="text-align: center;">암호 수명</th>
+                            <th data-sort="access_key_age_days" style="text-align: center;">액세스키 수명</th>
+                            <th style="text-align: center;">상세 정보</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in all_services_data.get('iam', {}).get('users', []) %}
+                        <tr>
+                            <td data-column="user_name">{{ user.user_name }}</td>
+                            <td data-column="create_date">{{ user.create_date|replace('T', ' ')|truncate(19, True, '') if user.create_date else '-' }}</td>
+                            <td data-column="has_console_password" style="text-align: center;">
+                                {% if user.has_console_password %}
+                                <span style="color: #28a745; font-weight: bold;">예</span>
+                                {% else %}
+                                <span style="color: #6c757d;">아니오</span>
+                                {% endif %}
+                            </td>
+                            <td data-column="mfa_devices" style="text-align: center;">
+                                {% if user.mfa_devices %}
+                                <span style="color: #28a745; font-weight: bold;">{{ user.mfa_devices|length }}개</span>
+                                {% else %}
+                                <span style="color: #6c757d;">-</span>
+                                {% endif %}
+                            </td>
+                            <td data-column="has_active_access_keys" style="text-align: center;">
+                                {% if user.has_active_access_keys %}
+                                <span style="color: #28a745; font-weight: bold;">예</span>
+                                {% else %}
+                                <span style="color: #6c757d;">-</span>
+                                {% endif %}
+            </td>
+                            <td data-column="last_activity_days" style="text-align: center;">
+                                {% if user.last_activity_days is not none %}
+                                    {% if user.last_activity_days > 90 %}
+                                    <span style="color: #dc3545; font-weight: bold;">{{ user.last_activity_days }}일 전</span>
+                                    {% elif user.last_activity_days > 30 %}
+                                    <span style="color: #ffc107; font-weight: bold;">{{ user.last_activity_days }}일 전</span>
+                                    {% else %}
+                                    <span style="color: #28a745; font-weight: bold;">{{ user.last_activity_days }}일 전</span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="color: #6c757d;">-</span>
+                                {% endif %}
+                            </td>
+                            <td data-column="password_age_days" style="text-align: center;">
+                                {% if user.password_age_days is not none %}
+                                    {% if user.password_age_days > 90 %}
+                                    <span style="color: #dc3545; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> {{ user.password_age_days }}일</span>
+                                    {% else %}
+                                    <span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> {{ user.password_age_days }}일</span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="color: #6c757d;">-</span>
+                                {% endif %}
+                            </td>
+                            <td data-column="access_key_age_days" style="text-align: center;">
+                                {% if user.access_key_age_days is not none %}
+                                    {% if user.access_key_age_days > 90 %}
+                                    <span style="color: #dc3545; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> {{ user.access_key_age_days }}일</span>
+                                    {% elif user.access_key_age_days > 60 %}
+                                    <span style="color: #ffc107; font-weight: bold;">{{ user.access_key_age_days }}일</span>
+                                    {% else %}
+                                    <span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> {{ user.access_key_age_days }}일</span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="color: #6c757d;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <button class="btn btn-sm btn-outline-primary detail-toggle" data-target="iam-user-detail-{{ loop.index }}">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr id="iam-user-detail-{{ loop.index }}" style="display: none;">
+                            <td colspan="9">
+                                <div class="detail-panel">
+                                    <div class="resource-tabs">
+                                        <div class="resource-tab active" data-tab="user-info-{{ loop.index }}">기본 정보</div>
+                                        <div class="resource-tab" data-tab="user-policies-{{ loop.index }}">정책</div>
+                                        <div class="resource-tab" data-tab="user-groups-{{ loop.index }}">그룹</div>
+                                    </div>
+                                    
+                                    <div class="resource-tab-content active" id="user-info-{{ loop.index }}">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>사용자 정보</h6>
+                                                <table class="table table-sm">
+                                                    <tr><td>사용자 이름</td><td>{{ user.user_name }}</td></tr>
+                                                    <tr><td>경로</td><td>{{ user.path }}</td></tr>
+                                                    <tr><td>생성 시간</td><td>{{ user.create_date|replace('T', ' ')|truncate(19, True, '') if user.create_date else '-' }}</td></tr>
+                                                    <tr><td>마지막 로그인</td><td>{{ user.password_last_used|replace('T', ' ')|truncate(19, True, '') if user.password_last_used else '-' }}</td></tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>보안 설정</h6>
+                                                <table class="table table-sm">
+                                                    <tr><td>콘솔 액세스</td><td><span style="color: {{ '#28a745' if user.has_console_password else '#6c757d' }}; font-weight: bold;">{{ '예' if user.has_console_password else '아니오' }}</span></td></tr>
+                                                    <tr><td>MFA 디바이스</td><td><span style="color: {{ '#28a745' if user.mfa_devices else '#6c757d' }}; font-weight: bold;">{{ user.mfa_devices|length }}개</span></td></tr>
+                                                    <tr><td>액세스 키</td><td><span style="color: {{ '#28a745' if user.access_keys else '#6c757d' }}; font-weight: bold;">{{ user.access_keys|length if user.access_keys else '-' }}</span></td></tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="resource-tab-content" id="user-policies-{{ loop.index }}">
+                                        <h6>연결된 정책</h6>
+                                        {% if user.attached_policies %}
+                                        <ul>
+                                            {% for policy in user.attached_policies %}
+                                            <li>{{ policy.PolicyName }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p>연결된 정책이 없습니다.</p>
+                                        {% endif %}
+                                        
+                                        {% if user.inline_policies %}
+                                        <h6 class="mt-3">인라인 정책</h6>
+                                        <ul>
+                                            {% for policy in user.inline_policies %}
+                                            <li>{{ policy.PolicyName }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="resource-tab-content" id="user-groups-{{ loop.index }}">
+                                        <h6>그룹 멤버십</h6>
+                                        {% if user.groups %}
+                                        <ul>
+                                            {% for group in user.groups %}
+                                            <li>{{ group }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p>속한 그룹이 없습니다.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+
+        
+        {% if not all_services_data.get('iam', {}).get('users') %}
+        <div class="empty-state">
+            <i class="fas fa-users-cog"></i>
+            <h3>IAM 데이터가 없습니다</h3>
+            <p>이 계정에서 IAM 사용자를 찾을 수 없거나 데이터 수집 중 오류가 발생했습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- 다른 서비스 섹션도 비슷한 방식으로 추가 -->
 
 {% else %}
@@ -991,13 +1233,15 @@ document.addEventListener('DOMContentLoaded', function() {
             let data = [];
             
             if (tableId === 'ec2-table') {
-                data = {{ all_services_data.ec2.instances|default([])|tojson }};
+                data = {{ (all_services_data.get('ec2', {}).get('instances', []))|tojson }};
             } else if (tableId === 's3-table') {
-                data = {{ all_services_data.s3.buckets|default([])|tojson }};
+                data = {{ (all_services_data.get('s3', {}).get('buckets', []))|tojson }};
             } else if (tableId === 'lambda-table') {
-                data = {{ all_services_data.lambda.functions|default([])|tojson }};
+                data = {{ (all_services_data.get('lambda', {}).get('functions', []))|tojson }};
             } else if (tableId === 'rds-table') {
-                data = {{ all_services_data.rds.instances|default([])|tojson }};
+                data = {{ (all_services_data.get('rds', {}).get('instances', []))|tojson }};
+            } else if (tableId === 'iam-users-table') {
+                data = {{ (all_services_data.get('iam', {}).get('users', []))|tojson }};
             }
             
             ServiceView.exportCSV(data, 'aws-' + tableId.replace('-table', ''));

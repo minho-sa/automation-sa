@@ -53,8 +53,18 @@ def run(role_arn=None) -> Dict[str, Any]:
             # 분석 항목
             issues = []
             
-            # 콘솔 액세스 확인
+            # 콘솔 액세스 확인 (password_enabled와 실제 로그인 프로필 확인)
             has_console_access = user['password_enabled'] == 'true'
+            
+            # 실제 로그인 프로필 확인으로 콘솔 액세스 재검증
+            try:
+                iam_client.get_login_profile(UserName=user_name)
+                has_console_access = True
+            except iam_client.exceptions.NoSuchEntityException:
+                has_console_access = False
+            except Exception:
+                # 권한 부족 등의 경우 credential report 결과 사용
+                pass
             
             # 액세스 키 확인
             has_access_key_1 = user['access_key_1_active'] == 'true'

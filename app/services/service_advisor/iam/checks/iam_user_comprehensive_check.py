@@ -42,8 +42,19 @@ def run(role_arn=None) -> Dict[str, Any]:
             # 자격 증명 보고서에서 사용자 정보 찾기
             user_cred_data = next((u for u in credential_data if u['user'] == user_name), {})
             
-            # 1. 비밀번호 관련 검사
+            # 1. 비밀번호 및 콘솔 액세스 관련 검사
             password_enabled = user_cred_data.get('password_enabled', 'false') == 'true'
+            
+            # 실제 로그인 프로필 확인으로 콘솔 액세스 재검증
+            try:
+                iam_client.get_login_profile(UserName=user_name)
+                password_enabled = True
+            except iam_client.exceptions.NoSuchEntityException:
+                password_enabled = False
+            except Exception:
+                # 권한 부족 등의 경우 credential report 결과 사용
+                pass
+            
             password_last_used = user_cred_data.get('password_last_used', 'N/A')
             password_last_changed = user_cred_data.get('password_last_changed', 'N/A')
             

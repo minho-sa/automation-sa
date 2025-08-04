@@ -159,6 +159,27 @@ class LambdaFunction(ResourceModel):
     errors: Optional[int] = None
     avg_duration: Optional[float] = None
     max_duration: Optional[float] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Lambda 함수 모델을 딕셔너리로 변환합니다.
+        코드 크기가 제대로 포함되는지 확인합니다.
+        
+        Returns:
+            Dict[str, Any]: 리소스 데이터 딕셔너리
+        """
+        result = super().to_dict()
+        
+        # 코드 크기가 제대로 설정되었는지 확인
+        if 'code_size' not in result or result['code_size'] is None:
+            result['code_size'] = 0
+        
+        # 디버깅을 위한 로그 (실제 운영에서는 제거)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"LambdaFunction.to_dict(): {self.name}, code_size: {result['code_size']}")
+        
+        return result
 
 @dataclass
 class IAMUser(ResourceModel):
@@ -188,6 +209,11 @@ class IAMUser(ResourceModel):
     has_active_access_keys: bool = False
     has_signing_certificates: bool = False
     has_ssh_public_keys: bool = False
+    
+    # 활동 및 수명 정보
+    last_activity_days: Optional[int] = None
+    password_age_days: Optional[int] = None
+    access_key_age_days: Optional[int] = None
 
 @dataclass
 class IAMRole(ResourceModel):

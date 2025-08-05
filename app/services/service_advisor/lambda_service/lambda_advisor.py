@@ -6,7 +6,6 @@ from app.services.service_advisor.lambda_service.checks import (
     memory_size_check,
     timeout_check,
     runtime_check,
-    tag_check,
     provisioned_concurrency_check,
     code_signing_check,
     least_privilege_check
@@ -60,15 +59,7 @@ class LambdaAdvisor(BaseAdvisor):
             severity='high'
         )
         
-        # 태그 관리 검사
-        self.register_check(
-            check_id='lambda-tags',
-            name='태그 관리',
-            description='Lambda 함수의 태그 관리 상태를 검사하여 태그가 없거나 부족한 함수를 식별합니다. 리소스 관리 및 비용 할당을 위한 적절한 태그 추가 방안을 제시합니다.',
-            function=tag_check.run,
-            category='거버넌스',
-            severity='low'
-        )
+
         
         # 프로비저닝된 동시성 검사
         self.register_check(

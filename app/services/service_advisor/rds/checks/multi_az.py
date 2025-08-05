@@ -133,7 +133,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         elif len(warning_instances) > 0:
             message = f'{len(instance_analysis)}개 인스턴스 중 {len(warning_instances)}개 인스턴스에 다중 AZ 구성을 고려하세요.'
             return create_check_result(
-                status=STATUS_OK,
+                status=STATUS_WARNING,
                 message=message,
                 data=data,
                 recommendations=recommendations

@@ -48,7 +48,7 @@ class InstanceBackupCheck(BaseEC2Check):
                 if instance_state == 'terminated':
                     continue
                 
-                instance_name = 'N/A'
+                instance_name = '-'
                 for tag in instance.get('Tags', []):
                     if tag['Key'] == 'Name':
                         instance_name = tag['Value']

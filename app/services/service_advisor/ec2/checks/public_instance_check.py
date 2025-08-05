@@ -92,8 +92,8 @@ class PublicInstanceCheck(BaseEC2Check):
         
         recommendations = [
             '불필요한 퍼블릭 IP를 제거하세요.',
-            'ALB/NLB로 웹 서버를 안전하게 노출하세요.',
-            'Session Manager로 안전하게 관리하세요.'
+            '웹 서비스가 필요한 경우 ALB/NLB를 통해 안전하게 노출하세요.',
+            'EC2 접속은 Session Manager를 사용하여 안전하게 관리하세요.'
         ]
         
         return recommendations

@@ -55,7 +55,7 @@ class EC2Advisor(BaseAdvisor):
             self.register_check(
                 check_id=security_check.check_id,
                 name='보안 그룹 설정 검사',
-                description='EC2 인스턴스의 보안 그룹 설정을 검사하여 0.0.0.0/0과 같이 과도하게 개방된 인바운드 규칙이 있는지 확인합니다. SSH(22), RDP(3389), 데이터베이스 포트(3306, 5432) 등 중요 서비스가 인터넷에 노출되어 있는 경우 보안 위험을 식별하고 개선 방안을 제시합니다.',
+                description='EC2 인스턴스의 보안 그룹 설정을 검사하여 0.0.0.0/0과 같이 과도하게 개방된 인바운드 규칙이 있는지 확인합니다.\nSSH(22), RDP(3389), 데이터베이스 포트(3306, 5432) 등 중요 서비스가 인터넷에 노출되어 있는 경우 보안 위험을 식별하고 개선 방안을 제시합니다.',
                 function=security_check.run,
                 category='보안',
                 severity='high'
@@ -122,18 +122,7 @@ class EC2Advisor(BaseAdvisor):
                 severity='low'
             )
             
-            # 인스턴스 태그 검사
-            from app.services.service_advisor.ec2.checks.instance_tags_check import InstanceTagsCheck
-            tags_check = InstanceTagsCheck()
-            self.register_check(
-                check_id=tags_check.check_id,
-                name='인스턴스 태그 관리 검사',
-                description='EC2 인스턴스의 태그 설정을 검사합니다. 필수 태그(Name, Environment, Owner) 누락을 확인하고 리소스 관리 개선 방안을 제시합니다.',
-                function=tags_check.run,
-                category='운영 우수성',
-                severity='low'
-            )
-            
+
             # 인스턴스 생명주기 검사
             from app.services.service_advisor.ec2.checks.instance_lifecycle_check import InstanceLifecycleCheck
             lifecycle_check = InstanceLifecycleCheck()
@@ -179,6 +168,18 @@ class EC2Advisor(BaseAdvisor):
                 description='구세대 EC2 인스턴스 타입을 식별합니다. 성능과 비용 효율성 향상을 위해 최신 세대 인스턴스로의 업그레이드 필요성을 평가하고 개선 방안을 제시합니다.',
                 function=generation_check.run,
                 category='성능',
+                severity='medium'
+            )
+            
+            # 예약 인스턴스 검사
+            from app.services.service_advisor.ec2.checks.reserved_instances_check import ReservedInstancesCheck
+            ri_check = ReservedInstancesCheck()
+            self.register_check(
+                check_id=ri_check.check_id,
+                name='예약 인스턴스 현황 및 만료 검사',
+                description='예약 인스턴스(RI)의 만료 일정과 사용률을 검사합니다.\n30일 이내 만료 예정인 RI를 식별하고, 사용률이 낮거나 초과 사용되는 RI를 찾아 비용 최적화 방안을 제시합니다.',
+                function=ri_check.run,
+                category='비용 최적화',
                 severity='medium'
             )
             

@@ -669,14 +669,77 @@ function displayCheckResult(checkId, result) {
         resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
         
         resultHtml += '<div class="table-responsive aws-table">';
-        resultHtml += '<table class="table table-sm table-hover">';
+        resultHtml += '<table class="table table-sm table-hover" style="table-layout: fixed; word-wrap: break-word;">';
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th width="5%"></th>';
-        resultHtml += '<th width="20%">리소스 이름</th>';
-        resultHtml += '<th width="20%">리소스 ID</th>';
-        resultHtml += '<th width="15%">상태</th>';
-        resultHtml += '<th width="40%">세부 정보</th>';
+        // S3 버킷, RDS 인스턴스, Lambda 함수의 경우 리소스 ID 컬럼 제거
+        const hasS3Buckets = resources.some(r => r.bucket_name);
+        const hasRDSInstances = resources.some(r => r.instance_id && r.engine);
+        const hasLambdaFunctions = resources.some(r => r.function_name || r.memory_size !== undefined);
+        const hasIAMUsers = resources.some(r => r.user_name);
+        const hasEC2SecurityGroups = resources.some(r => r.sg_name && r.sg_id);
+        const hasEBSVolumes = resources.some(r => r.volume_name && r.volume_id);
+        const hasEC2Instances = resources.some(r => r.instance_name && r.instance_id);
+        const hasUnusedResources = resources.some(r => r.resource_type && (r.resource_type === 'Elastic IP' || r.resource_type === 'EBS Volume'));
+        const hasReservedInstances = resources.some(r => r.ri_id);
+        const hasRDSEngineVersions = resources.some(r => r.db_identifier && r.engine);
+        if (hasS3Buckets) {
+            resultHtml += '<th width="25%">버킷 이름</th>';
+            resultHtml += '<th width="20%">상태</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
+        } else if (hasRDSInstances) {
+            resultHtml += '<th width="25%">DB 인스턴스 식별자</th>';
+            resultHtml += '<th width="20%">상태</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
+        } else if (hasLambdaFunctions) {
+            resultHtml += '<th width="25%">함수 이름</th>';
+            resultHtml += '<th width="20%">상태</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
+        } else if (hasIAMUsers) {
+            resultHtml += '<th width="25%">사용자 이름</th>';
+            resultHtml += '<th width="20%">상태</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
+        } else if (hasEC2SecurityGroups) {
+            resultHtml += '<th width="20%">보안그룹 이름</th>';
+            resultHtml += '<th width="20%">보안그룹 ID</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="40%">세부 정보</th>';
+        } else if (hasEBSVolumes) {
+            resultHtml += '<th width="20%">볼륨 이름</th>';
+            resultHtml += '<th width="20%">볼륨 ID</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="40%">세부 정보</th>';
+        } else if (hasEC2Instances) {
+            resultHtml += '<th width="20%">인스턴스 이름</th>';
+            resultHtml += '<th width="20%">인스턴스 ID</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="40%">세부 정보</th>';
+        } else if (hasUnusedResources) {
+            resultHtml += '<th width="20%">리소스 이름</th>';
+            resultHtml += '<th width="20%">리소스 ID</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="40%">세부 정보</th>';
+        } else if (hasReservedInstances) {
+            resultHtml += '<th width="15%">인스턴스 타입</th>';
+            resultHtml += '<th width="10%">개수</th>';
+            resultHtml += '<th width="15%">가용 영역</th>';
+            resultHtml += '<th width="10%">만료일</th>';
+            resultHtml += '<th width="10%">사용률</th>';
+            resultHtml += '<th width="10%">상태</th>';
+            resultHtml += '<th width="25%">세부 정보</th>';
+        } else if (hasRDSEngineVersions) {
+            resultHtml += '<th width="20%">DB 식별자</th>';
+            resultHtml += '<th width="15%">엔진</th>';
+            resultHtml += '<th width="15%">현재 버전</th>';
+            resultHtml += '<th width="15%">최신 버전</th>';
+            resultHtml += '<th width="10%">상태</th>';
+            resultHtml += '<th width="20%">세부 정보</th>';
+        } else {
+            resultHtml += '<th width="25%">리소스 ID</th>';
+            resultHtml += '<th width="20%">상태</th>';
+            resultHtml += '<th width="50%">세부 정보</th>';
+        }
         resultHtml += '</tr>';
         resultHtml += '</thead>';
         resultHtml += '<tbody>';
@@ -692,30 +755,77 @@ function displayCheckResult(checkId, result) {
                 resourceStatusClass = 'danger';
                 resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else if (resource.status === 'warning') {
-                resourceStatusClass = 'warning';
-                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
+                resourceStatusClass = 'danger';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else {
                 resourceStatusClass = 'secondary';
                 resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
             }
             
-            // 리소스 ID와 이름 추출
+            // 리소스 ID 추출
             const resourceId = resource.id || resource.user_name || resource.role_name || resource.policy_name || resource.bucket_name || resource.instance_id || resource.function_name || '';
-            // Name 태그나 다른 이름 필드에서 이름 추출
-            let resourceName = '-';
-            if (resource.name && resource.name !== resourceId && resource.name !== 'N/A') {
-                resourceName = resource.name;
-            } else if (resource.tags && resource.tags.Name) {
-                resourceName = resource.tags.Name;
-            } else if (resource.volume_name) {
-                resourceName = resource.volume_name;
-            }
             
             resultHtml += `<tr class="table-${resourceStatusClass}">`;
             resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
-            resultHtml += `<td>${resourceName}</td>`;
-            resultHtml += `<td><code>${resourceId}</code></td>`;
-            resultHtml += `<td>${resource.status_text || ''}</td>`;
+            // S3 버킷, RDS 인스턴스, Lambda 함수의 경우 이름과 ID를 하나로 표시
+            if (resource.bucket_name) {
+                resultHtml += `<td><code>${resource.bucket_name}</code></td>`;
+            } else if (resource.instance_id && resource.engine) {
+                resultHtml += `<td><code>${resource.instance_id}</code></td>`;
+            } else if (resource.function_name || resource.memory_size !== undefined) {
+                const functionName = resource.function_name || resourceId;
+                resultHtml += `<td><code>${functionName}</code></td>`;
+            } else if (resource.user_name) {
+                resultHtml += `<td><code>${resource.user_name}</code></td>`;
+            } else if (resource.sg_name && resource.sg_id) {
+                resultHtml += `<td>${resource.sg_name}</td>`;
+                resultHtml += `<td><code>${resource.sg_id}</code></td>`;
+            } else if (resource.volume_name && resource.volume_id) {
+                resultHtml += `<td>${resource.volume_name}</td>`;
+                resultHtml += `<td><code>${resource.volume_id}</code></td>`;
+            } else if (resource.instance_name && resource.instance_id) {
+                resultHtml += `<td>${resource.instance_name}</td>`;
+                resultHtml += `<td><code>${resource.instance_id}</code></td>`;
+            } else if (resource.resource_type && (resource.resource_type === 'Elastic IP' || resource.resource_type === 'EBS Volume')) {
+                let displayName = '-';
+                let displayId = resourceId;
+                
+                if (resource.resource_type === 'Elastic IP') {
+                    displayName = resource.eip_name || '-';
+                    displayId = resource.allocation_id || resourceId;
+                } else if (resource.resource_type === 'EBS Volume') {
+                    displayName = resource.volume_name || '-';
+                    displayId = resource.volume_id || resourceId;
+                }
+                
+                resultHtml += `<td>${displayName}</td>`;
+                resultHtml += `<td><code>${displayId}</code></td>`;
+            } else if (resource.ri_id) {
+                const instanceType = resource.instance_type || 'N/A';
+                const instanceCount = resource.instance_count || 0;
+                const availabilityZone = resource.availability_zone || 'N/A';
+                const daysUntilExpiry = resource.days_until_expiry || 0;
+                const utilization = resource.utilization || 0;
+                
+                resultHtml += `<td><code>${instanceType}</code></td>`;
+                resultHtml += `<td>${instanceCount}</td>`;
+                resultHtml += `<td>${availabilityZone}</td>`;
+                resultHtml += `<td>${daysUntilExpiry}일</td>`;
+                resultHtml += `<td>${utilization.toFixed(1)}%</td>`;
+            } else if (resource.db_identifier && resource.engine) {
+                const dbIdentifier = resource.db_identifier || resourceId;
+                const engine = resource.engine || 'N/A';
+                const currentVersion = resource.current_version || 'N/A';
+                const latestVersion = resource.latest_version || 'N/A';
+                
+                resultHtml += `<td><code>${dbIdentifier}</code></td>`;
+                resultHtml += `<td>${engine}</td>`;
+                resultHtml += `<td>${currentVersion}</td>`;
+                resultHtml += `<td>${latestVersion}</td>`;
+            } else {
+                resultHtml += `<td><code>${resourceId}</code></td>`;
+            }
+            resultHtml += `<td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 80px;" title="${resource.status_text || ''}">${resource.status_text || ''}</td>`;
             // 서비스별 추가 정보 표시
             let additionalInfo = '';
             
@@ -755,8 +865,28 @@ function displayCheckResult(checkId, result) {
                 }
             }
             
-            const adviceText = resource.advice ? resource.advice.replace(/보안\s*위협\s*발견\s*:?\s*/g, '').replace(/보안\s*위험\s*발견\s*:?\s*/g, '').trim() : '';
-            resultHtml += `<td class="resource-advice">${additionalInfo ? additionalInfo + (adviceText ? ' ' + adviceText : '') : adviceText}</td>`;
+            let adviceText = resource.advice ? resource.advice.replace(/보안\s*위협\s*발견\s*:?\s*/g, '').replace(/보안\s*위험\s*발견\s*:?\s*/g, '').trim() : '';
+            
+            // '있습니다.', '됩니다.', '세요.', '않습니다.', '없습니다.', '있지만,' 뒤에 줄바꿈 추가
+            if (adviceText) {
+                adviceText = adviceText.replace(/(있습니다\.|됩니다\.|세요\.|않습니다\.|없습니다\.|있지만,)\s*/g, '$1<br>');
+                
+                // 대상 버킷 정보를 더 보기 좋게 표시
+                adviceText = adviceText.replace(/대상 버킷:\s*/g, '대상 버킷:<br>');
+                adviceText = adviceText.replace(/, ([a-zA-Z0-9-]+)/g, ',<br>$1');
+            }
+            
+            // 세부 정보를 두 줄로 나누어 표시
+            let detailInfo = '';
+            if (additionalInfo && adviceText) {
+                detailInfo = `${additionalInfo}<br>${adviceText}`;
+            } else if (additionalInfo) {
+                detailInfo = additionalInfo;
+            } else if (adviceText) {
+                detailInfo = adviceText;
+            }
+            
+            resultHtml += `<td class="resource-advice" style="white-space: pre-wrap; word-break: break-word; max-width: 300px;">${detailInfo}</td>`;
             resultHtml += '</tr>';
         });
         

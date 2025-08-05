@@ -85,10 +85,10 @@ def run(role_arn=None) -> Dict[str, Any]:
                     # 표준화된 리소스 결과 생성
                     function_result = create_resource_result(
                         resource_id=function_name,
-                        resource_name=function_name,
                         status=status,
                         status_text=status_text,
-                        advice=advice
+                        advice=advice,
+                        function_name=function_name
                     )
                     
                     function_analysis.append(function_result)
@@ -99,10 +99,10 @@ def run(role_arn=None) -> Dict[str, Any]:
                     
                     function_result = create_resource_result(
                         resource_id=function_name,
-                        resource_name=function_name,
                         status=RESOURCE_STATUS_UNKNOWN,
                         status_text=status_text,
-                        advice=advice
+                        advice=advice,
+                        function_name=function_name
                     )
                     
                     function_analysis.append(function_result)
@@ -114,10 +114,10 @@ def run(role_arn=None) -> Dict[str, Any]:
                 
                 function_result = create_resource_result(
                     resource_id=function_name,
-                    resource_name=function_name,
                     status=RESOURCE_STATUS_UNKNOWN,
                     status_text=status_text,
-                    advice=advice
+                    advice=advice,
+                    function_name=function_name
                 )
                 
                 function_analysis.append(function_result)
@@ -125,9 +125,11 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 결과 분류
         passed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_PASS]
         failed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_FAIL]
+        unknown_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_UNKNOWN]
         
         # 최적화 필요 함수 카운트
         optimization_needed_count = len(failed_functions)
+        unknown_count = len(unknown_functions)
         
         # 권장사항 생성
         recommendations = [
@@ -140,6 +142,9 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 전체 상태 결정 및 결과 생성
         if optimization_needed_count > 0:
             message = f'{len(function_analysis)}개 함수 중 {optimization_needed_count}개가 타임아웃 설정 최적화가 필요합니다.'
+            status = STATUS_WARNING
+        elif unknown_count > 0:
+            message = f'{len(function_analysis)}개 함수 중 {unknown_count}개가 데이터 부족으로 검사가 불가능합니다.'
             status = STATUS_WARNING
         else:
             message = f'모든 함수({len(passed_functions)}개)가 적절한 타임아웃 설정으로 구성되어 있습니다.'

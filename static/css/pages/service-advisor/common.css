@@ -8,6 +8,15 @@
     color: #16191f;
 }
 
+/* 서비스 네비게이션 카드 */
+.col-md-2 .awsui-card {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
 /* 서비스 네비게이션 */
 .service-nav {
     list-style: none;
@@ -321,6 +330,7 @@
     background-color: #fdfdfd;
     border-bottom: 1px solid #eee;
     line-height: 1.4;
+    white-space: pre-line;
 }
 
 /* 검사 항목 결과 */
@@ -363,9 +373,9 @@
 }
 
 .alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border-left: 4px solid #ffc107;
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
 }
 
 .alert-danger {
@@ -536,6 +546,17 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* Bootstrap table 클래스 오버라이드 */
+.table-warning {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb !important;
+}
+
+.table-warning td,
+.table-warning th {
+    border-color: #f5c6cb !important;
 }
 
 /* 유틸리티 클래스 */

@@ -83,10 +83,10 @@ def run(role_arn=None) -> Dict[str, Any]:
             # 표준화된 리소스 결과 생성
             function_result = create_resource_result(
                 resource_id=function_name,
-                resource_name=function_name,
                 status=status,
                 status_text=status_text,
-                advice=advice
+                advice=advice,
+                function_name=function_name
             )
             
             function_analysis.append(function_result)

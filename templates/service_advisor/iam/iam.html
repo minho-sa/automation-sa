@@ -31,14 +31,25 @@
     </div>
     
     <div class="check-items-container">
+        {% set severity_groups = {'high': [], 'medium': [], 'low': []} %}
         {% for check in checks %}
+            {% set _ = severity_groups[check.severity].append(check) %}
+        {% endfor %}
+        
+        {% for severity, group_checks in [('high', severity_groups.high), ('medium', severity_groups.medium), ('low', severity_groups.low)] %}
+            {% if group_checks %}
+                <div class="severity-group-header {{ severity }}">
+                    <h4 class="severity-group-title {{ severity }}">
+                        {{ 'HIGH 심각도' if severity == 'high' else 'MEDIUM 심각도' if severity == 'medium' else 'LOW 심각도' }}
+                    </h4>
+                </div>
+                {% for check in group_checks %}
         <div class="check-item" data-check-id="{{ check.id }}">
             <div class="check-item-header">
                 <div class="check-item-title">
                     <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
                     <h3>{{ check.name }}</h3>
                     <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
-                    <span class="check-item-severity {{ check.severity }}">{{ check.severity }}</span>
                 </div>
                 <div class="check-item-actions">
                     <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
@@ -65,6 +76,8 @@
                 </div>
             </div>
         </div>
+                {% endfor %}
+            {% endif %}
         {% endfor %}
     </div>
 </div>

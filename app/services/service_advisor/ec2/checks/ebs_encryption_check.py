@@ -48,7 +48,7 @@ class EBSEncryptionCheck(BaseEC2Check):
                 status=status,
                 advice=advice,
                 status_text=status_text,
-                name=volume_name,
+                volume_name=volume_name or '-',
                 volume_id=volume_id,
                 size=volume.get('Size', 0),
                 volume_type=volume.get('VolumeType', 'N/A'),

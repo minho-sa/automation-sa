@@ -131,6 +131,7 @@ def run(role_arn=None) -> Dict[str, Any]:
         
         # 최적화 필요 함수 카운트
         optimization_needed_count = len(failed_functions)
+        unknown_count = len(unknown_functions)
         
         # 권장사항 생성 (문자열 배열)
         recommendations = [
@@ -142,6 +143,14 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 전체 상태 결정 및 결과 생성
         if optimization_needed_count > 0:
             message = f'{len(function_analysis)}개 함수 중 {optimization_needed_count}개가 최적화가 필요합니다.'
+            return create_unified_check_result(
+                status=STATUS_WARNING,
+                message=message,
+                resources=function_analysis,
+                recommendations=recommendations
+            )
+        elif unknown_count > 0:
+            message = f'{len(function_analysis)}개 함수 중 {unknown_count}개가 데이터 부족으로 검사가 불가능합니다.'
             return create_unified_check_result(
                 status=STATUS_WARNING,
                 message=message,

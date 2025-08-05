@@ -9,6 +9,7 @@ from app.services.service_advisor.rds.checks import (
     public_access_check,
     instance_sizing_check
 )
+from app.services.service_advisor.rds.checks.engine_version_check import EngineVersionCheck
 
 class RDSAdvisor(BaseAdvisor):
     """
@@ -77,3 +78,60 @@ class RDSAdvisor(BaseAdvisor):
             category='비용 최적화',
             severity='medium'
         )
+        
+        # 엔진 버전 검사
+        engine_version_check = EngineVersionCheck()
+        self.register_check(
+            check_id=engine_version_check.check_id,
+            name='엔진 버전 및 업그레이드 검사',
+            description='RDS 인스턴스의 데이터베이스 엔진 버전을 검사하여 업그레이드 필요성을 평가합니다.\n구버전 엔진, 지원 종료 예정 버전, 자동 마이너 업그레이드 비활성화 등을 식별하고 보안 및 성능 향상을 위한 개선 방안을 제시합니다.',
+            function=engine_version_check.run,
+            category='보안',
+            severity='medium'
+        )
+    
+    # 추상 메서드 구현
+    def collect_data(self) -> Dict[str, Any]:
+        """
+        AWS에서 필요한 데이터를 수집합니다.
+        
+        Returns:
+            Dict[str, Any]: 수집된 데이터
+        """
+        return {}
+    
+    def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        수집된 데이터를 분석하여 결과를 생성합니다.
+        
+        Args:
+            collected_data: 수집된 데이터
+            
+        Returns:
+            Dict[str, Any]: 분석 결과
+        """
+        return {}
+    
+    def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
+        """
+        분석 결과를 바탕으로 권장사항을 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            List[str]: 권장사항 목록
+        """
+        return []
+    
+    def create_message(self, analysis_result: Dict[str, Any]) -> str:
+        """
+        분석 결과를 바탕으로 메시지를 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            str: 결과 메시지
+        """
+        return ""

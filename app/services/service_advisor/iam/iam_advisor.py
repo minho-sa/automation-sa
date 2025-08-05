@@ -8,10 +8,8 @@ from app.services.service_advisor.iam.checks import (
     mfa_check,
     inactive_users_check,
     root_account_check,
-    policy_analyzer_check,
-    credential_report_check
+    policy_analyzer_check
 )
-from app.services.service_advisor.iam.checks import iam_user_comprehensive_check
 
 class IAMAdvisor(BaseAdvisor):
     """
@@ -91,23 +89,6 @@ class IAMAdvisor(BaseAdvisor):
             severity='high'
         )
         
-        # 자격 증명 보고서 검사
-        self.register_check(
-            check_id='iam-credential-report',
-            name='자격 증명 보고서',
-            description='IAM 사용자의 자격 증명 보고서를 분석하여 보안 위험을 식별합니다. MFA 미설정, 오래된 액세스 키, 비활성 사용자 등을 종합적으로 분석하고 개선 방안을 제시합니다.',
-            function=credential_report_check.run,
-            category='보안',
-            severity='high'
-        )
+
         
 
-        # IAM 사용자 종합 검사
-        self.register_check(
-            check_id='iam-user-comprehensive',
-            name='IAM 사용자 종합 검사',
-            description='IAM 사용자에 대한 전반적인 확인을 수행합니다. 사용자 비밀번호, 자격 증명, 활동 기록 등을 종합적으로 분석하여 오래된 자격 증명이나 미사용 계정을 식별하고 정리 방안을 제시합니다.',
-            function=iam_user_comprehensive_check.run,
-            category='보안',
-            severity='high'
-        )

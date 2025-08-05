@@ -125,10 +125,12 @@ class SecurityGroupCheck(BaseEC2Check):
             # 보안 그룹 결과 생성
             sg_result = create_resource_result(
                 resource_id=sg_id,
-                resource_name=sg_name,
                 status=status,
                 status_text=status_text,
-                advice=advice
+                advice=advice,
+                resource_name=sg_name,
+                sg_id=sg_id,
+                sg_name=sg_name
             )
             
             sg_analysis.append(sg_result)

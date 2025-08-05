@@ -38,14 +38,33 @@ class UnusedResourcesCheck(BaseEC2Check):
             allocation_id = eip.get('AllocationId', 'N/A')
             public_ip = eip.get('PublicIp', 'N/A')
             
-            if 'InstanceId' not in eip:
+            # EIP 이름 태그 찾기
+            eip_name = '-'
+            for tag in eip.get('Tags', []):
+                if tag['Key'] == 'Name':
+                    eip_name = tag['Value']
+                    break
+            
+            # EIP 사용 상태 확인 (인스턴스, NAT Gateway, 네트워크 인터페이스 등)
+            is_in_use = any([
+                'InstanceId' in eip,
+                'NetworkInterfaceId' in eip,
+                'AssociationId' in eip
+            ])
+            
+            if not is_in_use:
                 status = RESOURCE_STATUS_WARNING
-                advice = f'Elastic IP({public_ip})가 인스턴스에 연결되지 않아 비용이 발생합니다.'
+                advice = f'Elastic IP({public_ip})가 어떤 리소스에도 연결되지 않아 비용이 발생합니다.'
                 status_text = '미사용'
                 problem_count += 1
             else:
                 status = RESOURCE_STATUS_PASS
-                advice = f'Elastic IP({public_ip})가 인스턴스에 연결되어 있습니다.'
+                if 'InstanceId' in eip:
+                    advice = f'Elastic IP({public_ip})가 EC2 인스턴스에 연결되어 있습니다.'
+                elif 'NetworkInterfaceId' in eip:
+                    advice = f'Elastic IP({public_ip})가 네트워크 인터페이스(NAT Gateway 등)에 연결되어 있습니다.'
+                else:
+                    advice = f'Elastic IP({public_ip})가 사용 중입니다.'
                 status_text = '사용 중'
             
             resources.append(create_resource_result(
@@ -53,6 +72,8 @@ class UnusedResourcesCheck(BaseEC2Check):
                 status=status,
                 advice=advice,
                 status_text=status_text,
+                eip_name=eip_name,
+                allocation_id=allocation_id,
                 resource_type='Elastic IP',
                 public_ip=public_ip,
                 instance_id=eip.get('InstanceId', 'N/A')
@@ -63,11 +84,20 @@ class UnusedResourcesCheck(BaseEC2Check):
             volume_id = volume['VolumeId']
             size = volume.get('Size', 0)
             
+            # 볼륨 이름 태그 찾기
+            volume_name = '-'
+            for tag in volume.get('Tags', []):
+                if tag['Key'] == 'Name':
+                    volume_name = tag['Value']
+                    break
+            
             resources.append(create_resource_result(
                 resource_id=volume_id,
                 status=RESOURCE_STATUS_WARNING,
                 advice=f'사용되지 않는 EBS 볼륨({size}GB)으로 불필요한 비용이 발생합니다.',
                 status_text='미사용',
+                volume_name=volume_name,
+                volume_id=volume_id,
                 resource_type='EBS Volume',
                 size=size,
                 volume_type=volume.get('VolumeType', 'N/A')

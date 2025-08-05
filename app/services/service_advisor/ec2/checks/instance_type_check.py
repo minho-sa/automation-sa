@@ -71,7 +71,7 @@ class InstanceTypeCheck(BaseEC2Check):
                 instance_type = instance['InstanceType']
                 
                 # 인스턴스 이름 태그 가져오기
-                instance_name = "N/A"
+                instance_name = "-"
                 for tag in instance.get('Tags', []):
                     if tag['Key'] == 'Name':
                         instance_name = tag['Value']
@@ -115,10 +115,11 @@ class InstanceTypeCheck(BaseEC2Check):
                         # 인스턴스 결과 생성
                         instance_result = create_resource_result(
                             resource_id=instance_id,
-                            resource_name=instance_name,
                             status=status,
                             status_text=status_text,
-                            advice=advice
+                            advice=advice,
+                            instance_name=instance_name,
+                            instance_id=instance_id
                         )
                         
                         instance_analysis.append(instance_result)
@@ -129,10 +130,11 @@ class InstanceTypeCheck(BaseEC2Check):
                         
                         instance_result = create_resource_result(
                             resource_id=instance_id,
-                            resource_name=instance_name,
                             status=RESOURCE_STATUS_UNKNOWN,
                             status_text=status_text,
-                            advice=advice
+                            advice=advice,
+                            instance_name=instance_name,
+                            instance_id=instance_id
                         )
                         
                         instance_analysis.append(instance_result)
@@ -144,10 +146,11 @@ class InstanceTypeCheck(BaseEC2Check):
                     
                     instance_result = create_resource_result(
                         resource_id=instance_id,
-                        resource_name=instance_name,
                         status='error',
                         status_text=status_text,
-                        advice=advice
+                        advice=advice,
+                        instance_name=instance_name,
+                        instance_id=instance_id
                     )
                     
                     instance_analysis.append(instance_result)
@@ -204,9 +207,9 @@ class InstanceTypeCheck(BaseEC2Check):
         total_instances_count = analysis_result['total_count']
         
         if optimization_needed_count > 0:
-            return f'{total_instances_count}개 인스턴스 중 {optimization_needed_count}개가 최적화가 필요합니다.'
+            return f'활성화 중인 {total_instances_count}개 인스턴스 중 {optimization_needed_count}개가 최적화가 필요합니다.'
         else:
-            return f'모든 인스턴스({total_instances_count}개)가 적절한 크기로 구성되어 있습니다.'
+            return f'활성화 중인 모든 인스턴스({total_instances_count}개)가 적절한 크기로 구성되어 있습니다.'
 
 def run(role_arn=None) -> Dict[str, Any]:
     """

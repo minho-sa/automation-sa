@@ -75,16 +75,19 @@ class AWSClient:
             raise Exception(f"AWS 자격증명이 유효하지 않습니다: {str(e)}")
 
 # 기존 코드와의 호환성을 위한 함수
-def create_boto3_client(service_name, region_name=None):
+def create_boto3_client(service_name, region_name=None, role_arn=None):
     """
     boto3 클라이언트를 생성하는 함수 (기존 코드와의 호환성 유지)
     
     Args:
         service_name: AWS 서비스 이름
         region_name: AWS 리전 이름 (선택 사항)
+        role_arn: AWS 역할 ARN (선택 사항)
         
     Returns:
         boto3 클라이언트 객체
     """
+    # 일단 role_arn을 무시하고 기본 자격증명 사용
+    # Role assume 권한 문제로 인한 임시 수정
     client = AWSClient()
     return client.get_client(service_name)

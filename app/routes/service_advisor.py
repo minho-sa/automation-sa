@@ -68,6 +68,21 @@ def service_advisor_detail(service_name):
         current_app.logger.warning(f"서비스 템플릿을 찾을 수 없음: {service_name}, 공통 템플릿 사용")
         return render_template('service_advisor/service_template.html', checks=checks, service_name=service_name, base_url='/advisor')
 
+@service_advisor_bp.route('/<service_name>/checks')
+@service_advisor_access_required
+def get_service_checks(service_name):
+    """특정 서비스의 검사 항목 목록을 반환합니다."""
+    current_app.logger.info(f"사용자 {current_user.username}이 {service_name} 서비스의 검사 항목을 요청했습니다.")
+    
+    advisor_factory = ServiceAdvisorFactory()
+    advisor = advisor_factory.get_advisor(service_name)
+    
+    if not advisor:
+        return jsonify({'error': f'서비스 {service_name}에 대한 어드바이저를 찾을 수 없습니다.'}), 404
+    
+    checks = advisor.get_available_checks()
+    return jsonify({'checks': checks})
+
 @service_advisor_bp.route('/<service_name>/run-check', methods=['POST'])
 @service_advisor_access_required
 def run_service_check(service_name):

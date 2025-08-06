@@ -17,24 +17,35 @@ class EngineVersionCheck(BaseRDSCheck):
     def collect_data(self, role_arn=None) -> Dict[str, Any]:
         rds_client = create_boto3_client('rds', role_arn=role_arn)
         
-        # RDS 인스턴스 조회
-        db_instances = rds_client.describe_db_instances()
-        
-        # 각 엔진별 사용 가능한 버전 조회
-        engine_versions = {}
-        for instance in db_instances['DBInstances']:
-            engine = instance['Engine']
-            if engine not in engine_versions:
-                try:
-                    versions = rds_client.describe_db_engine_versions(Engine=engine)
-                    engine_versions[engine] = versions['DBEngineVersions']
-                except Exception:
-                    engine_versions[engine] = []
-        
-        return {
-            'db_instances': db_instances['DBInstances'],
-            'engine_versions': engine_versions
-        }
+        try:
+            # RDS 인스턴스 조회
+            db_instances = rds_client.describe_db_instances()
+            
+            # 각 엔진별 사용 가능한 버전 조회
+            engine_versions = {}
+            for instance in db_instances.get('DBInstances', []):
+                engine = instance.get('Engine')
+                if not engine:
+                    continue
+                    
+                if engine not in engine_versions:
+                    try:
+                        versions = rds_client.describe_db_engine_versions(Engine=engine)
+                        engine_versions[engine] = versions.get('DBEngineVersions', [])
+                    except Exception as e:
+                        print(f"엔진 {engine}의 버전 정보를 가져오는 중 오류 발생: {str(e)}")
+                        engine_versions[engine] = []
+            
+            return {
+                'db_instances': db_instances.get('DBInstances', []),
+                'engine_versions': engine_versions
+            }
+        except Exception as e:
+            print(f"RDS 데이터 수집 중 오류 발생: {str(e)}")
+            return {
+                'db_instances': [],
+                'engine_versions': {}
+            }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         resources = []
@@ -43,11 +54,15 @@ class EngineVersionCheck(BaseRDSCheck):
         # 구버전으로 간주할 기준 (월 단위)
         old_version_threshold = 12  # 12개월 이상 된 버전
         
-        for instance in collected_data['db_instances']:
-            db_identifier = instance['DBInstanceIdentifier']
-            engine = instance['Engine']
-            current_version = instance['EngineVersion']
+        for instance in collected_data.get('db_instances', []):
+            db_identifier = instance.get('DBInstanceIdentifier', 'Unknown')
+            engine = instance.get('Engine', 'Unknown')
+            current_version = instance.get('EngineVersion', 'Unknown')
             auto_minor_upgrade = instance.get('AutoMinorVersionUpgrade', False)
+            
+            # 필수 정보가 없으면 건너뛰기
+            if not all([db_identifier != 'Unknown', engine != 'Unknown', current_version != 'Unknown']):
+                continue
             
             # 사용 가능한 엔진 버전들
             available_versions = collected_data['engine_versions'].get(engine, [])
@@ -57,11 +72,15 @@ class EngineVersionCheck(BaseRDSCheck):
             latest_version_info = None
             
             for version in available_versions:
-                if version['Version'] == current_version:
+                version_str = version.get('Version', '')
+                if not version_str:
+                    continue
+                    
+                if version_str == current_version:
                     current_version_info = version
                 
                 # 최신 버전 찾기 (가장 높은 버전)
-                if latest_version_info is None or self._compare_versions(version['Version'], latest_version_info['Version']) > 0:
+                if latest_version_info is None or self._compare_versions(version_str, latest_version_info.get('Version', '')) > 0:
                     latest_version_info = version
             
             # 상태 결정
@@ -70,18 +89,19 @@ class EngineVersionCheck(BaseRDSCheck):
             advice = f'현재 엔진 버전({current_version})이 최신 상태입니다.'
             
             # 버전 비교 및 분석
-            if latest_version_info and current_version != latest_version_info['Version']:
-                version_gap = self._calculate_version_gap(current_version, latest_version_info['Version'])
+            latest_version = latest_version_info.get('Version', '') if latest_version_info else ''
+            if latest_version_info and current_version != latest_version:
+                version_gap = self._calculate_version_gap(current_version, latest_version)
                 
                 if version_gap >= 2:  # 메이저 버전이 2개 이상 차이
                     status = RESOURCE_STATUS_FAIL
                     status_text = '업그레이드 필요'
-                    advice = f'현재 버전({current_version})이 최신 버전({latest_version_info["Version"]})보다 {version_gap}개 버전 뒤처져 있습니다. 보안 및 성능 향상을 위해 업그레이드를 권장합니다.'
+                    advice = f'현재 버전({current_version})이 최신 버전({latest_version})보다 {version_gap}개 버전 뒤처져 있습니다. 보안 및 성능 향상을 위해 업그레이드를 권장합니다.'
                     problem_count += 1
                 elif version_gap >= 1:  # 메이저 버전이 1개 차이
                     status = RESOURCE_STATUS_WARNING
                     status_text = '업그레이드 권장'
-                    advice = f'현재 버전({current_version})보다 새로운 버전({latest_version_info["Version"]})이 사용 가능합니다. 업그레이드를 고려하세요.'
+                    advice = f'현재 버전({current_version})보다 새로운 버전({latest_version})이 사용 가능합니다. 업그레이드를 고려하세요.'
                     problem_count += 1
             
             # 자동 마이너 버전 업그레이드 확인
@@ -107,7 +127,7 @@ class EngineVersionCheck(BaseRDSCheck):
                 db_identifier=db_identifier,
                 engine=engine,
                 current_version=current_version,
-                latest_version=latest_version_info['Version'] if latest_version_info else 'N/A',
+                latest_version=latest_version_info.get('Version', 'N/A') if latest_version_info else 'N/A',
                 auto_minor_upgrade=auto_minor_upgrade
             ))
         

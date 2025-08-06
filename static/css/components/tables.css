@@ -150,17 +150,29 @@ code {
     color: #6c757d;
 }
 
-/* 리소스 ID 한줄 표시 */
+/* 리소스 ID 컬럼 너비 제한 */
 .aws-table .table tbody td:nth-child(3) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 150px;
+    max-width: 100px;
+    width: 100px;
 }
 
-/* 상태 한줄 표시 */
+/* 상태 컬럼 너비 확보 */
 .aws-table .table tbody td:nth-child(4) {
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 150px;
+    width: 150px;
+}
+
+/* 테이블 헤더 컬럼 너비 */
+.aws-table .table thead th:nth-child(3) {
+    width: 100px;
+    max-width: 100px;
+}
+
+.aws-table .table thead th:nth-child(4) {
+    width: 150px;
+    min-width: 150px;
 }

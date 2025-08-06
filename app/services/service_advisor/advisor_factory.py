@@ -10,6 +10,10 @@ from app.services.service_advisor.lambda_service.lambda_advisor import LambdaAdv
 from app.services.service_advisor.iam.iam_advisor import IAMAdvisor
 from app.services.service_advisor.rds.rds_advisor import RDSAdvisor
 from app.services.service_advisor.s3.s3_advisor import S3Advisor
+from app.services.service_advisor.alb.alb_advisor import ALBAdvisor
+from app.services.service_advisor.acm.acm_advisor import ACMAdvisor
+from app.services.service_advisor.vpn.vpn_advisor import VPNAdvisor
+from app.services.service_advisor.ebs.ebs_advisor import EBSAdvisor
 
 class ServiceAdvisorFactory:
     """
@@ -24,10 +28,14 @@ class ServiceAdvisorFactory:
         self.logger = logging.getLogger(__name__)
         self.service_mapping = {
             'ec2': EC2Advisor,
+            'ebs': EBSAdvisor,
             'lambda': LambdaAdvisor,
             'iam': IAMAdvisor,
             'rds': RDSAdvisor,
-            's3': S3Advisor
+            's3': S3Advisor,
+            'alb': ALBAdvisor,
+            'acm': ACMAdvisor,
+            'vpn': VPNAdvisor
         }
     
     def get_advisor(self, service_name: str, role_arn: str = None) -> Optional[Any]:
@@ -55,6 +63,10 @@ class ServiceAdvisorFactory:
             # 모든 서비스에 대해 실제 어드바이저 객체 생성
             advisor = advisor_class(session=session)
             print(f"어드바이저 객체 생성 성공: {service_name}, 클래스: {advisor_class.__name__}")
+            print(f"어드바이저 검사 항목 수: {len(advisor.checks)}")
+            if hasattr(advisor, 'get_available_checks'):
+                checks = advisor.get_available_checks()
+                print(f"사용 가능한 검사 항목: {[check['id'] for check in checks]}")
             return advisor
         except Exception as e:
             self.logger.error(f"어드바이저 생성 중 오류 발생: {str(e)}")
@@ -148,10 +160,14 @@ class ServiceAdvisorFactory:
         """
         service_display_names = {
             'ec2': 'Amazon EC2',
+            'ebs': 'Amazon EBS',
             'lambda': 'AWS Lambda',
             'iam': 'AWS IAM',
             'rds': 'Amazon RDS',
-            's3': 'Amazon S3'
+            's3': 'Amazon S3',
+            'alb': 'Elastic Load Balancer',
+            'acm': 'AWS Certificate Manager',
+            'vpn': 'AWS VPN'
         }
         
         return service_display_names.get(service_name, service_name.upper())

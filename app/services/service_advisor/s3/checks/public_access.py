@@ -27,6 +27,13 @@ def run(role_arn=None) -> Dict[str, Any]:
         for bucket in buckets.get('Buckets', []):
             bucket_name = bucket['Name']
             
+            # 버킷 리전 정보 가져오기
+            try:
+                bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)
+                region = bucket_location.get('LocationConstraint') or 'us-east-1'
+            except Exception as e:
+                region = 'N/A'
+            
             # 퍼블릭 액세스 차단 설정 확인
             try:
                 public_access_block = s3_client.get_public_access_block(Bucket=bucket_name)
@@ -101,6 +108,7 @@ def run(role_arn=None) -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
+                region=region,
                 creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
                 public_acl=public_acl if 'public_acl' in locals() else 'N/A',
                 all_blocked=all_blocked if 'all_blocked' in locals() else 'N/A'

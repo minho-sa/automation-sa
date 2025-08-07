@@ -3,6 +3,7 @@ EC2 보안 그룹 설정 검사
 """
 import boto3
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR,
@@ -17,9 +18,28 @@ class SecurityGroupCheck(BaseEC2Check):
     def __init__(self):
         self.check_id = 'ec2-security-group'
     
+    def _collect_region_data(self, region: str, role_arn: str) -> List[Dict[str, Any]]:
+        """
+        특정 리전의 보안 그룹 데이터를 수집합니다.
+        """
+        try:
+            ec2 = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
+            security_groups = ec2.describe_security_groups()
+            
+            # 리전 정보 추가
+            region_sgs = []
+            for sg in security_groups['SecurityGroups']:
+                sg['Region'] = region
+                region_sgs.append(sg)
+            
+            return region_sgs
+        except Exception as e:
+            print(f"리전 {region}에서 보안 그룹 데이터 수집 중 오류: {str(e)}")
+            return []
+    
     def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """
-        EC2 보안 그룹 데이터를 수집합니다.
+        모든 리전의 EC2 보안 그룹 데이터를 병렬로 수집합니다.
         
         Args:
             role_arn: AWS 역할 ARN (선택 사항)
@@ -27,19 +47,23 @@ class SecurityGroupCheck(BaseEC2Check):
         Returns:
             Dict[str, Any]: 수집된 데이터
         """
-        try:
-            ec2 = create_boto3_client('ec2', role_arn=role_arn)
-            security_groups = ec2.describe_security_groups()
+        # 모든 리전 목록 가져오기
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
+        
+        all_security_groups = []
+        
+        # 병렬 처리로 리전별 데이터 수집 (10개 리전 동시 처리)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
             
-            return {
-                'security_groups': security_groups['SecurityGroups']
-            }
-        except Exception as e:
-            print(f"보안 그룹 데이터 수집 중 오류: {str(e)}")
-            # 오류 발생 시 빈 데이터 반환
-            return {
-                'security_groups': []
-            }
+            for future in as_completed(future_to_region):
+                region_sgs = future.result()
+                all_security_groups.extend(region_sgs)
+        
+        return {
+            'security_groups': all_security_groups
+        }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -61,6 +85,7 @@ class SecurityGroupCheck(BaseEC2Check):
             sg_name = sg['GroupName']
             vpc_id = sg.get('VpcId', 'N/A')
             description = sg.get('Description', '')
+            region = sg.get('Region', 'N/A')
             
             # 위험한 규칙 찾기
             risky_rules = []
@@ -122,7 +147,7 @@ class SecurityGroupCheck(BaseEC2Check):
             else:
                 advice = "보안 그룹이 적절히 구성되어 있습니다."
             
-            # 보안 그룹 결과 생성
+            # 보안 그룹 결과 생성 (리전 정보 추가)
             sg_result = create_resource_result(
                 resource_id=sg_id,
                 status=status,
@@ -130,7 +155,8 @@ class SecurityGroupCheck(BaseEC2Check):
                 advice=advice,
                 resource_name=sg_name,
                 sg_id=sg_id,
-                sg_name=sg_name
+                sg_name=sg_name,
+                region=sg.get('Region', 'N/A')
             )
             
             sg_analysis.append(sg_result)

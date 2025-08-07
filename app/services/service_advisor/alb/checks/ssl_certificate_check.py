@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.common.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     create_resource_result, RESOURCE_STATUS_PASS, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_FAIL
@@ -22,6 +23,11 @@ class SSLCertificateCheck(BaseALBCheck):
         try:
             # ALB 목록 조회
             load_balancers = elbv2_client.describe_load_balancers()
+            
+            # 리전 정보 추가
+            current_region = elbv2_client.meta.region_name
+            for lb in load_balancers.get('LoadBalancers', []):
+                lb['Region'] = current_region
             
             # 리스너 정보 조회
             listeners = {}
@@ -249,6 +255,7 @@ class SSLCertificateCheck(BaseALBCheck):
                 advice=advice,
                 status_text=status_text,
                 alb_name=lb_name,
+                region=lb.get('Region', 'N/A'),
                 scheme=lb_scheme,
                 https_listeners=len(https_listeners),
                 http_listeners=len(http_listeners),

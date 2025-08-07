@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     create_resource_result, RESOURCE_STATUS_PASS, RESOURCE_STATUS_WARNING
@@ -14,15 +15,49 @@ class InstanceBackupCheck(BaseEC2Check):
         self.session = session or boto3.Session()
         self.check_id = 'ec2_instance_backup_check'
     
+    def _collect_region_data(self, region: str, role_arn: str) -> Dict[str, Any]:
+        """특정 리전의 인스턴스와 스냅샷 데이터를 수집합니다."""
+        try:
+            ec2_client = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
+            
+            instances = ec2_client.describe_instances()
+            snapshots = ec2_client.describe_snapshots(OwnerIds=['self'])
+            
+            return {
+                'reservations': instances['Reservations'],
+                'snapshots': snapshots['Snapshots'],
+                'region': region
+            }
+        except Exception as e:
+            print(f"리전 {region}에서 데이터 수집 중 오류: {str(e)}")
+            return {'reservations': [], 'snapshots': [], 'region': region}
+    
     def collect_data(self, role_arn=None) -> Dict[str, Any]:
-        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+        # 모든 리전 목록 가져오기
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
         
-        instances = ec2_client.describe_instances()
-        snapshots = ec2_client.describe_snapshots(OwnerIds=['self'])
+        all_reservations = []
+        all_snapshots = []
+        
+        # 병렬 처리로 리전별 데이터 수집
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
+            
+            for future in as_completed(future_to_region):
+                result = future.result()
+                
+                # 각 인스턴스에 리전 정보 추가
+                for reservation in result['reservations']:
+                    for instance in reservation['Instances']:
+                        instance['Region'] = result['region']
+                
+                all_reservations.extend(result['reservations'])
+                all_snapshots.extend(result['snapshots'])
         
         return {
-            'reservations': instances['Reservations'],
-            'snapshots': snapshots['Snapshots']
+            'reservations': all_reservations,
+            'snapshots': all_snapshots
         }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -79,6 +114,7 @@ class InstanceBackupCheck(BaseEC2Check):
                     status_text=status_text,
                     instance_id=instance_id,
                     instance_name=instance_name,
+                    region=instance.get('Region', 'N/A'),
                     has_recent_backup=has_recent_backup
                 ))
         

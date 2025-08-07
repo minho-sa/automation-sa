@@ -4,13 +4,16 @@
 
 /* EBS 테이블 가로 스크롤 */
 .check-resources .table-responsive {
-    overflow-x: auto !important;
+    overflow-x: scroll !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     border: 1px solid #dee2e6;
     border-radius: 0.375rem;
     max-width: 100%;
     white-space: nowrap;
+    position: relative;
+    background: white;
+    padding-bottom: 5px;
 }
 
 .check-resources .table-responsive table {
@@ -24,31 +27,89 @@
 .check-resources .table-responsive table td {
     white-space: nowrap !important;
     min-width: 120px;
+    padding: 8px 12px;
+    vertical-align: middle;
+    overflow: visible !important;
+    text-overflow: unset !important;
 }
 
 .check-resources .table-responsive table td.resource-advice {
     white-space: normal !important;
     word-break: break-word !important;
-    max-width: 400px !important;
-    min-width: 300px !important;
+    line-height: 1.4;
+    min-width: 300px;
 }
 
+/* 가로 스크롤바 스타일 - 기본적으로 숨김 */
 .check-resources .table-responsive::-webkit-scrollbar {
-    height: 12px;
+    height: 16px;
+    background: transparent;
+    border-radius: 8px;
 }
 
 .check-resources .table-responsive::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 6px;
+    background: transparent;
+    border-radius: 8px;
 }
 
 .check-resources .table-responsive::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 6px;
+    background: transparent;
+    border-radius: 8px;
+    min-width: 50px;
+    cursor: pointer;
 }
 
-.check-resources .table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+/* 호버 시 스크롤바 표시 */
+.check-resources .table-responsive:hover::-webkit-scrollbar {
+    background: #f8f9fa;
+}
+
+.check-resources .table-responsive:hover::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+}
+
+.check-resources .table-responsive:hover::-webkit-scrollbar-thumb {
+    background: #6c757d;
+    border: 2px solid #e9ecef;
+}
+
+.check-resources .table-responsive:hover::-webkit-scrollbar-thumb:hover {
+    background: #495057;
+    border-color: #dee2e6;
+}
+
+.check-resources .table-responsive:hover::-webkit-scrollbar-thumb:active {
+    background: #343a40;
+}
+
+/* Firefox 스크롤바 스타일 */
+.check-resources .table-responsive {
+    scrollbar-width: thin;
+    scrollbar-color: #6c757d #f8f9fa;
+}
+
+/* 스크롤 표시기 추가 */
+.check-resources .table-responsive::before {
+    content: "← 좌우로 스크롤하여 더 많은 정보를 확인하세요 →";
+    position: absolute;
+    top: -25px;
+    right: 0;
+    font-size: 11px;
+    color: #6c757d;
+    background: #fff3cd;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid #ffeaa7;
+    z-index: 10;
+    white-space: nowrap;
+    opacity: 0.8;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.8; }
 }
 
 /* 테이블 헤더 칸막이 선 */

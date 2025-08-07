@@ -97,8 +97,8 @@ function displayEBSCheckResult(checkId, result) {
         // 리소스 수 표시
         resultHtml += `<div class="resource-count">총 ${result.resources.length}개의 리소스</div>`;
         
-        resultHtml += '<div class="table-responsive aws-table" style="overflow-x: auto; max-width: 100%; white-space: nowrap;">';
-        resultHtml += '<table class="table table-sm table-hover" style="min-width: 1200px; width: auto;">';
+        resultHtml += '<div class="table-responsive aws-table" style="overflow-x: auto; max-width: 100%; white-space: nowrap; border: 1px solid #dee2e6; border-radius: 0.375rem; position: relative;">';
+        resultHtml += '<table class="table table-sm table-hover" style="min-width: 1600px; width: auto; margin-bottom: 0;">';
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th style="white-space: nowrap; min-width: 50px;"></th>';

@@ -7,9 +7,9 @@ from app.services.service_advisor.rds.checks import (
     multi_az,
     encryption_check,
     public_access_check,
-    instance_sizing_check
+    instance_sizing_check,
+    engine_version_check
 )
-from app.services.service_advisor.rds.checks.engine_version_check import EngineVersionCheck
 
 class RDSAdvisor(BaseAdvisor):
     """
@@ -80,9 +80,8 @@ class RDSAdvisor(BaseAdvisor):
         )
         
         # 엔진 버전 검사
-        engine_version_check = EngineVersionCheck()
         self.register_check(
-            check_id=engine_version_check.check_id,
+            check_id='rds-engine-version',
             name='엔진 버전 및 업그레이드 검사',
             description='RDS 인스턴스의 데이터베이스 엔진 버전을 검사하여 업그레이드 필요성을 평가합니다.\n구버전 엔진, 지원 종료 예정 버전, 자동 마이너 업그레이드 비활성화 등을 식별하고 보안 및 성능 향상을 위한 개선 방안을 제시합니다.',
             function=engine_version_check.run,

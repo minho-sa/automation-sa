@@ -1,5 +1,6 @@
 import boto3
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.aws_client import create_boto3_client
 
 RESOURCE_STATUS_PASS = 'pass'
@@ -15,25 +16,35 @@ class UnusedVolumesCheck(BaseEBSCheck):
         super().__init__(session)
         self.check_id = 'unused_volumes_check'
     
-    def collect_data(self, role_arn=None) -> Dict[str, Any]:
-        """EBS 볼륨 데이터 수집"""
+    def _collect_region_data(self, region: str, role_arn: str) -> Dict[str, Any]:
         try:
-            ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+            ec2_client = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
             volumes_response = ec2_client.describe_volumes()
             volumes = volumes_response['Volumes']
             
-            # 리전 정보 추가
-            current_region = ec2_client.meta.region_name
             for volume in volumes:
-                volume['Region'] = current_region
+                volume['Region'] = region
             
-            print(f"사용하지 않는 EBS 볼륨 검사: {len(volumes)}개 볼륨 발견 (리전: {current_region})")
             return {'volumes': volumes}
         except Exception as e:
-            print(f"EBS 데이터 수집 중 오류 발생: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            print(f"리전 {region}에서 EBS 데이터 수집 중 오류: {str(e)}")
             return {'volumes': []}
+    
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
+        """EBS 볼륨 데이터 수집"""
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
+        
+        all_volumes = []
+        
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
+            
+            for future in as_completed(future_to_region):
+                result = future.result()
+                all_volumes.extend(result['volumes'])
+        
+        return {'volumes': all_volumes}
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         resources = []
@@ -91,13 +102,7 @@ class UnusedVolumesCheck(BaseEBSCheck):
                 'status_text': status_text,
                 'volume_id': volume_id,
                 'volume_name': volume_name or '-',
-                'region': region,
-                'size': volume.get('Size', 0),
-                'volume_type': volume.get('VolumeType', 'N/A'),
-                'state': state,
-                'availability_zone': volume.get('AvailabilityZone', 'N/A'),
-                'attached_instances': ', '.join(attached_instances) if attached_instances else '연결 안됨',
-                'create_time': volume.get('CreateTime', '').strftime('%Y-%m-%d %H:%M:%S') if volume.get('CreateTime') else 'N/A'
+                'region': region
             })
         
         return {

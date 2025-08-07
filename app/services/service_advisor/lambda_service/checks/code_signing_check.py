@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
+from app.services.service_advisor.common.aws_client import get_all_regions
 from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL,
@@ -18,66 +19,79 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        lambda_client = create_boto3_client('lambda', role_arn=role_arn)
-        
-        # Lambda 함수 정보 수집
-        functions = lambda_client.list_functions()
-        
-        # 함수 분석 결과
+        # 모든 리전에서 Lambda 함수 정보 수집
+        regions = get_all_regions('lambda')
         function_analysis = []
         
-        for function in functions.get('Functions', []):
-            function_name = function['FunctionName']
-            
-            # 함수 태그 가져오기
+        for region in regions:
             try:
-                tags_response = lambda_client.list_tags(Resource=function['FunctionArn'])
-                tags = tags_response.get('Tags', {})
-            except Exception:
-                tags = {}
+                lambda_client = create_boto3_client('lambda', region_name=region, role_arn=role_arn)
+                
+                # Lambda 함수 정보 수집
+                functions = lambda_client.list_functions()
+                
+                if not functions.get('Functions'):
+                    continue  # 해당 리전에 함수가 없으면 다음 리전으로
+                
+            except Exception as e:
+                # 리전 접근 실패 시 다음 리전으로 계속
+                continue
             
-            # 환경 태그 확인
-            environment = tags.get('Environment', '').lower()
-            is_production = environment in ['prod', 'production']
+            for function in functions.get('Functions', []):
+                function_name = function['FunctionName']
             
-            # 코드 서명 구성 확인
-            try:
-                code_signing_config = lambda_client.get_function_code_signing_config(
-                    FunctionName=function_name
+                # 함수 태그 가져오기
+                try:
+                    tags_response = lambda_client.list_tags(Resource=function['FunctionArn'])
+                    tags = tags_response.get('Tags', {})
+                except Exception:
+                    tags = {}
+                
+                # 환경 태그 확인
+                environment = tags.get('Environment', '').lower()
+                is_production = environment in ['prod', 'production']
+                
+                # 코드 서명 구성 확인
+                try:
+                    code_signing_config = lambda_client.get_function_code_signing_config(
+                        FunctionName=function_name
+                    )
+                    has_code_signing = 'CodeSigningConfigArn' in code_signing_config
+                except Exception:
+                    has_code_signing = False
+                
+                # 코드 서명 분석
+                status = RESOURCE_STATUS_PASS  # 기본값은 통과
+                advice = None
+                status_text = None
+                
+                if is_production and not has_code_signing:
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '보안 위험'
+                    advice = f'이 함수는 프로덕션 환경에서 실행되지만 코드 서명이 구성되어 있지 않습니다. 코드 무결성을 보장하기 위해 코드 서명을 활성화하세요.'
+                elif not is_production and has_code_signing:
+                    status_text = '최적화됨'
+                    advice = f'이 함수는 프로덕션 환경이 아니지만 코드 서명이 구성되어 있습니다. 보안 모범 사례를 따르고 있습니다.'
+                elif is_production and has_code_signing:
+                    status_text = '최적화됨'
+                    advice = f'이 함수는 프로덕션 환경에서 실행되며 코드 서명이 적절하게 구성되어 있습니다.'
+                else:
+                    status_text = '최적화됨'
+                    advice = f'이 함수는 프로덕션 환경이 아니므로 코드 서명이 필요하지 않습니다.'
+            
+                # 표준화된 리소스 결과 생성 (리전 정보 포함)
+                function_result = create_resource_result(
+                    resource_id=f"{function_name} ({region})",
+                    status=status,
+                    status_text=status_text,
+                    advice=advice,
+                    function_name=function_name,
+                    region=region,
+                    is_production=is_production,
+                    has_code_signing=has_code_signing
                 )
-                has_code_signing = 'CodeSigningConfigArn' in code_signing_config
-            except Exception:
-                has_code_signing = False
-            
-            # 코드 서명 분석
-            status = RESOURCE_STATUS_PASS  # 기본값은 통과
-            advice = None
-            status_text = None
-            
-            if is_production and not has_code_signing:
-                status = RESOURCE_STATUS_FAIL
-                status_text = '보안 위험'
-                advice = f'이 함수는 프로덕션 환경에서 실행되지만 코드 서명이 구성되어 있지 않습니다. 코드 무결성을 보장하기 위해 코드 서명을 활성화하세요.'
-            elif not is_production and has_code_signing:
-                status_text = '최적화됨'
-                advice = f'이 함수는 프로덕션 환경이 아니지만 코드 서명이 구성되어 있습니다. 보안 모범 사례를 따르고 있습니다.'
-            elif is_production and has_code_signing:
-                status_text = '최적화됨'
-                advice = f'이 함수는 프로덕션 환경에서 실행되며 코드 서명이 적절하게 구성되어 있습니다.'
-            else:
-                status_text = '최적화됨'
-                advice = f'이 함수는 프로덕션 환경이 아니므로 코드 서명이 필요하지 않습니다.'
-            
-            # 표준화된 리소스 결과 생성
-            function_result = create_resource_result(
-                resource_id=function_name,
-                status=status,
-                status_text=status_text,
-                advice=advice,
-                function_name=function_name
-            )
-            
-            function_analysis.append(function_result)
+                
+                function_analysis.append(function_result)
         
         # 결과 분류
         passed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_PASS]

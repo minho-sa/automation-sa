@@ -20,6 +20,11 @@ class UnusedALBCheck(BaseALBCheck):
             # ALB 목록 조회
             load_balancers = elbv2_client.describe_load_balancers()
             
+            # 리전 정보 추가
+            current_region = elbv2_client.meta.region_name
+            for lb in load_balancers.get('LoadBalancers', []):
+                lb['Region'] = current_region
+            
             # 타겟 그룹 목록 조회
             target_groups = elbv2_client.describe_target_groups()
             
@@ -144,6 +149,7 @@ class UnusedALBCheck(BaseALBCheck):
                 advice=advice,
                 status_text=status_text,
                 alb_name=lb_name,
+                region=lb.get('Region', 'N/A'),
                 alb_arn=lb_arn,
                 state=lb_state,
                 listener_count=len(listeners.get(lb_arn, [])),

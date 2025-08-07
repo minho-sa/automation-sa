@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
+from app.services.service_advisor.common.aws_client import get_all_regions
 from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL,
@@ -18,12 +19,8 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        lambda_client = create_boto3_client('lambda', role_arn=role_arn)
-        
-        # Lambda 함수 정보 수집
-        functions = lambda_client.list_functions()
-        
-        # 함수 분석 결과
+        # 모든 리전에서 Lambda 함수 정보 수집
+        regions = get_all_regions('lambda')
         function_analysis = []
         
         # 지원 종료된 런타임 목록 (AWS 공식 발표 기준)
@@ -36,33 +33,49 @@ def run(role_arn=None) -> Dict[str, Any]:
             'go1.x'  # go1.x는 2024년 지원 종료 예정
         ]
         
-        for function in functions.get('Functions', []):
-            function_name = function['FunctionName']
-            runtime = function['Runtime']
+        for region in regions:
+            try:
+                lambda_client = create_boto3_client('lambda', region_name=region, role_arn=role_arn)
+                
+                # Lambda 함수 정보 수집
+                functions = lambda_client.list_functions()
+                
+                if not functions.get('Functions'):
+                    continue  # 해당 리전에 함수가 없으면 다음 리전으로
+                
+            except Exception as e:
+                # 리전 접근 실패 시 다음 리전으로 계속
+                continue
             
-            # 런타임 분석
-            status = RESOURCE_STATUS_PASS  # 기본값은 통과
-            advice = None
-            status_text = None
-            
-            if runtime in deprecated_runtimes:
-                status = RESOURCE_STATUS_FAIL
-                status_text = '지원 종료'
-                advice = f'런타임 {runtime}은 지원 종료되었거나 곧 지원 종료될 예정입니다. 지원되는 런타임으로 업그레이드하세요.'
-            else:
-                status_text = '지원 중'
-                advice = f'런타임 {runtime}은 현재 지원되고 있습니다.'
-            
-            # 표준화된 리소스 결과 생성
-            function_result = create_resource_result(
-                resource_id=function_name,
-                status=status,
-                status_text=status_text,
-                advice=advice,
-                function_name=function_name
-            )
-            
-            function_analysis.append(function_result)
+            for function in functions.get('Functions', []):
+                function_name = function['FunctionName']
+                runtime = function['Runtime']
+                
+                # 런타임 분석
+                status = RESOURCE_STATUS_PASS  # 기본값은 통과
+                advice = None
+                status_text = None
+                
+                if runtime in deprecated_runtimes:
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '지원 종료'
+                    advice = f'런타임 {runtime}은 지원 종료되었거나 곧 지원 종료될 예정입니다. 지원되는 런타임으로 업그레이드하세요.'
+                else:
+                    status_text = '지원 중'
+                    advice = f'런타임 {runtime}은 현재 지원되고 있습니다.'
+                
+                # 표준화된 리소스 결과 생성 (리전 정보 포함)
+                function_result = create_resource_result(
+                    resource_id=f"{function_name} ({region})",
+                    status=status,
+                    status_text=status_text,
+                    advice=advice,
+                    function_name=function_name,
+                    region=region,
+                    runtime=runtime
+                )
+                
+                function_analysis.append(function_result)
         
         # 결과 분류
         passed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_PASS]

@@ -86,18 +86,7 @@ class EC2Advisor(BaseAdvisor):
                 severity='medium'
             )
             
-            # EBS 암호화 검사
-            from app.services.service_advisor.ec2.checks.ebs_encryption_check import EBSEncryptionCheck
-            ebs_encryption_check = EBSEncryptionCheck()
-            self.register_check(
-                check_id=ebs_encryption_check.check_id,
-                name='EBS 볼륨 암호화 검사',
-                description='EBS 볼륨의 암호화 설정을 검사합니다. 암호화되지 않은 볼륨을 식별하고 데이터 보호를 위한 암호화 활성화 방안을 제시합니다.',
-                function=ebs_encryption_check.run,
-                category='보안',
-                severity='high'
-            )
-            
+
             # 미사용 리소스 검사
             from app.services.service_advisor.ec2.checks.unused_resources_check import UnusedResourcesCheck
             unused_resources_check = UnusedResourcesCheck()

@@ -15,10 +15,9 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        rds_client = create_boto3_client('rds', role_arn=role_arn)
-        
-        # RDS 인스턴스 목록 가져오기
-        instances = rds_client.describe_db_instances()
+        # 모든 리전에서 RDS 인스턴스 수집
+        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
         
         # 인스턴스 분석 결과
         instance_analysis = []
@@ -26,67 +25,76 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 프로덕션 환경으로 간주할 인스턴스 태그 또는 이름 패턴
         production_indicators = ['prod', 'production', 'prd']
         
-        for instance in instances.get('DBInstances', []):
-            instance_id = instance['DBInstanceIdentifier']
-            engine = instance['Engine']
-            multi_az = instance['MultiAZ']
-            instance_class = instance['DBInstanceClass']
-            
-            # 인스턴스가 프로덕션 환경인지 추정
-            is_production = False
-            
-            # 인스턴스 이름에서 프로덕션 환경 여부 추정
-            for indicator in production_indicators:
-                if indicator in instance_id.lower():
-                    is_production = True
-                    break
-            
-            # 태그에서 프로덕션 환경 여부 추정
+        for region in regions:
             try:
-                tags_response = rds_client.list_tags_for_resource(
-                    ResourceName=instance['DBInstanceArn']
-                )
-                tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagList', [])}
+                rds_client = create_boto3_client('rds', region_name=region, role_arn=role_arn)
+                instances = rds_client.describe_db_instances()
+            except Exception:
+                continue
                 
-                for key, value in tags.items():
-                    if (key.lower() in ['environment', 'env'] and 
-                        any(ind in value.lower() for ind in production_indicators)):
+            for instance in instances.get('DBInstances', []):
+                instance_id = instance['DBInstanceIdentifier']
+                engine = instance['Engine']
+                multi_az = instance['MultiAZ']
+                instance_class = instance['DBInstanceClass']
+                
+                # 인스턴스가 프로덕션 환경인지 추정
+                is_production = False
+                
+                # 인스턴스 이름에서 프로덕션 환경 여부 추정
+                for indicator in production_indicators:
+                    if indicator in instance_id.lower():
                         is_production = True
                         break
-            except Exception:
-                pass
-            
-            # 다중 AZ 구성 분석
-            status = RESOURCE_STATUS_PASS
-            advice = None
-            status_text = None
-            
-            if is_production and not multi_az:
-                status = RESOURCE_STATUS_FAIL
-                status_text = '다중 AZ 필요'
-                advice = '프로덕션 환경으로 추정되는 인스턴스에 다중 AZ가 구성되어 있지 않습니다. 고가용성을 위해 다중 AZ를 활성화하세요.'
-            elif not is_production and not multi_az:
-                status = RESOURCE_STATUS_WARNING
-                status_text = '다중 AZ 권장'
-                advice = '중요한 워크로드의 경우 고가용성을 위해 다중 AZ를 활성화하는 것이 좋습니다.'
-            elif multi_az:
-                status_text = '다중 AZ 활성화됨'
-                advice = '다중 AZ가 적절하게 구성되어 있습니다.'
-            
-            # 표준화된 리소스 결과 생성
-            instance_result = create_resource_result(
-                resource_id=instance_id,
-                status=status,
-                advice=advice,
-                status_text=status_text,
-                instance_id=instance_id,
-                engine=engine,
-                instance_class=instance_class,
-                multi_az=multi_az,
-                is_production=is_production
-            )
-            
-            instance_analysis.append(instance_result)
+                
+                # 태그에서 프로덕션 환경 여부 추정
+                try:
+                    tags_response = rds_client.list_tags_for_resource(
+                        ResourceName=instance['DBInstanceArn']
+                    )
+                    tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagList', [])}
+                    
+                    for key, value in tags.items():
+                        if (key.lower() in ['environment', 'env'] and 
+                            any(ind in value.lower() for ind in production_indicators)):
+                            is_production = True
+                            break
+                except Exception:
+                    pass
+                
+                # 다중 AZ 구성 분석
+                status = RESOURCE_STATUS_PASS
+                advice = None
+                status_text = None
+                
+                if is_production and not multi_az:
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '다중 AZ 필요'
+                    advice = '프로덕션 환경으로 추정되는 인스턴스에 다중 AZ가 구성되어 있지 않습니다. 고가용성을 위해 다중 AZ를 활성화하세요.'
+                elif not is_production and not multi_az:
+                    status = RESOURCE_STATUS_WARNING
+                    status_text = '다중 AZ 권장'
+                    advice = '중요한 워크로드의 경우 고가용성을 위해 다중 AZ를 활성화하는 것이 좋습니다.'
+                elif multi_az:
+                    status_text = '다중 AZ 활성화됨'
+                    advice = '다중 AZ가 적절하게 구성되어 있습니다.'
+                
+                # 표준화된 리소스 결과 생성
+                instance_result = create_resource_result(
+                    resource_id=instance_id,
+                    status=status,
+                    advice=advice,
+                    status_text=status_text,
+                    instance_id=instance_id,
+                    region=region,
+                    engine=engine,
+                    instance_class=instance_class,
+                    multi_az=multi_az,
+                    is_production=is_production
+                )
+                
+                instance_analysis.append(instance_result)
+
         
         # 결과 분류
         passed_instances = [i for i in instance_analysis if i['status'] == RESOURCE_STATUS_PASS]

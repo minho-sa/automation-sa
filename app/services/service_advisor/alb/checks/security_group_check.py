@@ -1,5 +1,6 @@
 import boto3
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.common.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     create_resource_result, RESOURCE_STATUS_PASS, RESOURCE_STATUS_WARNING, RESOURCE_STATUS_FAIL
@@ -13,24 +14,23 @@ class SecurityGroupCheck(BaseALBCheck):
         self.session = session or boto3.Session()
         self.check_id = 'alb_security_group_check'
     
-    def collect_data(self, role_arn=None) -> Dict[str, Any]:
-        elbv2_client = create_boto3_client('elbv2', role_arn=role_arn)
-        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
-        
+    def _collect_region_data(self, region: str, role_arn: str) -> Dict[str, Any]:
         try:
-            # ALB 목록 조회
+            elbv2_client = create_boto3_client('elbv2', region_name=region, role_arn=role_arn)
+            ec2_client = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
+            
             load_balancers = elbv2_client.describe_load_balancers()
             
-            # 보안 그룹 정보 조회
             security_groups = {}
             for lb in load_balancers.get('LoadBalancers', []):
+                lb['Region'] = region
                 for sg_id in lb.get('SecurityGroups', []):
                     if sg_id not in security_groups:
                         try:
                             sg_response = ec2_client.describe_security_groups(GroupIds=[sg_id])
                             security_groups[sg_id] = sg_response['SecurityGroups'][0]
                         except Exception as e:
-                            print(f"보안 그룹 {sg_id} 조회 중 오류: {str(e)}")
+                            print(f"리전 {region}에서 보안 그룹 {sg_id} 조회 중 오류: {str(e)}")
                             security_groups[sg_id] = None
             
             return {
@@ -38,11 +38,28 @@ class SecurityGroupCheck(BaseALBCheck):
                 'security_groups': security_groups
             }
         except Exception as e:
-            print(f"ALB 보안 그룹 데이터 수집 중 오류 발생: {str(e)}")
-            return {
-                'load_balancers': [],
-                'security_groups': {}
-            }
+            print(f"리전 {region}에서 ALB 데이터 수집 중 오류: {str(e)}")
+            return {'load_balancers': [], 'security_groups': {}}
+    
+    def collect_data(self, role_arn=None) -> Dict[str, Any]:
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
+        
+        all_load_balancers = []
+        all_security_groups = {}
+        
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
+            
+            for future in as_completed(future_to_region):
+                result = future.result()
+                all_load_balancers.extend(result['load_balancers'])
+                all_security_groups.update(result['security_groups'])
+        
+        return {
+            'load_balancers': all_load_balancers,
+            'security_groups': all_security_groups
+        }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         resources = []
@@ -114,6 +131,7 @@ class SecurityGroupCheck(BaseALBCheck):
                 advice=advice,
                 status_text=status_text,
                 alb_name=lb_name,
+                region=lb.get('Region', 'N/A'),
                 scheme=lb_scheme,
                 security_group_count=len(lb_security_groups),
                 issues=issues

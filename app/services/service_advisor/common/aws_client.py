@@ -89,5 +89,30 @@ def create_boto3_client(service_name, region_name=None, role_arn=None):
     """
     # 일단 role_arn을 무시하고 기본 자격증명 사용
     # Role assume 권한 문제로 인한 임시 수정
-    client = AWSClient()
-    return client.get_client(service_name)
+    session = boto3.Session()
+    if region_name:
+        return session.client(service_name, region_name=region_name)
+    else:
+        return session.client(service_name)
+
+def get_all_regions(service_name='lambda'):
+    """
+    Lambda 서비스가 지원하는 모든 리전을 반환합니다.
+    
+    Args:
+        service_name: AWS 서비스 이름
+        
+    Returns:
+        List[str]: 리전 목록
+    """
+    try:
+        session = boto3.Session()
+        return session.get_available_regions(service_name)
+    except Exception:
+        # 기본 리전 목록 반환
+        return [
+            'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+            'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2',
+            'ap-south-1', 'eu-west-1', 'eu-west-2', 'eu-central-1',
+            'ca-central-1', 'sa-east-1'
+        ]

@@ -1,5 +1,6 @@
 import boto3
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     create_resource_result, RESOURCE_STATUS_PASS, RESOURCE_STATUS_WARNING
@@ -13,27 +14,51 @@ class InstanceTerminationProtectionCheck(BaseEC2Check):
         self.session = session or boto3.Session()
         self.check_id = 'ec2_termination_protection_check'
     
+    def _collect_region_data(self, region: str, role_arn: str) -> Dict[str, Any]:
+        try:
+            ec2_client = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
+            instances = ec2_client.describe_instances()
+            
+            instance_protections = {}
+            for reservation in instances['Reservations']:
+                for instance in reservation['Instances']:
+                    instance['Region'] = region
+                    if instance['State']['Name'] != 'terminated':
+                        try:
+                            attr = ec2_client.describe_instance_attribute(
+                                InstanceId=instance['InstanceId'],
+                                Attribute='disableApiTermination'
+                            )
+                            instance_protections[instance['InstanceId']] = attr['DisableApiTermination']['Value']
+                        except:
+                            instance_protections[instance['InstanceId']] = False
+            
+            return {
+                'reservations': instances['Reservations'],
+                'protections': instance_protections
+            }
+        except Exception as e:
+            print(f"리전 {region}에서 데이터 수집 중 오류: {str(e)}")
+            return {'reservations': [], 'protections': {}}
+    
     def collect_data(self, role_arn=None) -> Dict[str, Any]:
-        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
-        instances = ec2_client.describe_instances()
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
         
-        # 각 인스턴스의 종료 보호 설정 확인
-        instance_protections = {}
-        for reservation in instances['Reservations']:
-            for instance in reservation['Instances']:
-                if instance['State']['Name'] != 'terminated':
-                    try:
-                        attr = ec2_client.describe_instance_attribute(
-                            InstanceId=instance['InstanceId'],
-                            Attribute='disableApiTermination'
-                        )
-                        instance_protections[instance['InstanceId']] = attr['DisableApiTermination']['Value']
-                    except:
-                        instance_protections[instance['InstanceId']] = False
+        all_reservations = []
+        all_protections = {}
+        
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
+            
+            for future in as_completed(future_to_region):
+                result = future.result()
+                all_reservations.extend(result['reservations'])
+                all_protections.update(result['protections'])
         
         return {
-            'reservations': instances['Reservations'],
-            'protections': instance_protections
+            'reservations': all_reservations,
+            'protections': all_protections
         }
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -80,6 +105,7 @@ class InstanceTerminationProtectionCheck(BaseEC2Check):
                     status_text=status_text,
                     instance_id=instance_id,
                     instance_name=instance_name,
+                    region=instance.get('Region', 'N/A'),
                     environment=environment,
                     protected=protected,
                     is_production=is_production

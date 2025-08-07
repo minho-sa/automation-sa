@@ -15,53 +15,61 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        rds_client = create_boto3_client('rds', role_arn=role_arn)
-        
-        # RDS 인스턴스 목록 가져오기
-        instances = rds_client.describe_db_instances()
+        # 모든 리전에서 RDS 인스턴스 수집
+        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
         
         # 인스턴스 분석 결과
         instance_analysis = []
         
-        for instance in instances.get('DBInstances', []):
-            instance_id = instance['DBInstanceIdentifier']
-            engine = instance['Engine']
-            publicly_accessible = instance.get('PubliclyAccessible', False)
-            
-            # 태그 가져오기
+        for region in regions:
             try:
-                tags_response = rds_client.list_tags_for_resource(
-                    ResourceName=instance['DBInstanceArn']
-                )
-                tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagList', [])}
+                rds_client = create_boto3_client('rds', region_name=region, role_arn=role_arn)
+                instances = rds_client.describe_db_instances()
             except Exception:
-                tags = {}
-            
-            # 공개 액세스 설정 분석
-            status = RESOURCE_STATUS_PASS
-            advice = None
-            status_text = None
-            
-            if publicly_accessible:
-                status = RESOURCE_STATUS_FAIL
-                status_text = '인터넷 노출 위험'
-                advice = f'⚠️ 위험: {instance_id}가 인터넷에서 직접 접근 가능합니다. 즉시 조치 필요:\n1. AWS 콘솔에서 인스턴스 수정 → "퍼블릭 액세스 가능" 비활성화\n2. 프라이빗 서브넷으로 이동 (다운타임 발생)\n3. 보안그룹에서 0.0.0.0/0 규칙 제거\n4. 외부 접근 시 VPN/Direct Connect 사용'
-            else:
-                status_text = '보안 설정 양호'
-                advice = f'{instance_id}는 VPC 내부에서만 접근 가능하도록 안전하게 구성되어 있습니다.'
-            
-            # 표준화된 리소스 결과 생성
-            instance_result = create_resource_result(
-                resource_id=instance_id,
-                status=status,
-                advice=advice,
-                status_text=status_text,
-                instance_id=instance_id,
-                engine=engine,
-                publicly_accessible=publicly_accessible
-            )
-            
-            instance_analysis.append(instance_result)
+                continue
+                
+            for instance in instances.get('DBInstances', []):
+                instance_id = instance['DBInstanceIdentifier']
+                engine = instance['Engine']
+                publicly_accessible = instance.get('PubliclyAccessible', False)
+                
+                # 태그 가져오기
+                try:
+                    tags_response = rds_client.list_tags_for_resource(
+                        ResourceName=instance['DBInstanceArn']
+                    )
+                    tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagList', [])}
+                except Exception:
+                    tags = {}
+                
+                # 공개 액세스 설정 분석
+                status = RESOURCE_STATUS_PASS
+                advice = None
+                status_text = None
+                
+                if publicly_accessible:
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '인터넷 노출 위험'
+                    advice = f'⚠️ 위험: {instance_id}가 인터넷에서 직접 접근 가능합니다. 즉시 조치 필요:\n1. AWS 콘솔에서 인스턴스 수정 → "퍼블릭 액세스 가능" 비활성화\n2. 프라이빗 서브넷으로 이동 (다운타임 발생)\n3. 보안그룹에서 0.0.0.0/0 규칙 제거\n4. 외부 접근 시 VPN/Direct Connect 사용'
+                else:
+                    status_text = '보안 설정 양호'
+                    advice = f'{instance_id}는 VPC 내부에서만 접근 가능하도록 안전하게 구성되어 있습니다.'
+                
+                # 표준화된 리소스 결과 생성
+                instance_result = create_resource_result(
+                    resource_id=instance_id,
+                    status=status,
+                    advice=advice,
+                    status_text=status_text,
+                    instance_id=instance_id,
+                    region=region,
+                    engine=engine,
+                    publicly_accessible=publicly_accessible
+                )
+                
+                instance_analysis.append(instance_result)
+
         
         # 결과 분류
         passed_instances = [i for i in instance_analysis if i['status'] == RESOURCE_STATUS_PASS]

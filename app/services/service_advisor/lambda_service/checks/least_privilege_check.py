@@ -1,6 +1,7 @@
 import boto3
 from typing import Dict, List, Any
 from app.services.service_advisor.aws_client import create_boto3_client
+from app.services.service_advisor.common.aws_client import get_all_regions
 from app.services.service_advisor.common.unified_result import (
     STATUS_OK, STATUS_WARNING, STATUS_ERROR,
     RESOURCE_STATUS_PASS, RESOURCE_STATUS_FAIL,
@@ -18,13 +19,8 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        lambda_client = create_boto3_client('lambda', role_arn=role_arn)
-        iam_client = create_boto3_client('iam', role_arn=role_arn)
-        
-        # Lambda 함수 정보 수집
-        functions = lambda_client.list_functions()
-        
-        # 함수 분석 결과
+        # 모든 리전에서 Lambda 함수 정보 수집
+        regions = get_all_regions('lambda')
         function_analysis = []
         
         # 과도한 권한을 가진 관리형 정책 목록
@@ -37,59 +33,76 @@ def run(role_arn=None) -> Dict[str, Any]:
             'arn:aws:iam::aws:policy/AmazonEC2FullAccess'
         ]
         
-        for function in functions.get('Functions', []):
-            function_name = function['FunctionName']
-            role_name = function['Role'].split('/')[-1]  # ARN에서 역할 이름 추출
-            
-            # 역할에 연결된 정책 가져오기
+        for region in regions:
             try:
-                attached_policies = iam_client.list_attached_role_policies(
-                    RoleName=role_name
-                )
+                lambda_client = create_boto3_client('lambda', region_name=region, role_arn=role_arn)
+                iam_client = create_boto3_client('iam', role_arn=role_arn)  # IAM은 글로벌 서비스
                 
-                # 인라인 정책 가져오기
-                inline_policies = iam_client.list_role_policies(
-                    RoleName=role_name
-                )
+                # Lambda 함수 정보 수집
+                functions = lambda_client.list_functions()
                 
-                # 과도한 권한 확인
-                has_overly_permissive_policy = False
-                problematic_policies = []
-                
-                for policy in attached_policies.get('AttachedPolicies', []):
-                    if policy['PolicyArn'] in overly_permissive_policies:
-                        has_overly_permissive_policy = True
-                        problematic_policies.append(policy['PolicyName'])
-                
-                # 최소 권한 분석
-                status = RESOURCE_STATUS_PASS  # 기본값은 통과
-                advice = None
-                status_text = None
-                
-                if has_overly_permissive_policy:
-                    status = RESOURCE_STATUS_FAIL
-                    status_text = '과도한 권한'
-                    advice = f'이 함수의 실행 역할에 과도한 권한이 부여되어 있습니다: {", ".join(problematic_policies)}. 최소 권한 원칙에 따라 필요한 권한만 부여하세요.'
-                else:
-                    status_text = '적절한 권한'
-                    advice = f'이 함수의 실행 역할은 최소 권한 원칙을 따르고 있습니다.'
+                if not functions.get('Functions'):
+                    continue  # 해당 리전에 함수가 없으면 다음 리전으로
                 
             except Exception as e:
-                # IAM 역할 액세스 오류
-                status = RESOURCE_STATUS_FAIL
-                status_text = '확인 불가'
-                advice = f'IAM 역할 정보를 가져올 수 없습니다. IAM 권한을 확인하세요.'
+                # 리전 접근 실패 시 다음 리전으로 계속
+                continue
+        
+            for function in functions.get('Functions', []):
+                function_name = function['FunctionName']
+                role_name = function['Role'].split('/')[-1]  # ARN에서 역할 이름 추출
+                
+                # 역할에 연결된 정책 가져오기
+                try:
+                    attached_policies = iam_client.list_attached_role_policies(
+                        RoleName=role_name
+                    )
+                    
+                    # 인라인 정책 가져오기
+                    inline_policies = iam_client.list_role_policies(
+                        RoleName=role_name
+                    )
+                    
+                    # 과도한 권한 확인
+                    has_overly_permissive_policy = False
+                    problematic_policies = []
+                    
+                    for policy in attached_policies.get('AttachedPolicies', []):
+                        if policy['PolicyArn'] in overly_permissive_policies:
+                            has_overly_permissive_policy = True
+                            problematic_policies.append(policy['PolicyName'])
+                    
+                    # 최소 권한 분석
+                    status = RESOURCE_STATUS_PASS  # 기본값은 통과
+                    advice = None
+                    status_text = None
+                    
+                    if has_overly_permissive_policy:
+                        status = RESOURCE_STATUS_FAIL
+                        status_text = '과도한 권한'
+                        advice = f'이 함수의 실행 역할에 과도한 권한이 부여되어 있습니다: {", ".join(problematic_policies)}. 최소 권한 원칙에 따라 필요한 권한만 부여하세요.'
+                    else:
+                        status_text = '적절한 권한'
+                        advice = f'이 함수의 실행 역할은 최소 권한 원칙을 따르고 있습니다.'
+                    
+                except Exception as e:
+                    # IAM 역할 액세스 오류
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '확인 불가'
+                    advice = f'IAM 역할 정보를 가져올 수 없습니다. IAM 권한을 확인하세요.'
             
-            # 표준화된 리소스 결과 생성
-            function_result = create_resource_result(
-                resource_id=function_name,
-                status=status,
-                status_text=status_text,
-                advice=advice,
-                function_name=function_name
-            )
-            
-            function_analysis.append(function_result)
+                # 표준화된 리소스 결과 생성 (리전 정보 포함)
+                function_result = create_resource_result(
+                    resource_id=f"{function_name} ({region})",
+                    status=status,
+                    status_text=status_text,
+                    advice=advice,
+                    function_name=function_name,
+                    region=region,
+                    role_name=role_name
+                )
+                
+                function_analysis.append(function_result)
         
         # 결과 분류
         passed_functions = [f for f in function_analysis if f['status'] == RESOURCE_STATUS_PASS]

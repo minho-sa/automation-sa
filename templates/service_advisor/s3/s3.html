@@ -48,8 +48,10 @@
             <div class="check-item-header">
                 <div class="check-item-title">
                     <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
-                    <h3>{{ check.name }}</h3>
-                    <span class="check-item-category {{ check.category|lower }}">{{ check.category }}</span>
+                    <div class="check-title-content">
+                        <span class="check-item-category-label {{ check.category|lower }}">{{ check.category }}</span>
+                        <h3>{{ check.name }}</h3>
+                    </div>
                 </div>
                 <div class="check-item-actions">
                     <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>

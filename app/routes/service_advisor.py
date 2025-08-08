@@ -59,6 +59,23 @@ def service_advisor_detail(service_name):
         return render_template('service_advisor/common/not_found.html', service_name=service_name, base_url='/advisor')
     
     checks = advisor.get_available_checks()
+    
+    # 카테고리 정렬 순서 정의
+    category_order = {
+        '보안': 1,
+        '비용 최적화': 2,
+        '성능': 3,
+        '내결함성': 4,
+        '운영 우수성': 5,
+        '서비스 한도': 6
+    }
+    
+    # 검사 항목을 카테고리 순서대로 정렬
+    def sort_by_category(check):
+        return category_order.get(check.get('category', ''), 99)
+    
+    checks.sort(key=sort_by_category)
+    
     try:
         # 서비스별 템플릿이 있는지 확인
         template_path = f'service_advisor/{service_name}/{service_name}.html'

@@ -22,15 +22,22 @@ class EBSAdvisor(BaseAdvisor):
                 'id': 'unused_volumes_check',
                 'name': '사용하지 않는 EBS 볼륨 검사',
                 'description': '인스턴스에 연결되지 않은 EBS 볼륨을 검사합니다.',
-                'category': '비용-최적화',
+                'category': '비용 최적화',
                 'severity': 'medium'
             },
             {
                 'id': 'snapshot_management_check',
                 'name': 'EBS 스냅샷 관리 검사',
                 'description': 'EBS 스냅샷의 상태와 수명주기를 검사합니다.',
-                'category': '비용-최적화',
+                'category': '비용 최적화',
                 'severity': 'low'
+            },
+            {
+                'id': 'public_snapshots_check',
+                'name': 'EBS 퍼블릭 스냅샷 검사',
+                'description': '퍼블릭으로 설정된 EBS 스냅샷을 검사합니다.',
+                'category': '보안',
+                'severity': 'high'
             }
         ]
     
@@ -53,6 +60,9 @@ class EBSAdvisor(BaseAdvisor):
                 return run(role_arn)
             elif check_id == 'snapshot_management_check':
                 from app.services.service_advisor.ebs.checks.snapshot_management_check import run
+                return run(role_arn)
+            elif check_id == 'public_snapshots_check':
+                from app.services.service_advisor.ebs.checks.public_snapshots_check import run
                 return run(role_arn)
             else:
                 return {

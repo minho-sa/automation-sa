@@ -23,6 +23,57 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-top: none;
+    position: relative;
+    min-width: 80px;
+}
+
+.aws-table .table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.aws-table .table th,
+.aws-table .table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-wrap: break-word;
+}
+
+/* 열 크기 조절 핸들 */
+.aws-table .table thead th::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    border-right: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.aws-table .table thead th:hover::after {
+    border-right-color: #0073bb;
+}
+
+/* 리사이즈 가능한 테이블 */
+.resizable-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.resizable-table th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resizable-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .aws-table .table tbody td {
@@ -31,6 +82,9 @@
     color: #212529;
     border-bottom: 1px solid #f1f3f4;
     vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .aws-table .table tbody tr:hover {
@@ -102,7 +156,7 @@ tr.details-row > td {
 }
 
 .table-warning {
-    background-color: rgba(255, 193, 7, 0.1) !important;
+    background-color: rgba(220, 53, 69, 0.15) !important;
 }
 
 .table-secondary {

@@ -20,25 +20,32 @@ class AWSClient:
         self.session = session or boto3.Session()
         self.clients = {}
     
-    def get_client(self, service_name: str) -> Any:
+    def get_client(self, service_name: str, region_name: str = None, role_arn: str = None) -> Any:
         """
         특정 AWS 서비스의 클라이언트를 반환합니다.
         
         Args:
             service_name: AWS 서비스 이름 (ec2, s3, iam 등)
+            region_name: AWS 리전 이름 (선택 사항)
+            role_arn: AWS 역할 ARN (선택 사항, 현재 미사용)
             
         Returns:
             boto3 클라이언트 객체
         """
-        if service_name not in self.clients:
+        client_key = f"{service_name}_{region_name or 'default'}"
+        
+        if client_key not in self.clients:
             try:
-                self.clients[service_name] = self.session.client(service_name)
-                self.logger.debug(f"{service_name} 클라이언트 생성 완료")
+                if region_name:
+                    self.clients[client_key] = self.session.client(service_name, region_name=region_name)
+                else:
+                    self.clients[client_key] = self.session.client(service_name)
+                self.logger.debug(f"{service_name} 클라이언트 생성 완료 (region: {region_name or 'default'})")
             except ClientError as e:
                 self.logger.error(f"{service_name} 클라이언트 생성 중 오류 발생: {str(e)}")
                 raise
         
-        return self.clients[service_name]
+        return self.clients[client_key]
     
     def get_resource(self, service_name: str) -> Any:
         """

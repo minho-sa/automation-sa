@@ -22,7 +22,7 @@ class VPNAdvisor(BaseAdvisor):
                 'id': 'vpn_service_limits_check',
                 'name': 'VPN 서비스 한도 검사',
                 'description': 'VPN 관련 리소스의 서비스 한도 사용량을 검사합니다.',
-                'category': '서비스-한도',
+                'category': '서비스 한도',
                 'severity': 'medium'
             }
         ]

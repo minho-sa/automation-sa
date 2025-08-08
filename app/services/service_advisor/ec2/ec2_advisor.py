@@ -172,6 +172,16 @@ class EC2Advisor(BaseAdvisor):
                 severity='medium'
             )
             
+            # Windows Server 지원 종료 검사
+            self.register_check(
+                check_id='ec2-windows-server-eol',
+                name='Windows Server 지원 종료 검사',
+                description='이 확인 기능은 Microsoft Windows Server 버전의 지원 종료가 임박했거나 종료 시점에 도달했는지 알려줍니다. 각 Windows Server 버전은 5년간의 일반 지원과 5년간의 연장 지원을 포함하여 10년간의 지원을 제공합니다. 지원 종료 후에는 Windows Server 버전이 정기적인 보안 업데이트를 받지 못하게 됩니다. 지원되지 않는 Windows Server 버전으로 애플리케이션을 실행하면 보안 또는 규정 준수 위험이 발생할 수 있습니다.',
+                function=self._run_windows_eol_check,
+                category='보안',
+                severity='high'
+            )
+            
             print(f"EC2Advisor: 검사 항목 등록 완료, 총 {len(self.checks)}개 항목")
         except Exception as e:
             print(f"EC2Advisor: 검사 항목 등록 중 오류 발생 - {str(e)}")
@@ -221,3 +231,16 @@ class EC2Advisor(BaseAdvisor):
             str: 결과 메시지
         """
         return ""
+    
+    def _run_windows_eol_check(self, role_arn: str = None) -> Dict[str, Any]:
+        """
+        Windows Server 지원 종료 검사를 실행합니다.
+        
+        Args:
+            role_arn: AWS 역할 ARN
+            
+        Returns:
+            Dict[str, Any]: 검사 결과
+        """
+        from app.services.service_advisor.ec2.checks.windows_server_eol_check import run
+        return run(role_arn)

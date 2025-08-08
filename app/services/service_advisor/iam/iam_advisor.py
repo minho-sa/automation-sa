@@ -8,7 +8,8 @@ from app.services.service_advisor.iam.checks import (
     mfa_check,
     inactive_users_check,
     root_account_check,
-    policy_analyzer_check
+    policy_analyzer_check,
+    exposed_access_keys_check
 )
 
 class IAMAdvisor(BaseAdvisor):
@@ -85,6 +86,16 @@ class IAMAdvisor(BaseAdvisor):
             name='정책 분석',
             description='IAM 정책의 보안 위험을 분석합니다. 관리자 액세스를 허용하거나 와일드카드 리소스 또는 작업을 사용하는 정책을 식별하고 최소 권한 원칙에 따라 개선 방안을 제시합니다.',
             function=policy_analyzer_check.run,
+            category='보안',
+            severity='high'
+        )
+        
+        # 노출된 액세스 키 검사
+        self.register_check(
+            check_id='iam-exposed-access-keys',
+            name='노출된 액세스 키 검사',
+            description='의심스러운 액세스 키 사용 패턴을 분석하여 노출 가능성을 검사합니다.\n이 검사는 노출된 액세스 키의 식별을 보장하지 않습니다. 액세스 키와 AWS 리소스의 안전과 보안에 대한 최종 책임은 사용자에게 있습니다. ',
+            function=exposed_access_keys_check.run,
             category='보안',
             severity='high'
         )

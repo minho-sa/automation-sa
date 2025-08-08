@@ -285,6 +285,59 @@
     border: 1px solid #ffe082 !important;
 }
 
+/* 제목 위 카테고리 라벨 스타일 */
+.check-title-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.check-item-category-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+    margin-bottom: 2px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.check-item-category-label.보안 {
+    color: #004085;
+    background-color: #e6f3ff;
+}
+
+.check-item-category-label.비용최적화,
+.check-item-category-label[class*="비용"] {
+    color: #e65100;
+    background-color: #fffaf5;
+}
+
+.check-item-category-label.성능 {
+    color: #0c5460;
+    background-color: #e8f6f8;
+}
+
+.check-item-category-label.내결함성 {
+    color: #155724;
+    background-color: #eaf6ed;
+}
+
+.check-item-category-label.운영우수성,
+.check-item-category-label[class*="운영"] {
+    color: #7b1fa2;
+    background-color: #f9f2fa;
+}
+
+.check-item-category-label.서비스한도,
+.check-item-category-label[class*="서비스"] {
+    color: #8a6914;
+    background-color: #fffcf0;
+}
+
 .check-item-severity {
     font-size: 12px;
     padding: 3px 8px;

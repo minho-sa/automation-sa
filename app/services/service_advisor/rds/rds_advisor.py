@@ -35,7 +35,7 @@ class RDSAdvisor(BaseAdvisor):
             name='백업 보존 기간',
             description='RDS 인스턴스의 백업 보존 기간을 검사하여 데이터 보호 수준을 평가합니다. 백업이 비활성화되었거나 보존 기간이 짧은 인스턴스를 식별하고 개선 방안을 제시합니다.',
             function=backup_retention.run,
-            category='데이터 보호',
+            category='내결함성',
             severity='high'
         )
         
@@ -45,7 +45,7 @@ class RDSAdvisor(BaseAdvisor):
             name='다중 AZ 구성',
             description='RDS 인스턴스의 다중 AZ 구성을 검사하여 고가용성 수준을 평가합니다. 프로덕션 환경에서 다중 AZ가 구성되지 않은 인스턴스를 식별하고 개선 방안을 제시합니다.',
             function=multi_az.run,
-            category='고가용성',
+            category='내결함성',
             severity='medium'
         )
         
@@ -87,6 +87,16 @@ class RDSAdvisor(BaseAdvisor):
             function=engine_version_check.run,
             category='보안',
             severity='medium'
+        )
+        
+        # 퍼블릭 스냅샷 검사
+        self.register_check(
+            check_id='rds-public-snapshots',
+            name='퍼블릭 스냅샷 검사',
+            description='퍼블릭으로 설정된 RDS 스냅샷을 검사합니다. 퍼블릭 스냅샷은 누구나 접근할 수 있어 데이터 유출 위험이 있으므로 즉시 프라이빗으로 변경해야 합니다.',
+            function=self._run_public_snapshots_check,
+            category='보안',
+            severity='high'
         )
     
     # 추상 메서드 구현
@@ -134,3 +144,16 @@ class RDSAdvisor(BaseAdvisor):
             str: 결과 메시지
         """
         return ""
+    
+    def _run_public_snapshots_check(self, role_arn: str = None) -> Dict[str, Any]:
+        """
+        RDS 퍼블릭 스냅샷 검사를 실행합니다.
+        
+        Args:
+            role_arn: AWS 역할 ARN
+            
+        Returns:
+            Dict[str, Any]: 검사 결과
+        """
+        from app.services.service_advisor.rds.checks.public_snapshots_check import run
+        return run(role_arn)

@@ -48,7 +48,7 @@ class S3Advisor(BaseAdvisor):
             name='암호화 설정',
             description='S3 버킷의 기본 암호화 설정을 검사하여 데이터 보호 수준을 평가합니다. 암호화가 설정되지 않은 버킷을 식별하고 개선 방안을 제시합니다.',
             function=encryption.run,
-            category='데이터 보호',
+            category='보안',
             severity='high'
         )
         
@@ -58,7 +58,7 @@ class S3Advisor(BaseAdvisor):
             name='버전 관리 설정',
             description='S3 버킷의 버전 관리 설정을 검사하여 데이터 보호 수준을 평가합니다. 버전 관리가 활성화되지 않은 버킷을 식별하고 개선 방안을 제시합니다.',
             function=versioning_check.run,
-            category='데이터 보호',
+            category='내결함성',
             severity='medium'
         )
         
@@ -98,7 +98,7 @@ class S3Advisor(BaseAdvisor):
             name='객체 잠금 설정',
             description='S3 버킷의 객체 잠금(Object Lock) 설정을 검사하여 데이터 보호 수준을 평가합니다. 중요한 데이터를 저장하는 버킷에 객체 잠금이 활성화되지 않은 경우 개선 방안을 제시합니다.',
             function=object_lock_check.run,
-            category='데이터 보호',
+            category='내결함성',
             severity='medium'
         )
         
@@ -108,7 +108,7 @@ class S3Advisor(BaseAdvisor):
             name='복제 설정',
             description='S3 버킷의 복제(Replication) 설정을 검사하여 재해 복구 수준을 평가합니다. 프로덕션 환경의 버킷에 복제가 구성되지 않은 경우 개선 방안을 제시합니다.',
             function=replication_check.run,
-            category='재해 복구',
+            category='내결함성',
             severity='medium'
         )
         

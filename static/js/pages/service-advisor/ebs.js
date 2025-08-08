@@ -122,8 +122,8 @@ function displayEBSCheckResult(checkId, result) {
                 resourceStatusClass = 'danger';
                 resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else if (resource.status === 'warning') {
-                resourceStatusClass = 'warning';
-                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
+                resourceStatusClass = 'danger';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else {
                 resourceStatusClass = 'secondary';
                 resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';

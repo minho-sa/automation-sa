@@ -678,6 +678,7 @@ function displayCheckResult(checkId, result) {
         const hasRDSInstances = resources.some(r => r.instance_id && r.engine);
         const hasLambdaFunctions = resources.some(r => r.function_name || r.memory_size !== undefined);
         const hasIAMUsers = resources.some(r => r.user_name);
+        const hasIAMPolicies = resources.some(r => r.policy_name);
         const hasEC2SecurityGroups = resources.some(r => r.sg_name && r.sg_id);
         const hasEBSVolumes = resources.some(r => r.volume_name && r.volume_id);
         const hasEC2Instances = resources.some(r => r.instance_name && r.instance_id);
@@ -699,10 +700,16 @@ function displayCheckResult(checkId, result) {
             resultHtml += '<th width="25%">함수 이름</th>';
             resultHtml += '<th width="15%">상태</th>';
             resultHtml += '<th width="45%">세부 정보</th>';
-        } else if (hasIAMUsers) {
-            resultHtml += '<th width="25%">사용자 이름</th>';
-            resultHtml += '<th width="20%">상태</th>';
-            resultHtml += '<th width="50%">세부 정보</th>';
+        } else if (hasIAMUsers || hasIAMPolicies) {
+            if (hasIAMPolicies) {
+                resultHtml += '<th width="30%">정책 이름</th>';
+                resultHtml += '<th width="20%">상태</th>';
+                resultHtml += '<th width="50%">세부 정보</th>';
+            } else {
+                resultHtml += '<th width="25%">사용자 이름</th>';
+                resultHtml += '<th width="20%">상태</th>';
+                resultHtml += '<th width="50%">세부 정보</th>';
+            }
         } else if (hasEC2SecurityGroups) {
             resultHtml += '<th style="width: 80px; max-width: 80px;">리전</th>';
             resultHtml += '<th style="width: 280px; max-width: 280px;">보안그룹 이름</th>';
@@ -789,6 +796,8 @@ function displayCheckResult(checkId, result) {
                 resultHtml += `<td><code>${functionName}</code></td>`;
             } else if (resource.user_name) {
                 resultHtml += `<td><code>${resource.user_name}</code></td>`;
+            } else if (resource.policy_name) {
+                resultHtml += `<td><code>${resource.policy_name}</code></td>`;
             } else if (resource.sg_name && resource.sg_id) {
                 resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
                 resultHtml += `<td style="word-break: break-word; white-space: normal; max-width: 280px;">${resource.sg_name}</td>`;

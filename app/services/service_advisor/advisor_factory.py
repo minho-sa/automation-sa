@@ -14,6 +14,8 @@ from app.services.service_advisor.alb.alb_advisor import ALBAdvisor
 from app.services.service_advisor.acm.acm_advisor import ACMAdvisor
 from app.services.service_advisor.vpn.vpn_advisor import VPNAdvisor
 from app.services.service_advisor.ebs.ebs_advisor import EBSAdvisor
+from app.services.service_advisor.cloudtrail.cloudtrail_advisor import CloudTrailAdvisor
+from app.services.service_advisor.efs.efs_advisor import EFSAdvisor
 
 class ServiceAdvisorFactory:
     """
@@ -35,7 +37,9 @@ class ServiceAdvisorFactory:
             's3': S3Advisor,
             'alb': ALBAdvisor,
             'acm': ACMAdvisor,
-            'vpn': VPNAdvisor
+            'vpn': VPNAdvisor,
+            'cloudtrail': CloudTrailAdvisor,
+            'efs': EFSAdvisor
         }
     
     def get_advisor(self, service_name: str, role_arn: str = None) -> Optional[Any]:
@@ -167,7 +171,9 @@ class ServiceAdvisorFactory:
             's3': 'Amazon S3',
             'alb': 'Elastic Load Balancer',
             'acm': 'AWS Certificate Manager',
-            'vpn': 'AWS VPN'
+            'vpn': 'AWS VPN',
+            'cloudtrail': 'AWS CloudTrail',
+            'efs': 'Amazon EFS'
         }
         
         return service_display_names.get(service_name, service_name.upper())

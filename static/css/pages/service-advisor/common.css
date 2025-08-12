@@ -645,6 +645,86 @@
 .check-resources .table-responsive table {
     margin-bottom: 0;
     table-layout: auto !important;
+    resize: none !important;
+}
+
+/* 테이블 컬럼 크기 조정 비활성화 */
+.check-resources .table-responsive table th,
+.check-resources .table-responsive table td {
+    resize: none !important;
+    cursor: default !important;
+}
+
+.check-resources .table-responsive table th:hover,
+.check-resources .table-responsive table td:hover {
+    cursor: default !important;
+}
+
+/* 테이블 전체에서 크기 조정 커서 완전 제거 */
+.check-resources .table-responsive,
+.check-resources .table-responsive *,
+.check-resources .table-responsive table,
+.check-resources .table-responsive table *,
+.check-resources .table-responsive table th,
+.check-resources .table-responsive table td,
+.check-resources .table-responsive table thead,
+.check-resources .table-responsive table tbody,
+.check-resources .table-responsive table tr {
+    cursor: default !important;
+    resize: none !important;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 테이블 경계선에서도 크기 조정 커서 제거 */
+.check-resources .table-responsive table th:after,
+.check-resources .table-responsive table th:before,
+.check-resources .table-responsive table td:after,
+.check-resources .table-responsive table td:before {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+/* Bootstrap 테이블 기본 크기 조정 기능 완전 비활성화 */
+.table th,
+.table td {
+    cursor: default !important;
+    resize: none !important;
+}
+
+.table th:hover,
+.table td:hover {
+    cursor: default !important;
+}
+
+/* 테이블 정렬 기능 스타일 */
+.sortable-header {
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background-color: #e9ecef !important;
+    cursor: pointer !important;
+}
+
+.sort-icon {
+    font-size: 0.8em;
+    margin-left: 5px;
+    transition: opacity 0.2s ease;
+}
+
+.sortable-header[data-sort="asc"] .sort-icon,
+.sortable-header[data-sort="desc"] .sort-icon {
+    opacity: 1 !important;
+    color: #0073bb;
+}
+
+.sortable-table th.sortable-header {
+    cursor: pointer !important;
+    user-select: none;
 }
 
 .check-resources .table-responsive table th,
@@ -661,6 +741,8 @@
     border-right: 1px solid #dee2e6 !important;
     background-color: #f8f9fa;
     font-weight: 600;
+    resize: none !important;
+    cursor: default !important;
 }
 
 .check-resources .table-responsive table th:last-child {

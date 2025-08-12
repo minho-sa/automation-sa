@@ -77,8 +77,12 @@ def service_advisor_detail(service_name):
     checks.sort(key=sort_by_category)
     
     try:
-        # 서비스별 템플릿이 있는지 확인
-        template_path = f'service_advisor/{service_name}/{service_name}.html'
+        # EFS는 index.html 템플릿 사용
+        if service_name == 'efs':
+            template_path = f'service_advisor/{service_name}/index.html'
+        else:
+            # 다른 서비스는 기존 방식 사용
+            template_path = f'service_advisor/{service_name}/{service_name}.html'
         return render_template(template_path, checks=checks, service_name=service_name, base_url='/advisor')
     except Exception as e:
         # 템플릿이 없으면 공통 템플릿 사용

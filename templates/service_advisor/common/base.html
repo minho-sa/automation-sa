@@ -56,6 +56,11 @@
                             <i class="fas fa-database"></i> RDS
                         </a>
                     </li>
+                    <li class="service-nav-item {% if '/advisor/efs' in request.path %}active{% endif %}">
+                        <a href="/advisor/efs">
+                            <i class="fas fa-folder-open"></i> EFS
+                        </a>
+                    </li>
                     <li class="service-nav-item {% if '/advisor/lambda' in request.path %}active{% endif %}">
                         <a href="/advisor/lambda">
                             <i class="fas fa-code"></i> Lambda
@@ -74,6 +79,11 @@
                     <li class="service-nav-item {% if '/advisor/vpn' in request.path %}active{% endif %}">
                         <a href="/advisor/vpn">
                             <i class="fas fa-network-wired"></i> VPN
+                        </a>
+                    </li>
+                    <li class="service-nav-item {% if '/advisor/cloudtrail' in request.path %}active{% endif %}">
+                        <a href="/advisor/cloudtrail">
+                            <i class="fas fa-search"></i> CloudTrail
                         </a>
                     </li>
                 </ul>

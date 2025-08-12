@@ -656,6 +656,8 @@ function displayCheckResult(checkId, result) {
             resources = result.data.buckets;
         } else if (result.data.functions) {
             resources = result.data.functions;
+        } else if (result.data.trails) {
+            resources = result.data.trails;
         } else if (Array.isArray(result.data)) {
             resources = result.data;
         }
@@ -669,16 +671,25 @@ function displayCheckResult(checkId, result) {
         resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
         
         resultHtml += '<div class="table-responsive aws-table" style="overflow-x: auto; max-width: 100%; border: 1px solid #dee2e6; border-radius: 0.375rem; position: relative;">';
-        resultHtml += '<table class="table table-sm table-hover" style="min-width: 1800px; width: auto; margin-bottom: 0; table-layout: fixed;">';
+        resultHtml += '<table class="table table-sm table-hover sortable-table" style="min-width: 1800px; width: auto; margin-bottom: 0; table-layout: fixed;">';
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th width="5%"></th>';
+        
+        // 정렬 가능한 헤더 생성 함수
+        function createSortableHeader(text, width, columnIndex) {
+            return `<th width="${width}" class="sortable-header" data-column="${columnIndex}" style="cursor: pointer; user-select: none;">
+                ${text} <i class="fas fa-sort sort-icon" style="margin-left: 5px; opacity: 0.5;"></i>
+            </th>`;
+        }
         // S3 버킷, RDS 인스턴스, Lambda 함수의 경우 리소스 ID 컬럼 제거
         const hasS3Buckets = resources.some(r => r.bucket_name);
         const hasRDSInstances = resources.some(r => r.instance_id && r.engine);
         const hasLambdaFunctions = resources.some(r => r.function_name || r.memory_size !== undefined);
         const hasIAMUsers = resources.some(r => r.user_name);
         const hasIAMPolicies = resources.some(r => r.policy_name);
+        const hasCloudTrails = resources.some(r => r.trail_name);
+        const hasEFSFilesystems = resources.some(r => r.filesystem_id || r.resource_name);
         const hasEC2SecurityGroups = resources.some(r => r.sg_name && r.sg_id);
         const hasEBSVolumes = resources.some(r => r.volume_name && r.volume_id);
         const hasEC2Instances = resources.some(r => r.instance_name && r.instance_id);
@@ -700,6 +711,17 @@ function displayCheckResult(checkId, result) {
             resultHtml += '<th width="25%">함수 이름</th>';
             resultHtml += '<th width="15%">상태</th>';
             resultHtml += '<th width="45%">세부 정보</th>';
+        } else if (hasCloudTrails) {
+            resultHtml += '<th width="12%">리전</th>';
+            resultHtml += '<th width="18%">Trail 이름</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="55%">세부 정보</th>';
+        } else if (hasEFSFilesystems) {
+            resultHtml += createSortableHeader('리전', '8%', 1);
+            resultHtml += createSortableHeader('파일시스템 이름', '12%', 2);
+            resultHtml += createSortableHeader('파일시스템 ID', '16%', 3);
+            resultHtml += createSortableHeader('상태', '10%', 4);
+            resultHtml += '<th width="54%">세부 정보</th>';
         } else if (hasIAMUsers || hasIAMPolicies) {
             if (hasIAMPolicies) {
                 resultHtml += '<th width="30%">정책 이름</th>';
@@ -794,6 +816,15 @@ function displayCheckResult(checkId, result) {
                 const functionName = resource.function_name || resourceId;
                 resultHtml += `<td>${resource.region || 'N/A'}</td>`;
                 resultHtml += `<td><code>${functionName}</code></td>`;
+            } else if (resource.trail_name) {
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${resource.trail_name}</code></td>`;
+            } else if (resource.filesystem_id || (resource.resource_name && resource.id && resource.id.startsWith('fs-'))) {
+                const fsId = resource.filesystem_id || resource.id;
+                const fsName = resource.filesystem_name || resource.resource_name || '-';
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td>${fsName}</td>`;
+                resultHtml += `<td><code>${fsId}</code></td>`;
             } else if (resource.user_name) {
                 resultHtml += `<td><code>${resource.user_name}</code></td>`;
             } else if (resource.policy_name) {
@@ -892,6 +923,66 @@ function displayCheckResult(checkId, result) {
                 }
             }
             
+            // CloudTrail 정보
+            if (resource.trail_name) {
+                let infoItems = [];
+                
+                if (resource.is_logging === true) {
+                    infoItems.push('로깅: 활성화');
+                } else {
+                    infoItems.push('로깅: 비활성화');
+                }
+                
+                if (resource.is_multi_region === true) {
+                    infoItems.push('다중 리전: 활성화');
+                } else {
+                    infoItems.push('다중 리전: 비활성화');
+                }
+                
+                if (resource.include_global_events === true) {
+                    infoItems.push('글로벌 이벤트: 활성화');
+                } else {
+                    infoItems.push('글로벌 이벤트: 비활성화');
+                }
+                
+                if (resource.log_file_validation_enabled === true) {
+                    infoItems.push('로그 검증: 활성화');
+                } else if (resource.log_file_validation_enabled === false) {
+                    infoItems.push('로그 검증: 비활성화');
+                }
+                
+                additionalInfo = infoItems.join(', ');
+                
+                if (resource.s3_bucket) {
+                    additionalInfo += `<br>S3 버킷: <code>${resource.s3_bucket}</code>`;
+                }
+            }
+            
+            // EFS 파일시스템 정보
+            if (resource.filesystem_id || (resource.resource_name && resource.id && resource.id.startsWith('fs-'))) {
+                let infoItems = [];
+                
+                if (resource.encrypted_at_rest === true) {
+                    infoItems.push('At-rest 암호화: 활성화');
+                } else {
+                    infoItems.push('At-rest 암호화: 비활성화');
+                }
+                
+                if (resource.lifecycle_state) {
+                    infoItems.push(`상태: ${resource.lifecycle_state}`);
+                }
+                
+                if (resource.mount_target_count !== undefined) {
+                    infoItems.push(`마운트 타겟: ${resource.mount_target_count}개`);
+                }
+                
+                if (resource.creation_time) {
+                    infoItems.push(`생성일: ${resource.creation_time}`);
+                }
+                
+                additionalInfo = infoItems.join(', ');
+            }
+            
             let adviceText = resource.advice ? resource.advice.replace(/보안\s*위협\s*발견\s*:?\s*/g, '').replace(/보안\s*위험\s*발견\s*:?\s*/g, '').trim() : '';
             
             // '있습니다.', '됩니다.', '세요.', '않습니다.', '없습니다.', '있지만,' 뒤에 줄바꿈 추가
@@ -926,6 +1017,9 @@ function displayCheckResult(checkId, result) {
     // 결과 내용 설정
     resultContent.innerHTML = resultHtml;
     resultContent.style.display = 'block';
+    
+    // 테이블 정렬 기능 초기화
+    initTableSorting();
 }
 
 /**
@@ -1012,6 +1106,76 @@ function initCheckItemClick() {
             description.addEventListener('click', toggleCheckbox);
             description.style.cursor = 'pointer';
         }
+    });
+}
+
+/**
+ * 테이블 정렬 기능 초기화
+ */
+function initTableSorting() {
+    const sortableHeaders = document.querySelectorAll('.sortable-header');
+    
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const table = this.closest('table');
+            const tbody = table.querySelector('tbody');
+            const columnIndex = parseInt(this.getAttribute('data-column'));
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 현재 정렬 상태 확인
+            const currentSort = this.getAttribute('data-sort') || 'none';
+            let newSort = 'asc';
+            
+            if (currentSort === 'asc') {
+                newSort = 'desc';
+            } else if (currentSort === 'desc') {
+                newSort = 'asc';
+            }
+            
+            // 모든 헤더의 정렬 상태 초기화
+            sortableHeaders.forEach(h => {
+                h.setAttribute('data-sort', 'none');
+                const icon = h.querySelector('.sort-icon');
+                if (icon) {
+                    icon.className = 'fas fa-sort sort-icon';
+                    icon.style.opacity = '0.5';
+                }
+            });
+            
+            // 현재 헤더에 정렬 상태 설정
+            this.setAttribute('data-sort', newSort);
+            const icon = this.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = newSort === 'asc' ? 'fas fa-sort-up sort-icon' : 'fas fa-sort-down sort-icon';
+                icon.style.opacity = '1';
+            }
+            
+            // 행 정렬
+            rows.sort((a, b) => {
+                const aCell = a.cells[columnIndex];
+                const bCell = b.cells[columnIndex];
+                
+                if (!aCell || !bCell) return 0;
+                
+                let aValue = aCell.textContent.trim();
+                let bValue = bCell.textContent.trim();
+                
+                // 숫자 비교 (날짜 포함)
+                const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return newSort === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                
+                // 문자열 비교
+                const comparison = aValue.localeCompare(bValue, 'ko', { numeric: true });
+                return newSort === 'asc' ? comparison : -comparison;
+            });
+            
+            // 정렬된 행들을 tbody에 다시 추가
+            rows.forEach(row => tbody.appendChild(row));
+        });
     });
 }
 

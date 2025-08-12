@@ -158,10 +158,13 @@ function initRunCheckButtons() {
                         checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
                     }
                     
-                    // PDF 다운로드 버튼 표시
+                    // PDF 다운로드 버튼 표시 및 순서 변경
                     const downloadPdfBtn = checkItem.querySelector('.download-pdf-btn');
-                    if (downloadPdfBtn) {
+                    const runCheckBtn = checkItem.querySelector('.run-check-btn');
+                    if (downloadPdfBtn && runCheckBtn) {
                         downloadPdfBtn.style.display = 'inline-block';
+                        // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                        runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                     }
                 })
                 .catch(error => {
@@ -290,10 +293,13 @@ function initRunSelectedChecks() {
                             checkItem.viewResultBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 결과 숨기기';
                         }
                         
-                        // PDF 다운로드 버튼 표시
+                        // PDF 다운로드 버튼 표시 및 순서 변경
                         const downloadPdfBtn = checkItem.querySelector('.download-pdf-btn');
-                        if (downloadPdfBtn) {
+                        const runCheckBtn = checkItem.querySelector('.run-check-btn');
+                        if (downloadPdfBtn && runCheckBtn) {
                             downloadPdfBtn.style.display = 'inline-block';
+                            // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                            runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                         }
                         
                         return result;
@@ -512,10 +518,13 @@ function loadLatestCheckResults() {
                         item.viewResultBtn.style.display = 'inline-flex';
                     }
                     
-                    // PDF 다운로드 버튼 표시
+                    // PDF 다운로드 버튼 표시 및 순서 변경
                     const downloadPdfBtn = item.querySelector('.download-pdf-btn');
-                    if (downloadPdfBtn) {
+                    const runCheckBtn = item.querySelector('.run-check-btn');
+                    if (downloadPdfBtn && runCheckBtn) {
                         downloadPdfBtn.style.display = 'inline-block';
+                        // PDF 다운로드 버튼을 검사하기 버튼 앞으로 이동
+                        runCheckBtn.parentNode.insertBefore(downloadPdfBtn, runCheckBtn);
                     }
                 } else {
                     // 검사 결과가 없는 경우 기본 메시지 표시
@@ -659,14 +668,94 @@ function displayCheckResult(checkId, result) {
         // 리소스 수 표시
         resultHtml += `<div class="resource-count">총 ${resources.length}개의 리소스</div>`;
         
-        resultHtml += '<div class="table-responsive aws-table">';
-        resultHtml += '<table class="table table-sm table-hover">';
+        resultHtml += '<div class="table-responsive aws-table" style="overflow-x: auto; max-width: 100%; border: 1px solid #dee2e6; border-radius: 0.375rem; position: relative;">';
+        resultHtml += '<table class="table table-sm table-hover" style="min-width: 1800px; width: auto; margin-bottom: 0; table-layout: fixed;">';
         resultHtml += '<thead>';
         resultHtml += '<tr>';
         resultHtml += '<th width="5%"></th>';
-        resultHtml += '<th width="25%">리소스 ID</th>';
-        resultHtml += '<th width="20%">상태</th>';
-        resultHtml += '<th width="50%">세부 정보</th>';
+        // S3 버킷, RDS 인스턴스, Lambda 함수의 경우 리소스 ID 컬럼 제거
+        const hasS3Buckets = resources.some(r => r.bucket_name);
+        const hasRDSInstances = resources.some(r => r.instance_id && r.engine);
+        const hasLambdaFunctions = resources.some(r => r.function_name || r.memory_size !== undefined);
+        const hasIAMUsers = resources.some(r => r.user_name);
+        const hasIAMPolicies = resources.some(r => r.policy_name);
+        const hasEC2SecurityGroups = resources.some(r => r.sg_name && r.sg_id);
+        const hasEBSVolumes = resources.some(r => r.volume_name && r.volume_id);
+        const hasEC2Instances = resources.some(r => r.instance_name && r.instance_id);
+        const hasUnusedResources = resources.some(r => r.resource_type && (r.resource_type === 'Elastic IP' || r.resource_type === 'EBS Volume'));
+        const hasReservedInstances = resources.some(r => r.ri_id);
+        const hasRDSEngineVersions = resources.some(r => r.db_identifier && r.engine);
+        if (hasS3Buckets) {
+            resultHtml += '<th width="15%">리전</th>';
+            resultHtml += '<th width="25%">버킷 이름</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="45%">세부 정보</th>';
+        } else if (hasRDSInstances) {
+            resultHtml += '<th width="15%">리전</th>';
+            resultHtml += '<th width="25%">DB 인스턴스 식별자</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="45%">세부 정보</th>';
+        } else if (hasLambdaFunctions) {
+            resultHtml += '<th width="15%">리전</th>';
+            resultHtml += '<th width="25%">함수 이름</th>';
+            resultHtml += '<th width="15%">상태</th>';
+            resultHtml += '<th width="45%">세부 정보</th>';
+        } else if (hasIAMUsers || hasIAMPolicies) {
+            if (hasIAMPolicies) {
+                resultHtml += '<th width="30%">정책 이름</th>';
+                resultHtml += '<th width="20%">상태</th>';
+                resultHtml += '<th width="50%">세부 정보</th>';
+            } else {
+                resultHtml += '<th width="25%">사용자 이름</th>';
+                resultHtml += '<th width="20%">상태</th>';
+                resultHtml += '<th width="50%">세부 정보</th>';
+            }
+        } else if (hasEC2SecurityGroups) {
+            resultHtml += '<th style="width: 80px; max-width: 80px;">리전</th>';
+            resultHtml += '<th style="width: 280px; max-width: 280px;">보안그룹 이름</th>';
+            resultHtml += '<th style="width: 160px; max-width: 160px;">보안그룹 ID</th>';
+            resultHtml += '<th style="width: 70px; max-width: 70px;">상태</th>';
+            resultHtml += '<th style="width: 350px;">세부 정보</th>';
+        } else if (hasEBSVolumes) {
+            resultHtml += '<th style="width: 100px; min-width: 100px;">리전</th>';
+            resultHtml += '<th style="width: 200px; min-width: 200px;">볼륨 이름</th>';
+            resultHtml += '<th style="width: 180px; min-width: 180px;">볼륨 ID</th>';
+            resultHtml += '<th style="width: 120px; min-width: 120px;">상태</th>';
+            resultHtml += '<th style="min-width: 300px;">세부 정보</th>';
+        } else if (hasEC2Instances) {
+            resultHtml += '<th style="width: 80px; max-width: 80px;">리전</th>';
+            resultHtml += '<th style="width: 150px; max-width: 150px;">인스턴스 이름</th>';
+            resultHtml += '<th style="width: 90px; max-width: 90px;">인스턴스 ID</th>';
+            resultHtml += '<th style="width: 80px; max-width: 80px;">상태</th>';
+            resultHtml += '<th style="width: 500px;">세부 정보</th>';
+        } else if (hasUnusedResources) {
+            resultHtml += '<th style="width: 80px; max-width: 80px;">리전</th>';
+            resultHtml += '<th style="width: 100px; max-width: 100px;">리소스 이름</th>';
+            resultHtml += '<th style="width: 160px; max-width: 160px;">리소스 ID</th>';
+            resultHtml += '<th style="width: 80px; max-width: 80px;">상태</th>';
+            resultHtml += '<th style="width: 480px;">세부 정보</th>';
+        } else if (hasReservedInstances) {
+            resultHtml += '<th width="15%">인스턴스 타입</th>';
+            resultHtml += '<th width="10%">개수</th>';
+            resultHtml += '<th width="15%">가용 영역</th>';
+            resultHtml += '<th width="10%">만료일</th>';
+            resultHtml += '<th width="10%">사용률</th>';
+            resultHtml += '<th width="10%">상태</th>';
+            resultHtml += '<th width="25%">세부 정보</th>';
+        } else if (hasRDSEngineVersions) {
+            resultHtml += '<th width="10%">리전</th>';
+            resultHtml += '<th width="20%">DB 식별자</th>';
+            resultHtml += '<th width="15%">엔진</th>';
+            resultHtml += '<th width="15%">현재 버전</th>';
+            resultHtml += '<th width="15%">최신 버전</th>';
+            resultHtml += '<th width="10%">상태</th>';
+            resultHtml += '<th width="15%">세부 정보</th>';
+        } else {
+            resultHtml += '<th style="width: 80px; max-width: 80px;">리전</th>';
+            resultHtml += '<th style="width: 280px; max-width: 280px;">리소스 ID</th>';
+            resultHtml += '<th style="width: 80px; max-width: 80px;">상태</th>';
+            resultHtml += '<th style="width: 460px;">세부 정보</th>';
+        }
         resultHtml += '</tr>';
         resultHtml += '</thead>';
         resultHtml += '<tbody>';
@@ -680,10 +769,10 @@ function displayCheckResult(checkId, result) {
                 resourceStatusIcon = '<i class="fas fa-check-circle text-success"></i>';
             } else if (resource.status === 'fail') {
                 resourceStatusClass = 'danger';
-                resourceStatusIcon = '<i class="fas fa-times-circle text-danger"></i>';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else if (resource.status === 'warning') {
-                resourceStatusClass = 'warning';
-                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-warning"></i>';
+                resourceStatusClass = 'danger';
+                resourceStatusIcon = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             } else {
                 resourceStatusClass = 'secondary';
                 resourceStatusIcon = '<i class="fas fa-question-circle text-secondary"></i>';
@@ -694,7 +783,75 @@ function displayCheckResult(checkId, result) {
             
             resultHtml += `<tr class="table-${resourceStatusClass}">`;
             resultHtml += `<td class="text-center">${resourceStatusIcon}</td>`;
-            resultHtml += `<td><code>${resourceId}</code></td>`;
+            // S3 버킷, RDS 인스턴스, Lambda 함수의 경우 이름과 ID를 하나로 표시
+            if (resource.bucket_name) {
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${resource.bucket_name}</code></td>`;
+            } else if (resource.instance_id && resource.engine) {
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${resource.instance_id}</code></td>`;
+            } else if (resource.function_name || resource.memory_size !== undefined) {
+                const functionName = resource.function_name || resourceId;
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${functionName}</code></td>`;
+            } else if (resource.user_name) {
+                resultHtml += `<td><code>${resource.user_name}</code></td>`;
+            } else if (resource.policy_name) {
+                resultHtml += `<td><code>${resource.policy_name}</code></td>`;
+            } else if (resource.sg_name && resource.sg_id) {
+                resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td style="word-break: break-word; white-space: normal; max-width: 280px;">${resource.sg_name}</td>`;
+                resultHtml += `<td style="word-break: break-all; white-space: normal; max-width: 160px;"><code>${resource.sg_id}</code></td>`;
+            } else if (resource.volume_name && resource.volume_id) {
+                resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td>${resource.volume_name}</td>`;
+                resultHtml += `<td><code>${resource.volume_id}</code></td>`;
+            } else if (resource.instance_name && resource.instance_id) {
+                resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td>${resource.instance_name}</td>`;
+                resultHtml += `<td><code>${resource.instance_id}</code></td>`;
+            } else if (resource.resource_type && (resource.resource_type === 'Elastic IP' || resource.resource_type === 'EBS Volume')) {
+                let displayName = '-';
+                let displayId = resourceId;
+                
+                if (resource.resource_type === 'Elastic IP') {
+                    displayName = resource.eip_name || '-';
+                    displayId = resource.allocation_id || resourceId;
+                } else if (resource.resource_type === 'EBS Volume') {
+                    displayName = resource.volume_name || '-';
+                    displayId = resource.volume_id || resourceId;
+                }
+                
+                resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td>${displayName}</td>`;
+                resultHtml += `<td><code>${displayId}</code></td>`;
+            } else if (resource.ri_id) {
+                const instanceType = resource.instance_type || 'N/A';
+                const instanceCount = resource.instance_count || 0;
+                const availabilityZone = resource.availability_zone || 'N/A';
+                const daysUntilExpiry = resource.days_until_expiry || 0;
+                const utilization = resource.utilization || 0;
+                
+                resultHtml += `<td><code>${instanceType}</code></td>`;
+                resultHtml += `<td>${instanceCount}</td>`;
+                resultHtml += `<td>${availabilityZone}</td>`;
+                resultHtml += `<td>${daysUntilExpiry}일</td>`;
+                resultHtml += `<td>${utilization.toFixed(1)}%</td>`;
+            } else if (resource.db_identifier && resource.engine) {
+                const dbIdentifier = resource.db_identifier || resourceId;
+                const engine = resource.engine || 'N/A';
+                const currentVersion = resource.current_version || 'N/A';
+                const latestVersion = resource.latest_version || 'N/A';
+                
+                resultHtml += `<td>${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${dbIdentifier}</code></td>`;
+                resultHtml += `<td>${engine}</td>`;
+                resultHtml += `<td>${currentVersion}</td>`;
+                resultHtml += `<td>${latestVersion}</td>`;
+            } else {
+                resultHtml += `<td style="white-space: nowrap;">${resource.region || 'N/A'}</td>`;
+                resultHtml += `<td><code>${resourceId}</code></td>`;
+            }
             resultHtml += `<td>${resource.status_text || ''}</td>`;
             // 서비스별 추가 정보 표시
             let additionalInfo = '';
@@ -735,7 +892,28 @@ function displayCheckResult(checkId, result) {
                 }
             }
             
-            resultHtml += `<td class="resource-advice">${additionalInfo ? additionalInfo + '<br>' : ''}${resource.advice || ''}</td>`;
+            let adviceText = resource.advice ? resource.advice.replace(/보안\s*위협\s*발견\s*:?\s*/g, '').replace(/보안\s*위험\s*발견\s*:?\s*/g, '').trim() : '';
+            
+            // '있습니다.', '됩니다.', '세요.', '않습니다.', '없습니다.', '있지만,' 뒤에 줄바꿈 추가
+            if (adviceText) {
+                adviceText = adviceText.replace(/(있습니다\.|됩니다\.|세요\.|않습니다\.|없습니다\.|있지만,)\s*/g, '$1<br>');
+                
+                // 대상 버킷 정보를 더 보기 좋게 표시
+                adviceText = adviceText.replace(/대상 버킷:\s*/g, '대상 버킷:<br>');
+                adviceText = adviceText.replace(/, ([a-zA-Z0-9-]+)/g, ',<br>$1');
+            }
+            
+            // 세부 정보를 두 줄로 나누어 표시
+            let detailInfo = '';
+            if (additionalInfo && adviceText) {
+                detailInfo = `${additionalInfo}<br>${adviceText}`;
+            } else if (additionalInfo) {
+                detailInfo = additionalInfo;
+            } else if (adviceText) {
+                detailInfo = adviceText;
+            }
+            
+            resultHtml += `<td class="resource-advice" style="white-space: pre-wrap; word-break: break-word;">${detailInfo}</td>`;
             resultHtml += '</tr>';
         });
         
@@ -799,6 +977,42 @@ function formatTimestamp(timestamp) {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     
     return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+/**
+ * 검사 항목 클릭으로 체크박스 토글
+ */
+function initCheckItemClick() {
+    const checkItems = document.querySelectorAll('.check-item');
+    
+    checkItems.forEach(item => {
+        const checkbox = item.querySelector('.check-select');
+        const header = item.querySelector('.check-item-header');
+        const description = item.querySelector('.check-item-description');
+        
+        function toggleCheckbox(e) {
+            // 버튼이나 체크박스 자체를 클릭한 경우는 제외
+            if (e.target.closest('button') || e.target.closest('input[type="checkbox"]')) {
+                return;
+            }
+            
+            // 체크박스 토글
+            checkbox.checked = !checkbox.checked;
+            
+            // 선택된 항목 수 업데이트
+            updateSelectedCount();
+        }
+        
+        if (header && checkbox) {
+            header.addEventListener('click', toggleCheckbox);
+            header.style.cursor = 'pointer';
+        }
+        
+        if (description && checkbox) {
+            description.addEventListener('click', toggleCheckbox);
+            description.style.cursor = 'pointer';
+        }
+    });
 }
 
 /**

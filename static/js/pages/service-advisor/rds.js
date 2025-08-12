@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initRunCheckButtons();
     initSelectAllChecks();
     initRunSelectedChecks();
+    initCheckItemClick();
     
     // 최신 검사 결과 로드
     loadLatestCheckResults();

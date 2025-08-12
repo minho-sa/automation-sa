@@ -27,6 +27,13 @@ def run(role_arn=None) -> Dict[str, Any]:
         for bucket in buckets.get('Buckets', []):
             bucket_name = bucket['Name']
             
+            # 버킷 리전 정보 가져오기
+            try:
+                bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)
+                region = bucket_location.get('LocationConstraint') or 'us-east-1'
+            except Exception as e:
+                region = 'N/A'
+            
             # 퍼블릭 액세스 차단 설정 확인
             try:
                 public_access_block = s3_client.get_public_access_block(Bucket=bucket_name)
@@ -101,6 +108,7 @@ def run(role_arn=None) -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
+                region=region,
                 creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
                 public_acl=public_acl if 'public_acl' in locals() else 'N/A',
                 all_blocked=all_blocked if 'all_blocked' in locals() else 'N/A'
@@ -119,7 +127,8 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 권장사항 생성 (문자열 배열)
         recommendations = [
             '모든 S3 버킷에 퍼블릭 액세스 차단을 설정하세요.',
-            '계정 수준에서 퍼블릭 액세스 차단을 활성화하세요.',
+            '버킷이 오픈 액세스를 허용하는 경우, 오픈 액세스가 실제로 필요한지 확인하세요.',
+            '예를 들어 정적 웹사이트를 호스팅하려면 CloudFront를 사용하여 S3에 호스팅된 콘텐츠를 제공할 수 있습니다. CloudFront 안내서의 Amazon S3 오리진에 대한 엑세스 제한을 참조하세요',
             '정기적으로 버킷 권한을 검토하세요.'
         ]
         

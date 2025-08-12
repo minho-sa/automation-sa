@@ -1,15 +1,163 @@
-## 상세 문서
+# AWS 리소스 최적화 분석기: 자동화된 클라우드 인프라 추천 시스템
 
-### 📋 서비스 어드바이저 검사 항목
-- [EC2 검사 항목 상세 분석](docs/service_advisor_checks/ec2_check_reasons.md)
-- [S3 검사 항목 상세 분석](docs/service_advisor_checks/s3_check_reasons.md)
-- [Lambda 검사 항목](docs/service_advisor_checks/lambda_check_reasons.md)
-- [RDS 검사 항목](docs/service_advisor_checks/rds_check_reasons.md)
-- [IAM 검사 항목](docs/service_advisor_checks/iam_check_reasons.md)
+AWS 리소스 최적화 분석기는 AWS 인프라를 분석하고 여러 AWS 서비스에 걸쳐 보안, 성능 및 비용 효율성을 개선하기 위한 실행 가능한 권장 사항을 제공하는 종합적인 웹 애플리케이션입니다.
 
-### 🔧 설정 가이드
-- [서비스 어드바이저 권한 설정 가이드](docs/service_advisor_permissions_guide.md)
-  - IAM 역할 생성 방법
-  - 필수 권한 정책
-  - 단계별 설정 가이드 (스크린샷 포함)
+이 애플리케이션은 EC2 인스턴스, Lambda 함수, S3 버킷, RDS 데이터베이스 등을 포함한 AWS 리소스에 대한 심층 분석을 수행합니다. AWS 모범 사례와 일반적인 최적화 패턴을 기반으로 구체적이고 실행 가능한 권장 사항을 생성합니다. 분석기는 전체 AWS 인프라에서 보안 취약점, 성능 병목 현상 및 비용 최적화 기회를 식별하는 데 도움을 줍니다.
 
+## 저장소 구조
+```
+.
+├── app/                            # 메인 애플리케이션 디렉토리
+│   ├── models/                     # 데이터 모델 및 스키마
+│   ├── routes/                     # 애플리케이션 라우트 핸들러
+│   ├── services/                   # 핵심 비즈니스 로직 및 AWS 서비스 통합
+│       ├── aws_services.py         # AWS 서비스 구성
+│       ├── recommendation/         # 권장 사항 생성 로직
+│       └── resource/              # AWS 리소스 데이터 수집
+├── docs/                          # 서비스별 문서
+├── static/                        # 프론트엔드 자산(CSS, JavaScript)
+├── templates/                     # HTML 템플릿
+├── config.py                      # 애플리케이션 구성
+├── requirements.txt               # Python 종속성
+└── run.py                        # 애플리케이션 진입점
+```
+
+## 사용 지침
+### 사전 요구 사항
+- Python 3.7 이상
+- 적절한 IAM 권한이 있는 AWS 계정
+- AWS 액세스 키 ID 및 비밀 액세스 키
+- Boto3(Python용 AWS SDK)
+- Flask 웹 프레임워크 및 종속성
+
+### 설치
+```bash
+# 저장소 복제
+git clone <repository-url>
+cd aws-resource-optimization-analyzer
+
+# 가상 환경 생성 및 활성화
+python3 -m venv venv
+source venv/bin/activate  # Windows에서는: venv\Scripts\activate
+
+# 종속성 설치
+pip install -r requirements.txt
+
+# 환경 변수 구성
+cp .env.example .env
+# AWS 자격 증명 및 구성으로 .env 편집
+```
+
+### 빠른 시작
+1. 애플리케이션 시작:
+```bash
+python3 run.py
+```
+
+2. 웹 인터페이스 접속:
+- 브라우저를 열고 `http://localhost:5000`으로 이동
+- AWS 자격 증명으로 로그인
+- "수집 시작"을 클릭하여 리소스 분석 시작
+
+3. 권장 사항 보기:
+- 권장 사항 탭으로 이동
+- 서비스 또는 심각도별로 권장 사항 필터링
+- 자세한 정보를 위해 개별 권장 사항 클릭
+
+### 더 자세한 예시
+```python
+# 예시: EC2 권장 사항 보기
+1. EC2 섹션으로 이동
+2. 인스턴스 사용률 지표 확인
+3. 비용 최적화 제안 확인
+4. 보안 그룹 구성 검토
+
+# 예시: Lambda 함수 최적화
+1. 메모리 할당 확인
+2. 타임아웃 설정 검토
+3. 콜드 스타트 영향 분석
+4. 코드 패키지 크기 최적화
+```
+
+### 문제 해결
+1. 데이터 수집 문제
+   - 오류: "AWS 자격 증명을 찾을 수 없음"
+     ```bash
+     # 환경 변수 확인
+     echo $AWS_ACCESS_KEY_ID
+     echo $AWS_SECRET_ACCESS_KEY
+     ```
+   - 해결책: .env 파일에서 AWS 자격 증명 확인
+
+2. 권한 문제
+   - 오류: "액세스 거부됨"
+   - 해결책: 필요한 서비스에 대한 IAM 권한 확인
+   - 필요한 권한:
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Action": [
+             "ec2:Describe*",
+             "lambda:List*",
+             "s3:List*"
+           ],
+           "Resource": "*"
+         }
+       ]
+     }
+     ```
+
+## 데이터 흐름
+애플리케이션은 권장 사항을 생성하기 위해 구조화된 데이터 수집 및 분석 파이프라인을 따릅니다.
+
+```ascii
+[AWS 계정] --> [리소스 수집기] --> [분석 엔진] --> [권장 사항 생성기] --> [웹 인터페이스]
+     |                |                |                |                   |
+     v                v                v                v                   v
+자격 증명 --> 서비스별 API 호출 --> 패턴 분석 및 --> 서비스별 권장 사항 --> 필터링 및 그룹화된
+                                  모범 사례                                 표시
+```
+
+주요 구성 요소 상호 작용:
+1. 리소스 수집기는 boto3를 사용하여 AWS 서비스에서 데이터를 가져옵니다
+2. 분석 엔진은 사전 정의된 패턴에 대해 원시 데이터를 처리합니다
+3. 권장 사항 생성기는 분석을 기반으로 실행 가능한 항목을 생성합니다
+4. 웹 인터페이스는 필터링 및 그룹화와 함께 권장 사항을 표시합니다
+5. 비동기 데이터 수집을 통한 실시간 업데이트
+6. 세션 관리를 사용한 안전한 자격 증명 처리
+7. 확장성을 위한 모듈식 서비스 통합
+## S3를 이용한 데이터 관리 기능
+
+통합 대시보드에서 수집한 데이터는 S3에 저장되어 사용자별로 관리됩니다. 이를 통해 다음과 같은 기능을 제공합니다:
+
+1. 사용자별 데이터 분리 - 각 사용자는 자신이 수집한 데이터만 볼 수 있습니다.
+2. 수집 데이터 영구 저장 - 서버 재시작 후에도 이전에 수집한 데이터를 볼 수 있습니다.
+3. 수집 이력 관리 - 여러 번 수집한 데이터를 시간별로 확인할 수 있습니다.
+4. 불필요한 데이터 삭제 - 더 이상 필요하지 않은 수집 데이터를 삭제할 수 있습니다.
+
+### 데이터 저장 구조
+
+S3에 저장되는 데이터는 다음과 같은 구조로 관리됩니다:
+
+```
+users/
+  ├── {user_id}/
+  │   └── dashboard_data/
+  │       └── collections/
+  │           ├── {collection_id}/
+  │           │   ├── metadata.json
+  │           │   └── services/
+  │           │       ├── ec2.json
+  │           │       ├── s3.json
+  │           │       └── ...
+  │           └── ...
+  └── ...
+```
+
+- `{user_id}`: 사용자 ID
+- `{collection_id}`: 수집 ID (UUID)
+- `metadata.json`: 수집 메타데이터 (수집 시간, 선택한 서비스 등)
+- `services/`: 각 서비스별 수집 데이터

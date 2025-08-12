@@ -26,6 +26,13 @@ def run(role_arn=None) -> Dict[str, Any]:
         for bucket in buckets.get('Buckets', []):
             bucket_name = bucket['Name']
             
+            # 버킷 리전 정보 가져오기
+            try:
+                bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)
+                region = bucket_location.get('LocationConstraint') or 'us-east-1'
+            except Exception as e:
+                region = 'N/A'
+            
             # 태그 가져오기
             try:
                 tags_response = s3_client.get_bucket_tagging(Bucket=bucket_name)
@@ -81,6 +88,7 @@ def run(role_arn=None) -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
+                region=region,
                 creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
                 versioning_status=versioning_status if 'versioning_status' in locals() else 'Unknown',
                 is_production=is_production

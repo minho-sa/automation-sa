@@ -55,7 +55,7 @@ class EC2Advisor(BaseAdvisor):
             self.register_check(
                 check_id=security_check.check_id,
                 name='보안 그룹 설정 검사',
-                description='EC2 인스턴스의 보안 그룹 설정을 검사하여 0.0.0.0/0과 같이 과도하게 개방된 인바운드 규칙이 있는지 확인합니다. SSH(22), RDP(3389), 데이터베이스 포트(3306, 5432) 등 중요 서비스가 인터넷에 노출되어 있는 경우 보안 위험을 식별하고 개선 방안을 제시합니다.',
+                description='EC2 인스턴스의 보안 그룹 설정을 검사하여 0.0.0.0/0과 같이 과도하게 개방된 인바운드 규칙이 있는지 확인합니다.\nSSH(22), RDP(3389), 데이터베이스 포트(3306, 5432) 등 중요 서비스가 인터넷에 노출되어 있는 경우 보안 위험을 식별하고 개선 방안을 제시합니다.',
                 function=security_check.run,
                 category='보안',
                 severity='high'
@@ -86,18 +86,7 @@ class EC2Advisor(BaseAdvisor):
                 severity='medium'
             )
             
-            # EBS 암호화 검사
-            from app.services.service_advisor.ec2.checks.ebs_encryption_check import EBSEncryptionCheck
-            ebs_encryption_check = EBSEncryptionCheck()
-            self.register_check(
-                check_id=ebs_encryption_check.check_id,
-                name='EBS 볼륨 암호화 검사',
-                description='EBS 볼륨의 암호화 설정을 검사합니다. 암호화되지 않은 볼륨을 식별하고 데이터 보호를 위한 암호화 활성화 방안을 제시합니다.',
-                function=ebs_encryption_check.run,
-                category='보안',
-                severity='high'
-            )
-            
+
             # 미사용 리소스 검사
             from app.services.service_advisor.ec2.checks.unused_resources_check import UnusedResourcesCheck
             unused_resources_check = UnusedResourcesCheck()
@@ -118,22 +107,11 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 모니터링 설정 검사',
                 description='EC2 인스턴스의 CloudWatch 모니터링 설정을 검사합니다. 상세 모니터링 활성화 여부를 확인하고 성능 모니터링 개선 방안을 제시합니다.',
                 function=monitoring_check.run,
-                category='운영',
+                category='운영 우수성',
                 severity='low'
             )
             
-            # 인스턴스 태그 검사
-            from app.services.service_advisor.ec2.checks.instance_tags_check import InstanceTagsCheck
-            tags_check = InstanceTagsCheck()
-            self.register_check(
-                check_id=tags_check.check_id,
-                name='인스턴스 태그 관리 검사',
-                description='EC2 인스턴스의 태그 설정을 검사합니다. 필수 태그(Name, Environment, Owner) 누락을 확인하고 리소스 관리 개선 방안을 제시합니다.',
-                function=tags_check.run,
-                category='거버넌스',
-                severity='low'
-            )
-            
+
             # 인스턴스 생명주기 검사
             from app.services.service_advisor.ec2.checks.instance_lifecycle_check import InstanceLifecycleCheck
             lifecycle_check = InstanceLifecycleCheck()
@@ -142,7 +120,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 생명주기 검사',
                 description='오래된 EC2 인스턴스를 식별합니다. 1년 이상 실행된 인스턴스를 찾아 업데이트나 교체 필요성을 평가하고 보안 및 성능 개선 방안을 제시합니다.',
                 function=lifecycle_check.run,
-                category='운영',
+                category='운영 우수성',
                 severity='medium'
             )
             
@@ -154,7 +132,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 백업 상태 검사',
                 description='EC2 인스턴스의 백업(스냅샷) 상태를 검사합니다. 최근 7일 내 백업이 없는 인스턴스를 식별하고 데이터 보호를 위한 백업 정책 수립 방안을 제시합니다.',
                 function=backup_check.run,
-                category='데이터 보호',
+                category='내결함성',
                 severity='high'
             )
             
@@ -166,7 +144,7 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 종료 보호 검사',
                 description='프로덕션 환경의 EC2 인스턴스 종료 보호 설정을 검사합니다. 중요한 인스턴스의 실수로 인한 종료를 방지하기 위한 보호 설정 방안을 제시합니다.',
                 function=protection_check.run,
-                category='보안',
+                category='내결함성',
                 severity='medium'
             )
             
@@ -178,8 +156,30 @@ class EC2Advisor(BaseAdvisor):
                 name='인스턴스 세대 검사',
                 description='구세대 EC2 인스턴스 타입을 식별합니다. 성능과 비용 효율성 향상을 위해 최신 세대 인스턴스로의 업그레이드 필요성을 평가하고 개선 방안을 제시합니다.',
                 function=generation_check.run,
-                category='성능 최적화',
+                category='성능',
                 severity='medium'
+            )
+            
+            # 예약 인스턴스 검사
+            from app.services.service_advisor.ec2.checks.reserved_instances_check import ReservedInstancesCheck
+            ri_check = ReservedInstancesCheck()
+            self.register_check(
+                check_id=ri_check.check_id,
+                name='예약 인스턴스 현황 및 만료 검사',
+                description='예약 인스턴스(RI)의 만료 일정과 사용률을 검사합니다.\n30일 이내 만료 예정인 RI를 식별하고, 사용률이 낮거나 초과 사용되는 RI를 찾아 비용 최적화 방안을 제시합니다.',
+                function=ri_check.run,
+                category='비용 최적화',
+                severity='medium'
+            )
+            
+            # Windows Server 지원 종료 검사
+            self.register_check(
+                check_id='ec2-windows-server-eol',
+                name='Windows Server 지원 종료 검사',
+                description='이 확인 기능은 Microsoft Windows Server 버전의 지원 종료가 임박했거나 종료 시점에 도달했는지 알려줍니다. 각 Windows Server 버전은 5년간의 일반 지원과 5년간의 연장 지원을 포함하여 10년간의 지원을 제공합니다. 지원 종료 후에는 Windows Server 버전이 정기적인 보안 업데이트를 받지 못하게 됩니다. 지원되지 않는 Windows Server 버전으로 애플리케이션을 실행하면 보안 또는 규정 준수 위험이 발생할 수 있습니다.',
+                function=self._run_windows_eol_check,
+                category='보안',
+                severity='high'
             )
             
             print(f"EC2Advisor: 검사 항목 등록 완료, 총 {len(self.checks)}개 항목")
@@ -231,3 +231,16 @@ class EC2Advisor(BaseAdvisor):
             str: 결과 메시지
         """
         return ""
+    
+    def _run_windows_eol_check(self, role_arn: str = None) -> Dict[str, Any]:
+        """
+        Windows Server 지원 종료 검사를 실행합니다.
+        
+        Args:
+            role_arn: AWS 역할 ARN
+            
+        Returns:
+            Dict[str, Any]: 검사 결과
+        """
+        from app.services.service_advisor.ec2.checks.windows_server_eol_check import run
+        return run(role_arn)

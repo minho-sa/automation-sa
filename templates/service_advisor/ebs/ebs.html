@@ -1,0 +1,85 @@
+{% extends "service_advisor/common/base.html" %}
+
+{% block advisor_title %}Amazon EBS{% endblock %}
+{% block advisor_description %}EBS 볼륨 및 스냅샷 최적화 검사{% endblock %}
+
+{% block advisor_js %}
+<script src="{{ url_for('static', filename='js/pages/service-advisor/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/service-advisor/ebs.js') }}"></script>
+{% endblock %}
+
+{% block advisor_content %}
+<div class="trusted-advisor-container">
+    <div class="check-actions">
+        <div class="check-actions-left">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="select-all-checks">
+                <label class="form-check-label" for="select-all-checks">
+                    전체 선택
+                </label>
+            </div>
+        </div>
+        <div class="check-actions-right">
+            <button id="download-selected-checks" class="awsui-button awsui-button-normal mr-2">
+                <i class="fas fa-file-pdf"></i> 선택한 항목 PDF 다운로드
+            </button>
+            <button id="run-selected-checks" class="awsui-button awsui-button-primary">
+                <i class="fas fa-play"></i> 선택한 항목 검사하기
+            </button>
+        </div>
+    </div>
+    
+    <div class="check-items-container">
+        {% set severity_groups = {'high': [], 'medium': [], 'low': []} %}
+        {% for check in checks %}
+            {% set _ = severity_groups[check.severity].append(check) %}
+        {% endfor %}
+        
+        {% for severity, group_checks in [('high', severity_groups.high), ('medium', severity_groups.medium), ('low', severity_groups.low)] %}
+            {% if group_checks %}
+                <div class="severity-group-header {{ severity }}">
+                    <h4 class="severity-group-title {{ severity }}">
+                        {{ 'HIGH 심각도' if severity == 'high' else 'MEDIUM 심각도' if severity == 'medium' else 'LOW 심각도' }}
+                    </h4>
+                </div>
+                {% for check in group_checks %}
+        <div class="check-item" data-check-id="{{ check.id }}">
+            <div class="check-item-header">
+                <div class="check-item-title">
+                    <input type="checkbox" class="check-select" data-check-id="{{ check.id }}">
+                    <div class="check-title-content">
+                        <span class="check-item-category-label {{ check.category|lower }}">{{ check.category }}</span>
+                        <h3>{{ check.name }}</h3>
+                    </div>
+                </div>
+                <div class="check-item-actions">
+                    <span class="last-check-date" id="last-check-date-{{ check.id }}">검사 기록 없음</span>
+                    <button class="awsui-button awsui-button-primary run-check-btn" data-check-id="{{ check.id }}">
+                        <i class="fas fa-play"></i> 검사하기
+                    </button>
+                    <button class="awsui-button awsui-button-normal download-pdf-btn" data-check-id="{{ check.id }}" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> PDF 다운로드
+                    </button>
+                </div>
+            </div>
+            <div class="check-item-description">
+                {{ check.description }}
+            </div>
+            <div class="check-item-result" id="result-{{ check.id }}" style="display: none;">
+                <div class="check-result-loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>검사 중입니다...</span>
+                </div>
+                <div class="check-result-content" style="display: none;">
+                    <!-- 결과는 JavaScript로 동적 생성됩니다 -->
+                </div>
+            </div>
+        </div>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

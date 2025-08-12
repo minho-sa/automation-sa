@@ -2,10 +2,8 @@ from . import base_ec2_check
 from . import instance_type_check
 from . import security_group_check
 from . import public_instance_check
-from . import ebs_encryption_check
 from . import unused_resources_check
 from . import instance_monitoring_check
-from . import instance_tags_check
 from . import instance_lifecycle_check
 from . import instance_backup_check
 from . import instance_termination_protection_check

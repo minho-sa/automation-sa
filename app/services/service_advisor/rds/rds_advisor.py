@@ -7,7 +7,8 @@ from app.services.service_advisor.rds.checks import (
     multi_az,
     encryption_check,
     public_access_check,
-    instance_sizing_check
+    instance_sizing_check,
+    engine_version_check
 )
 
 class RDSAdvisor(BaseAdvisor):
@@ -34,7 +35,7 @@ class RDSAdvisor(BaseAdvisor):
             name='백업 보존 기간',
             description='RDS 인스턴스의 백업 보존 기간을 검사하여 데이터 보호 수준을 평가합니다. 백업이 비활성화되었거나 보존 기간이 짧은 인스턴스를 식별하고 개선 방안을 제시합니다.',
             function=backup_retention.run,
-            category='데이터 보호',
+            category='내결함성',
             severity='high'
         )
         
@@ -44,7 +45,7 @@ class RDSAdvisor(BaseAdvisor):
             name='다중 AZ 구성',
             description='RDS 인스턴스의 다중 AZ 구성을 검사하여 고가용성 수준을 평가합니다. 프로덕션 환경에서 다중 AZ가 구성되지 않은 인스턴스를 식별하고 개선 방안을 제시합니다.',
             function=multi_az.run,
-            category='고가용성',
+            category='내결함성',
             severity='medium'
         )
         
@@ -77,3 +78,82 @@ class RDSAdvisor(BaseAdvisor):
             category='비용 최적화',
             severity='medium'
         )
+        
+        # 엔진 버전 검사
+        self.register_check(
+            check_id='rds-engine-version',
+            name='엔진 버전 및 업그레이드 검사',
+            description='RDS 인스턴스의 데이터베이스 엔진 버전을 검사하여 업그레이드 필요성을 평가합니다.\n구버전 엔진, 지원 종료 예정 버전, 자동 마이너 업그레이드 비활성화 등을 식별하고 보안 및 성능 향상을 위한 개선 방안을 제시합니다.',
+            function=engine_version_check.run,
+            category='보안',
+            severity='medium'
+        )
+        
+        # 퍼블릭 스냅샷 검사
+        self.register_check(
+            check_id='rds-public-snapshots',
+            name='퍼블릭 스냅샷 검사',
+            description='퍼블릭으로 설정된 RDS 스냅샷을 검사합니다. 퍼블릭 스냅샷은 누구나 접근할 수 있어 데이터 유출 위험이 있으므로 즉시 프라이빗으로 변경해야 합니다.',
+            function=self._run_public_snapshots_check,
+            category='보안',
+            severity='high'
+        )
+    
+    # 추상 메서드 구현
+    def collect_data(self) -> Dict[str, Any]:
+        """
+        AWS에서 필요한 데이터를 수집합니다.
+        
+        Returns:
+            Dict[str, Any]: 수집된 데이터
+        """
+        return {}
+    
+    def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        수집된 데이터를 분석하여 결과를 생성합니다.
+        
+        Args:
+            collected_data: 수집된 데이터
+            
+        Returns:
+            Dict[str, Any]: 분석 결과
+        """
+        return {}
+    
+    def generate_recommendations(self, analysis_result: Dict[str, Any]) -> List[str]:
+        """
+        분석 결과를 바탕으로 권장사항을 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            List[str]: 권장사항 목록
+        """
+        return []
+    
+    def create_message(self, analysis_result: Dict[str, Any]) -> str:
+        """
+        분석 결과를 바탕으로 메시지를 생성합니다.
+        
+        Args:
+            analysis_result: 분석 결과
+            
+        Returns:
+            str: 결과 메시지
+        """
+        return ""
+    
+    def _run_public_snapshots_check(self, role_arn: str = None) -> Dict[str, Any]:
+        """
+        RDS 퍼블릭 스냅샷 검사를 실행합니다.
+        
+        Args:
+            role_arn: AWS 역할 ARN
+            
+        Returns:
+            Dict[str, Any]: 검사 결과
+        """
+        from app.services.service_advisor.rds.checks.public_snapshots_check import run
+        return run(role_arn)

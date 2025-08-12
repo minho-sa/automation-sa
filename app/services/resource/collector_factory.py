@@ -3,6 +3,9 @@ import boto3
 from app.services.resource.common.base_collector import BaseCollector
 from app.services.resource.ec2_collector import EC2Collector
 from app.services.resource.s3_collector import S3Collector
+from app.services.resource.rds_collector import RDSCollector
+from app.services.resource.lambda_collector import LambdaCollector
+from app.services.resource.iam_collector import IAMCollector
 from config import Config
 
 class CollectorFactory:
@@ -14,6 +17,9 @@ class CollectorFactory:
     _collectors = {
         'ec2': EC2Collector,
         's3': S3Collector,
+        'rds': RDSCollector,
+        'lambda': LambdaCollector,
+        'iam': IAMCollector,
         # 다른 서비스 수집기 추가 예정
     }
     
@@ -59,5 +65,8 @@ class CollectorFactory:
         return {
             'ec2': 'EC2 인스턴스',
             's3': 'S3 버킷',
+            'rds': 'RDS 데이터베이스',
+            'lambda': 'Lambda 함수',
+            'iam': 'IAM 사용자',
             # 다른 서비스 추가 예정
         }

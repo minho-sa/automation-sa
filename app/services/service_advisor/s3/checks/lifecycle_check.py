@@ -27,6 +27,13 @@ def run(role_arn=None) -> Dict[str, Any]:
         for bucket in buckets.get('Buckets', []):
             bucket_name = bucket['Name']
             
+            # 버킷 리전 정보 가져오기
+            try:
+                bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)
+                region = bucket_location.get('LocationConstraint') or 'us-east-1'
+            except Exception as e:
+                region = 'N/A'
+            
             # 버전 관리 설정 확인
             try:
                 versioning = s3_client.get_bucket_versioning(Bucket=bucket_name)
@@ -100,6 +107,7 @@ def run(role_arn=None) -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
+                region=region,
                 creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
                 versioning_enabled=versioning_enabled,
                 has_lifecycle_rules=len(active_rules) > 0 if 'active_rules' in locals() else False,

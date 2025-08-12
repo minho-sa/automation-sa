@@ -27,6 +27,13 @@ def run(role_arn=None) -> Dict[str, Any]:
         for bucket in buckets.get('Buckets', []):
             bucket_name = bucket['Name']
             
+            # 버킷 리전 정보 가져오기
+            try:
+                bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)
+                region = bucket_location.get('LocationConstraint') or 'us-east-1'
+            except Exception:
+                region = 'N/A'
+            
             # CORS 설정 확인
             try:
                 cors = s3_client.get_bucket_cors(Bucket=bucket_name)
@@ -88,6 +95,7 @@ def run(role_arn=None) -> Dict[str, Any]:
                 advice=advice,
                 status_text=status_text,
                 bucket_name=bucket_name,
+                region=region,
                 creation_date=bucket['CreationDate'].strftime('%Y-%m-%d'),
                 has_cors=has_cors if 'has_cors' in locals() else False,
                 has_wildcard_origin=has_wildcard_origin if 'has_wildcard_origin' in locals() else False,

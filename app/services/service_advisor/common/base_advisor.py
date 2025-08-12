@@ -53,12 +53,15 @@ class BaseAdvisor:
     
     def get_available_checks(self) -> List[Dict[str, Any]]:
         """
-        사용 가능한 검사 항목 목록을 반환합니다.
+        사용 가능한 검사 항목 목록을 심각도 순으로 정렬하여 반환합니다.
         
         Returns:
-            List[Dict[str, Any]]: 검사 항목 목록
+            List[Dict[str, Any]]: 검사 항목 목록 (HIGH -> MEDIUM -> LOW 순)
         """
-        return [
+        # 심각도 우선순위 정의
+        severity_order = {'high': 0, 'medium': 1, 'low': 2}
+        
+        checks_list = [
             {
                 'id': check_id,
                 'name': check_info['name'],
@@ -68,6 +71,9 @@ class BaseAdvisor:
             }
             for check_id, check_info in self.checks.items()
         ]
+        
+        # 심각도 순으로 정렬 (HIGH -> MEDIUM -> LOW)
+        return sorted(checks_list, key=lambda x: severity_order.get(x['severity'].lower(), 999))
     
     def run_check(self, check_id, role_arn=None) -> Dict[str, Any]:
         """

@@ -20,25 +20,32 @@ class AWSClient:
         self.session = session or boto3.Session()
         self.clients = {}
     
-    def get_client(self, service_name: str) -> Any:
+    def get_client(self, service_name: str, region_name: str = None, role_arn: str = None) -> Any:
         """
         특정 AWS 서비스의 클라이언트를 반환합니다.
         
         Args:
             service_name: AWS 서비스 이름 (ec2, s3, iam 등)
+            region_name: AWS 리전 이름 (선택 사항)
+            role_arn: AWS 역할 ARN (선택 사항, 현재 미사용)
             
         Returns:
             boto3 클라이언트 객체
         """
-        if service_name not in self.clients:
+        client_key = f"{service_name}_{region_name or 'default'}"
+        
+        if client_key not in self.clients:
             try:
-                self.clients[service_name] = self.session.client(service_name)
-                self.logger.debug(f"{service_name} 클라이언트 생성 완료")
+                if region_name:
+                    self.clients[client_key] = self.session.client(service_name, region_name=region_name)
+                else:
+                    self.clients[client_key] = self.session.client(service_name)
+                self.logger.debug(f"{service_name} 클라이언트 생성 완료 (region: {region_name or 'default'})")
             except ClientError as e:
                 self.logger.error(f"{service_name} 클라이언트 생성 중 오류 발생: {str(e)}")
                 raise
         
-        return self.clients[service_name]
+        return self.clients[client_key]
     
     def get_resource(self, service_name: str) -> Any:
         """
@@ -75,16 +82,44 @@ class AWSClient:
             raise Exception(f"AWS 자격증명이 유효하지 않습니다: {str(e)}")
 
 # 기존 코드와의 호환성을 위한 함수
-def create_boto3_client(service_name, region_name=None):
+def create_boto3_client(service_name, region_name=None, role_arn=None):
     """
     boto3 클라이언트를 생성하는 함수 (기존 코드와의 호환성 유지)
     
     Args:
         service_name: AWS 서비스 이름
         region_name: AWS 리전 이름 (선택 사항)
+        role_arn: AWS 역할 ARN (선택 사항)
         
     Returns:
         boto3 클라이언트 객체
     """
-    client = AWSClient()
-    return client.get_client(service_name)
+    # 일단 role_arn을 무시하고 기본 자격증명 사용
+    # Role assume 권한 문제로 인한 임시 수정
+    session = boto3.Session()
+    if region_name:
+        return session.client(service_name, region_name=region_name)
+    else:
+        return session.client(service_name)
+
+def get_all_regions(service_name='lambda'):
+    """
+    Lambda 서비스가 지원하는 모든 리전을 반환합니다.
+    
+    Args:
+        service_name: AWS 서비스 이름
+        
+    Returns:
+        List[str]: 리전 목록
+    """
+    try:
+        session = boto3.Session()
+        return session.get_available_regions(service_name)
+    except Exception:
+        # 기본 리전 목록 반환
+        return [
+            'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+            'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2',
+            'ap-south-1', 'eu-west-1', 'eu-west-2', 'eu-central-1',
+            'ca-central-1', 'sa-east-1'
+        ]

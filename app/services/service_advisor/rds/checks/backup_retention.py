@@ -15,10 +15,9 @@ def run(role_arn=None) -> Dict[str, Any]:
         Dict[str, Any]: 검사 결과
     """
     try:
-        rds_client = create_boto3_client('rds', role_arn=role_arn)
-        
-        # RDS 인스턴스 목록 가져오기
-        instances = rds_client.describe_db_instances()
+        # 모든 리전에서 RDS 인스턴스 수집
+        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
         
         # 인스턴스 분석 결과
         instance_analysis = []
@@ -26,41 +25,50 @@ def run(role_arn=None) -> Dict[str, Any]:
         # 권장 백업 보존 기간 (일)
         recommended_retention = 7
         
-        for instance in instances.get('DBInstances', []):
-            instance_id = instance['DBInstanceIdentifier']
-            engine = instance['Engine']
-            retention_period = instance['BackupRetentionPeriod']
+        for region in regions:
+            try:
+                rds_client = create_boto3_client('rds', region_name=region, role_arn=role_arn)
+                instances = rds_client.describe_db_instances()
+            except Exception:
+                continue
+                
+            for instance in instances.get('DBInstances', []):
+                instance_id = instance['DBInstanceIdentifier']
+                engine = instance['Engine']
+                retention_period = instance['BackupRetentionPeriod']
+                
+                # 백업 보존 기간 분석
+                status = RESOURCE_STATUS_PASS
+                advice = None
+                status_text = None
+                
+                if retention_period < 1:
+                    status = RESOURCE_STATUS_FAIL
+                    status_text = '백업 없음'
+                    advice = f'자동 백업이 비활성화되어 있습니다. 최소 {recommended_retention}일의 백업 보존 기간을 설정하세요.'
+                elif retention_period < recommended_retention:
+                    status = RESOURCE_STATUS_WARNING
+                    status_text = '보존 기간 부족'
+                    advice = f'백업 보존 기간이 {retention_period}일로 설정되어 있습니다. 최소 {recommended_retention}일로 늘리는 것이 좋습니다.'
+                else:
+                    status_text = '최적화됨'
+                    advice = f'백업 보존 기간이 {retention_period}일로 적절하게 설정되어 있습니다.'
             
-            # 백업 보존 기간 분석
-            status = RESOURCE_STATUS_PASS
-            advice = None
-            status_text = None
-            
-            if retention_period < 1:
-                status = RESOURCE_STATUS_FAIL
-                status_text = '백업 없음'
-                advice = f'자동 백업이 비활성화되어 있습니다. 최소 {recommended_retention}일의 백업 보존 기간을 설정하세요.'
-            elif retention_period < recommended_retention:
-                status = RESOURCE_STATUS_WARNING
-                status_text = '보존 기간 부족'
-                advice = f'백업 보존 기간이 {retention_period}일로 설정되어 있습니다. 최소 {recommended_retention}일로 늘리는 것이 좋습니다.'
-            else:
-                status_text = '최적화됨'
-                advice = f'백업 보존 기간이 {retention_period}일로 적절하게 설정되어 있습니다.'
-            
-            # 표준화된 리소스 결과 생성
-            instance_result = create_resource_result(
-                resource_id=instance_id,
-                status=status,
-                advice=advice,
-                status_text=status_text,
-                instance_id=instance_id,
-                engine=engine,
-                retention_period=retention_period,
-                recommended_retention=recommended_retention
-            )
-            
-            instance_analysis.append(instance_result)
+                # 표준화된 리소스 결과 생성
+                instance_result = create_resource_result(
+                    resource_id=instance_id,
+                    status=status,
+                    advice=advice,
+                    status_text=status_text,
+                    instance_id=instance_id,
+                    region=region,
+                    engine=engine,
+                    retention_period=retention_period,
+                    recommended_retention=recommended_retention
+                )
+                
+                instance_analysis.append(instance_result)
+
         
         # 결과 분류
         passed_instances = [i for i in instance_analysis if i['status'] == RESOURCE_STATUS_PASS]

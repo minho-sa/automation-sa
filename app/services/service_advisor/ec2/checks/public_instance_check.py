@@ -1,5 +1,6 @@
 import boto3
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.service_advisor.aws_client import create_boto3_client
 from app.services.service_advisor.common.unified_result import (
     create_unified_check_result, create_resource_result, create_error_result,
@@ -15,12 +16,39 @@ class PublicInstanceCheck(BaseEC2Check):
         self.session = session or boto3.Session()
         self.check_id = 'ec2_public_instance_check'
     
+    def _collect_region_data(self, region: str, role_arn: str) -> Dict[str, Any]:
+        """특정 리전의 인스턴스 데이터를 수집합니다."""
+        try:
+            ec2_client = create_boto3_client('ec2', region_name=region, role_arn=role_arn)
+            instances = ec2_client.describe_instances()
+            
+            # 각 인스턴스에 리전 정보 추가
+            for reservation in instances['Reservations']:
+                for instance in reservation['Instances']:
+                    instance['Region'] = region
+            
+            return {'reservations': instances['Reservations']}
+        except Exception as e:
+            print(f"리전 {region}에서 데이터 수집 중 오류: {str(e)}")
+            return {'reservations': []}
+    
     def collect_data(self, role_arn=None) -> Dict[str, Any]:
         """EC2 인스턴스 데이터 수집"""
-        ec2_client = create_boto3_client('ec2', role_arn=role_arn)
+        # 모든 리전 목록 가져오기
+        ec2_default = create_boto3_client('ec2', role_arn=role_arn)
+        regions = [region['RegionName'] for region in ec2_default.describe_regions()['Regions']]
         
-        instances = ec2_client.describe_instances()
-        return {'reservations': instances['Reservations']}
+        all_reservations = []
+        
+        # 병렬 처리로 리전별 데이터 수집
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_region = {executor.submit(self._collect_region_data, region, role_arn): region for region in regions}
+            
+            for future in as_completed(future_to_region):
+                result = future.result()
+                all_reservations.extend(result['reservations'])
+        
+        return {'reservations': all_reservations}
     
     def analyze_data(self, collected_data: Dict[str, Any]) -> Dict[str, Any]:
         """EC2 인스턴스 퍼블릭 액세스 분석"""
@@ -71,6 +99,7 @@ class PublicInstanceCheck(BaseEC2Check):
                     status_text=status_text,
                     instance_id=instance_id,
                     instance_name=instance_name,
+                    region=instance.get('Region', 'N/A'),
                     instance_type=instance.get('InstanceType', 'N/A'),
                     instance_state=instance_state,
                     public_ip=public_ip or 'N/A',
@@ -92,8 +121,8 @@ class PublicInstanceCheck(BaseEC2Check):
         
         recommendations = [
             '불필요한 퍼블릭 IP를 제거하세요.',
-            'ALB/NLB로 웹 서버를 안전하게 노출하세요.',
-            'Session Manager로 안전하게 관리하세요.'
+            '웹 서비스가 필요한 경우 ALB/NLB를 통해 안전하게 노출하세요.',
+            'EC2 접속은 Session Manager를 사용하여 안전하게 관리하세요.'
         ]
         
         return recommendations

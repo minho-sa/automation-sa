@@ -1,0 +1,86 @@
+/* VPC 서비스 어드바이저 전용 스타일 */
+
+.vpc-advisor-container {
+    padding: 20px;
+}
+
+.vpc-check-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    transition: box-shadow 0.2s ease;
+}
+
+.vpc-check-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vpc-check-header {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.vpc-check-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #232f3e;
+    margin: 0;
+}
+
+.vpc-check-description {
+    padding: 16px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.vpc-resource-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.vpc-resource-table th,
+.vpc-resource-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.vpc-resource-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #232f3e;
+}
+
+.vpc-status-pass {
+    color: #28a745;
+}
+
+.vpc-status-warning {
+    color: #ffc107;
+}
+
+.vpc-status-fail {
+    color: #dc3545;
+}
+
+.vpc-eip-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.vpc-eip-badge.unused {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.vpc-eip-badge.in-use {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}

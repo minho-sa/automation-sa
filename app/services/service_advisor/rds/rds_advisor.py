@@ -89,6 +89,18 @@ class RDSAdvisor(BaseAdvisor):
             severity='medium'
         )
         
+        # 유휴 DB 인스턴스 검사
+        from app.services.service_advisor.rds.checks.idle_db_instances_check import IdleDBInstancesCheck
+        idle_db_check = IdleDBInstancesCheck()
+        self.register_check(
+            check_id=idle_db_check.check_id,
+            name='유휴 DB 인스턴스 검사',
+            description='CloudWatch 메트릭을 분석하여 유휴 상태의 RDS 인스턴스를 식별합니다. 지난 7일간 데이터베이스 연결 수가 낮은 인스턴스를 찾아 비용 최적화 기회를 제시합니다.',
+            function=idle_db_check.run,
+            category='비용 최적화',
+            severity='medium'
+        )
+        
         # 퍼블릭 스냅샷 검사
         self.register_check(
             check_id='rds-public-snapshots',

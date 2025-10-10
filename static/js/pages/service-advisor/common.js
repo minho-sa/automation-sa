@@ -892,9 +892,6 @@ function displayCheckResult(checkId, result) {
                 if (resource.public_acl === true) {
                     additionalInfo = '<span class="badge bg-danger">퍼블릭 ACL</span> ';
                 }
-                if (resource.all_blocked === false) {
-                    additionalInfo += '<span class="badge bg-warning">퍼블릭 액세스 차단 미설정</span>';
-                }
             }
             
             // Lambda 함수 정보

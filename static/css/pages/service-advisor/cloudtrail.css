@@ -1,0 +1,132 @@
+/* CloudTrail 서비스 어드바이저 스타일 */
+
+/* 공통 스타일 상속 */
+@import url('./common.css');
+
+/* CloudTrail 특화 스타일 */
+.check-item-category-label.security {
+    background-color: #d73027;
+    color: white;
+}
+
+.check-item-category-label.compliance {
+    background-color: #4575b4;
+    color: white;
+}
+
+/* CloudTrail 상태 표시 */
+.cloudtrail-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.cloudtrail-status.enabled {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.cloudtrail-status.disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.cloudtrail-status.partial {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* CloudTrail 설정 정보 */
+.cloudtrail-config {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.config-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.config-item .fas {
+    width: 1rem;
+    text-align: center;
+}
+
+.config-item.enabled {
+    color: #28a745;
+}
+
+.config-item.disabled {
+    color: #dc3545;
+}
+
+/* CloudTrail 테이블 특화 스타일 */
+.cloudtrail-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.cloudtrail-table .trail-name {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #0066cc;
+}
+
+.cloudtrail-table .s3-bucket {
+    font-family: 'Courier New', monospace;
+    color: #666;
+}
+
+/* 로그 파일 검증 상태 */
+.validation-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.validation-status.enabled {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.validation-status.disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* 암호화 상태 */
+.encryption-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.encryption-status.encrypted {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.encryption-status.not-encrypted {
+    background-color: #f8d7da;
+    color: #721c24;
+}

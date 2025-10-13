@@ -26,6 +26,20 @@ class EBSAdvisor(BaseAdvisor):
                 'severity': 'medium'
             },
             {
+                'id': 'ebs_low_utilization_volumes_check',
+                'name': '활용도 낮은 EBS 볼륨 검사',
+                'description': 'CloudWatch 메트릭을 분석하여 활용도가 낮은 EBS 볼륨을 식별합니다. 지난 7일간 IOPS가 낮은 볼륨을 찾아 비용 최적화 기회를 제시합니다.',
+                'category': '비용 최적화',
+                'severity': 'medium'
+            },
+            {
+                'id': 'ebs_overprovisioned_volumes_check',
+                'name': '과다 프로비저닝된 EBS 볼륨 검사',
+                'description': 'CloudWatch 메트릭을 분석하여 과다 프로비저닝된 EBS 볼륨을 식별합니다. 지난 14일간 IOPS 사용률이 20% 미만인 볼륨을 찾아 IOPS 비용 최적화 기회를 제시합니다.',
+                'category': '비용 최적화',
+                'severity': 'medium'
+            },
+            {
                 'id': 'snapshot_management_check',
                 'name': 'EBS 스냅샷 관리 검사',
                 'description': 'EBS 스냅샷의 상태와 수명주기를 검사합니다.',
@@ -58,6 +72,14 @@ class EBSAdvisor(BaseAdvisor):
             elif check_id == 'unused_volumes_check':
                 from app.services.service_advisor.ebs.checks.unused_volumes_check import run
                 return run(role_arn)
+            elif check_id == 'ebs_low_utilization_volumes_check':
+                from app.services.service_advisor.ebs.checks.low_utilization_volumes_check import LowUtilizationVolumesCheck
+                check = LowUtilizationVolumesCheck()
+                return check.run(role_arn)
+            elif check_id == 'ebs_overprovisioned_volumes_check':
+                from app.services.service_advisor.ebs.checks.overprovisioned_volumes_check import OverprovisionedVolumesCheck
+                check = OverprovisionedVolumesCheck()
+                return check.run(role_arn)
             elif check_id == 'snapshot_management_check':
                 from app.services.service_advisor.ebs.checks.snapshot_management_check import run
                 return run(role_arn)

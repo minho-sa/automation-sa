@@ -1,0 +1,94 @@
+{% extends "service_advisor/common/check_detail.html" %}
+
+{% block check_title %}전송 중 데이터 암호화{% endblock %}
+{% block check_description %}
+전송 중 데이터 암호화를 사용하여 Amazon EFS 파일 시스템이 탑재되었는지 확인합니다.
+우발적인 노출 또는 무단 액세스로부터 데이터를 보호하기 위해 모든 데이터 흐름에 전송 중 데이터 암호화를 사용할 것을 권장합니다.
+{% endblock %}
+
+{% block table_headers %}
+<th class="resizable-col" style="width: 100px;">리전</th>
+<th class="resizable-col" style="width: 150px;">파일시스템 이름</th>
+<th class="resizable-col" style="width: 180px;">파일시스템 ID</th>
+<th class="resizable-col" style="width: 100px;">상태</th>
+<th class="resizable-col" style="width: 130px;">At-rest 암호화</th>
+<th class="resizable-col" style="width: 110px;">마운트 타겟</th>
+<th class="resizable-col" style="width: 110px;">생성일</th>
+<th class="resizable-col" style="width: 400px;">권장사항</th>
+{% endblock %}
+
+{% block table_body %}
+<!-- 테이블 내용이 JavaScript로 동적 로드됩니다 -->
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    makeEFSTableResizable();
+});
+
+function makeEFSTableResizable() {
+    const table = document.querySelector('#checkResultTable');
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('th.resizable-col');
+    
+    headers.forEach((header, index) => {
+        const resizer = document.createElement('div');
+        resizer.className = 'column-resizer';
+        resizer.style.cssText = `
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+        `;
+        
+        header.style.position = 'relative';
+        header.appendChild(resizer);
+        
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+        
+        resizer.addEventListener('mousedown', function(e) {
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = parseInt(document.defaultView.getComputedStyle(header).width, 10);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            e.preventDefault();
+        });
+        
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+            const width = startWidth + e.clientX - startX;
+            if (width > 50) {
+                header.style.width = width + 'px';
+            }
+        }
+        
+        function handleMouseUp() {
+            isResizing = false;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+        
+        resizer.addEventListener('mouseenter', function() {
+            if (!isResizing) {
+                header.style.borderRight = '2px solid #0073bb';
+            }
+        });
+        
+        resizer.addEventListener('mouseleave', function() {
+            if (!isResizing) {
+                header.style.borderRight = '';
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

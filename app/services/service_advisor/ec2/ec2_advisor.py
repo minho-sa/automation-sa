@@ -87,17 +87,7 @@ class EC2Advisor(BaseAdvisor):
             )
             
 
-            # 미사용 리소스 검사
-            from app.services.service_advisor.ec2.checks.unused_resources_check import UnusedResourcesCheck
-            unused_resources_check = UnusedResourcesCheck()
-            self.register_check(
-                check_id=unused_resources_check.check_id,
-                name='미사용 리소스 검사',
-                description='사용되지 않는 Elastic IP와 EBS 볼륨을 검사합니다. 불필요한 비용을 발생시키는 미사용 리소스를 식별하고 비용 최적화 방안을 제시합니다.',
-                function=unused_resources_check.run,
-                category='비용 최적화',
-                severity='medium'
-            )
+
             
             # 인스턴스 모니터링 검사
             from app.services.service_advisor.ec2.checks.instance_monitoring_check import InstanceMonitoringCheck
@@ -168,6 +158,18 @@ class EC2Advisor(BaseAdvisor):
                 name='예약 인스턴스 현황 및 만료 검사',
                 description='예약 인스턴스(RI)의 만료 일정과 사용률을 검사합니다.\n30일 이내 만료 예정인 RI를 식별하고, 사용률이 낮거나 초과 사용되는 RI를 찾아 비용 최적화 방안을 제시합니다.',
                 function=ri_check.run,
+                category='비용 최적화',
+                severity='medium'
+            )
+            
+            # 중지된 인스턴스 검사
+            from app.services.service_advisor.ec2.checks.stopped_instances_check import StoppedInstancesCheck
+            stopped_instances_check = StoppedInstancesCheck()
+            self.register_check(
+                check_id=stopped_instances_check.check_id,
+                name='중지된 EC2 인스턴스 검사',
+                description='중지된 상태의 EC2 인스턴스를 검사합니다. 중지된 인스턴스는 EBS 볼륨에 대한 비용이 지속적으로 발생하므로 장기간 사용하지 않는 인스턴스는 종료를 고려해야 합니다.',
+                function=stopped_instances_check.run,
                 category='비용 최적화',
                 severity='medium'
             )
